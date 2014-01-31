@@ -409,7 +409,8 @@ class Main(Gtk.Application):
         self.global_search_entry.connect('changed', changed)
         self.global_search_entry.connect('activate', activate)
 
-    def set_title(self, value=''):
+    # ABD: Add possibility to choose the business date
+    def set_title(self, value='', date=''):
         if CONFIG['login.profile']:
             login_info = CONFIG['login.profile']
         else:
@@ -421,7 +422,7 @@ class Main(Gtk.Application):
         if value:
             titles.append(value)
         titles.append(CONFIG['client.title'])
-        self.header.set_title(' - '.join(titles))
+        self.header.set_title(' - '.join(titles) + ' (' + date + ')')
         self.header.set_subtitle(login_info)
         try:
             style_context = self.header.get_style_context()
@@ -506,7 +507,7 @@ class Main(Gtk.Application):
         page = self.notebook.get_current_page()
         self.notebook.set_current_page(page - 1)
 
-    def get_preferences(self):
+    def get_preferences(self, date=''):
         RPCContextReload()
         try:
             prefs = RPCExecute('model', 'res.user', 'get_preferences', False)
@@ -533,7 +534,8 @@ class Main(Gtk.Application):
         self.sig_win_menu(prefs=prefs)
         for action_id in prefs.get('actions', []):
             Action.execute(action_id, {})
-        self.set_title(prefs.get('status_bar', ''))
+        connexion_date = date.strftime('%d/%m/%Y') if date else ''
+        self.set_title(prefs.get('status_bar', ''), connexion_date)
         if prefs and 'language' in prefs:
             translate.setlang(prefs['language'], prefs.get('locale'))
             if CONFIG['client.lang'] != prefs['language']:

@@ -202,8 +202,8 @@ class WinImport(NoModal):
         self.view2.set_model(self.model2)
 
         sensible_allocation = self.sensible_widget.get_allocation()
-        self.dialog.set_default_size(int(sensible_allocation.width * 0.9),
-            int(sensible_allocation.height * 0.9))
+        self.dialog.set_default_size(int(sensible_allocation.width * 0.95),
+            int(sensible_allocation.height * 0.95))
         self.dialog.show_all()
         common.center_window(self.dialog, self.parent, self.sensible_widget)
 

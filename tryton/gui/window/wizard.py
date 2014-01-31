@@ -328,8 +328,8 @@ class WizardDialog(Wizard, NoModal):
     def update(self, view, defaults, buttons):
         super(WizardDialog, self).update(view, defaults, buttons)
         sensible_allocation = self.sensible_widget.get_allocation()
-        self.dia.set_default_size(int(sensible_allocation.width * 0.9),
-            int(sensible_allocation.height * 0.9))
+        self.dia.set_default_size(int(sensible_allocation.width * 0.95),
+            int(sensible_allocation.height * 0.95))
         self.dia.show()
         common.center_window(self.dia, self.parent, self.sensible_widget)
 

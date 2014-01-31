@@ -250,8 +250,8 @@ class TranslateDialog(NoModal):
         self.win.vbox.pack_start(scrolledwindow, True, True)
 
         sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.9),
-            int(sensible_allocation.height * 0.9))
+        self.win.set_default_size(int(sensible_allocation.width * 0.95),
+            int(sensible_allocation.height * 0.95))
 
         self.register()
         self.win.show_all()

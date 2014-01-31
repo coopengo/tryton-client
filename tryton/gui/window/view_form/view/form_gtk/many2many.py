@@ -84,8 +84,12 @@ class Many2Many(Widget):
 
         frame = Gtk.Frame()
         frame.add(hbox)
-        frame.set_shadow_type(Gtk.ShadowType.OUT)
-        vbox.pack_start(frame, expand=False, fill=True, padding=0)
+        # XXX: support expand_toolbar
+        if attrs.get('expand_toolbar'):
+            frame.set_shadow_type(Gtk.ShadowType.NONE)
+        else:
+            frame.set_shadow_type(Gtk.ShadowType.OUT)
+            vbox.pack_start(frame, expand=False, fill=True, padding=0)
 
         self.screen = Screen(attrs['relation'],
             view_ids=attrs.get('view_ids', '').split(','),
@@ -285,6 +289,8 @@ class Many2Many(Widget):
         new_group = self.field.get_client(self.record)
         if id(self.screen.group) != id(new_group):
             self.screen.group = new_group
+            if not new_group and self.expander:
+                self.expander.set_expanded(True)
         self.screen.display()
         return True
 

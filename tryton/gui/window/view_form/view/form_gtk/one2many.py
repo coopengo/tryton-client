@@ -153,8 +153,12 @@ class One2Many(Widget):
 
         frame = Gtk.Frame()
         frame.add(hbox)
-        frame.set_shadow_type(Gtk.ShadowType.OUT)
-        vbox.pack_start(frame, expand=False, fill=True, padding=0)
+        # XXX: support expand_toolbar
+        if attrs.get('expand_toolbar'):
+            frame.set_shadow_type(Gtk.ShadowType.NONE)
+        else:
+            frame.set_shadow_type(Gtk.ShadowType.OUT)
+            vbox.pack_start(frame, expand=False, fill=True, padding=0)
 
         model = attrs['relation']
         breadcrumb = list(self.view.screen.breadcrumb)
@@ -563,7 +567,7 @@ class One2Many(Widget):
                 size_limit = len(self.screen.group)
             else:
                 size_limit = min(size_limit, len(self.screen.group))
-        if self.screen.domain != domain:
+        if self.screen.get_domain() != domain:
             self.screen.domain = domain
         self.screen.size_limit = size_limit
         self.screen.display()

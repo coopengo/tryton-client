@@ -703,8 +703,6 @@ class Screen(SignalEvent):
             if (self.current_record
                     and self.current_record in self.current_record.group):
                 pass
-            elif self.group:
-                self.current_record = self.group[0]
             else:
                 self.current_record = None
         if self.views:

@@ -172,7 +172,8 @@ class One2Many(WidgetInterface):
         frame = gtk.Frame()
         frame.add(hbox)
         frame.set_shadow_type(gtk.SHADOW_OUT)
-        self.widget.pack_start(frame, expand=False, fill=True)
+        if not self.attrs.get('group') or self.attrs.get('mode') != 'form':
+            self.widget.pack_start(frame, expand=False, fill=True)
 
         self.screen = Screen(attrs['relation'],
             mode=attrs.get('mode', 'tree,form').split(','),
@@ -184,7 +185,8 @@ class One2Many(WidgetInterface):
         self.screen.signal_connect(self, 'record-message', self._sig_label)
         if self.attrs.get('group'):
             self.screen.signal_connect(self, 'current-record-changed',
-                lambda screen, _: gobject.idle_add(self.group_sync, screen))
+                lambda screen, _: gobject.idle_add(self.group_sync, screen,
+                    screen.current_record))
 
         self.widget.pack_start(self.screen.widget, expand=True, fill=True)
 
@@ -311,7 +313,6 @@ class One2Many(WidgetInterface):
                     and access['read']))
 
     def _validate(self):
-        self.view.set_value()
         record = self.screen.current_record
         if record:
             fields = self.screen.current_view.get_fields()
@@ -340,11 +341,12 @@ class One2Many(WidgetInterface):
         for widget in [self] + self.view.widgets[self.field_name]:
             if ((self.attrs.get('group')
                         and widget.attrs.get('group') != self.attrs['group'])
+                    or not widget.visible
                     or not hasattr(widget, 'screen')):
                 continue
             if (widget.screen.current_view.view_type == 'form'
                     or widget.screen.editable_get()):
-                record = widget.screen.new()
+                widget.screen.new()
                 widget.screen.current_view.widget.set_sensitive(True)
                 update_sequence()
                 break
@@ -392,7 +394,6 @@ class One2Many(WidgetInterface):
         access = common.MODELACCESS[self.screen.model_name]
         if not access['write'] or not access['read']:
             return
-        self.view.set_value()
         domain = self.field.domain_get(self.record)
         context = self.field.context_get(self.record)
         domain = [domain, self.record.expr_eval(self.attrs.get('add_remove'))]
@@ -447,10 +448,21 @@ class One2Many(WidgetInterface):
         self.label.set_text(line)
         self._set_button_sensitive()
 
-    def group_sync(self, screen):
+    def group_sync(self, screen, current_record):
         if not self.view or not self.view.widgets:
             return
+        if self.attrs.get('mode') == 'form':
+            return
+        if screen.current_record != current_record:
+            return
+
+        def is_compatbile(screen, record):
+            return not (screen.current_view.view_type == 'form'
+                and record is not None
+                and screen.model_name != record.model_name)
+
         current_record = self.screen.current_record
+        to_sync = []
         for widget in self.view.widgets[self.field_name]:
             if (widget == self
                     or widget.attrs.get('group') != self.attrs['group']
@@ -458,14 +470,29 @@ class One2Many(WidgetInterface):
                 continue
             if widget.screen.current_record == current_record:
                 continue
+            record = current_record
+            if not is_compatbile(widget.screen, record):
+                record = None
             if not widget._validate():
                 def go_previous():
-                    screen.current_record = widget.screen.current_record
+                    record = widget.screen.current_record
+                    if not is_compatbile(screen, record):
+                        record = None
+                    screen.current_record = record
                     screen.display()
                 gobject.idle_add(go_previous)
-                break
-            widget.screen.current_record = current_record
-            widget.screen.display()
+                return
+            to_sync.append((widget, record))
+        for widget, record in to_sync:
+            if (widget.screen.current_view.view_type == 'form'
+                    and record is not None
+                    and widget.screen.group.model_name ==
+                    record.group.model_name):
+                fields = dict((name, field.attrs) for name, field in
+                    widget.screen.group.fields.iteritems())
+                record.group.load_fields(fields)
+            widget.screen.current_record = record
+            widget.display(widget.record, widget.field)
 
     def display(self, record, field):
         super(One2Many, self).display(record, field)
@@ -479,8 +506,10 @@ class One2Many(WidgetInterface):
             self.screen.display()
             return False
         new_group = field.get_client(record)
-
-        if id(self.screen.group) != id(new_group):
+        if self.attrs.get('group') and self.attrs.get('mode') == 'form':
+            if self.screen.current_record is None:
+                self.invisible_set(True)
+        elif id(self.screen.group) != id(new_group):
             self.screen.group = new_group
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:
@@ -501,6 +530,9 @@ class One2Many(WidgetInterface):
         return True
 
     def set_value(self, record, field):
+        if (self.screen.current_view.view_type == 'form'
+                and self.screen.model_name != record.model_name):
+            return True
         self.screen.save_tree_state()
         self.screen.current_view.set_value()
         if self.screen.modified():  # TODO check if required

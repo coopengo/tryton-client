@@ -110,7 +110,8 @@ class SourceView(WidgetInterface):
         redo_btn = gtk.ToolButton('gtk-redo')
         redo_btn.connect('clicked', self.redo)
         toolbar.insert(redo_btn, -1)
-        check_btn = gtk.ToolButton(label='Check Code')
+        #check_btn = gtk.ToolButton(label='Check Code')
+        check_btn = gtk.ToolButton('gtk-apply')
         check_btn.connect('clicked', self.check_code)
         toolbar.insert(check_btn, -1)
 

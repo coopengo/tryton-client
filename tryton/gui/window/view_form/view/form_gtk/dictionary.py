@@ -485,14 +485,18 @@ class DictWidget(WidgetInterface):
         else:
             self.rows[key] = [label, alignment]
 
-    def add_key(self, key):
+    def get_key_descs(self, keys):
         context = self.field.context_get(self.record)
         try:
             key_ids = RPCExecute('model', self.schema_model, 'search',
-                [('name', '=', key)], 0, CONFIG['client.limit'],
+                [('name', 'in', keys)], 0, CONFIG['client.limit'],
                 None, context=context)
-            self.keys[key] = RPCExecute('model', self.schema_model,
-                'get_keys', key_ids, context=context)[0]
+            if not key_ids:
+                return
+            key_descriptions = RPCExecute('model', self.schema_model,
+                'get_keys', key_ids, context=context)
+            for key_desc in key_descriptions:
+                self.keys[key_desc['name']] = key_desc
         except RPCException:
             pass
 
@@ -509,10 +513,12 @@ class DictWidget(WidgetInterface):
             self._record_id = record_id
 
         value = field.get_client(record) if field else {}
-        for key in sorted(value.iterkeys()):
+        value_keys = sorted(value.iterkeys())
+        new_keys = [key for key in value_keys if not key in self.keys]
+        if new_keys:
+            self.get_key_descs(new_keys)
+        for key in value_keys:
             val = value[key]
-            if key not in self.keys:
-                self.add_key(key)
             if key not in self.fields:
                 self.add_line(key)
             widget = self.fields[key]

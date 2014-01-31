@@ -13,6 +13,9 @@ from interface import WidgetInterface
 
 _ = gettext.gettext
 CODE_TEMPLATE = """
+from decimal import Decimal
+Decimal(0)
+
 def test():
 %s
 """
@@ -247,7 +250,7 @@ class SourceView(WidgetInterface):
 
     def populate_tree(self, tree_data, parent=None):
         for element in tree_data:
-            if element['type'] == 'function':
+            if element['type'] != 'folder':
                 self.known_funcs.add(element['translated'])
             if element['fct_args']:
                 param_txt = _('Parameters: {}').format(element['fct_args'])
@@ -302,7 +305,9 @@ class SourceView(WidgetInterface):
                     and message.message_args[0] in self.known_funcs):
                 continue
             error_type = ERROR2COLOR.get(message.__class__, SYNTAX)
-            line_nbr = message.lineno - 2
+            # "5" is the number of lines of the template before the actual
+            # code
+            line_nbr = message.lineno - 5
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
             line = self.sourcebuffer.props.text.split('\n')[line_nbr - 1]

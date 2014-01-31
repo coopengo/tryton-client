@@ -253,11 +253,19 @@ class SourceView(WidgetInterface):
         for element in tree_data:
             if element['type'] != 'folder':
                 self.known_funcs.add(element['translated'])
+            if element['long_description']:
+                desc = element['long_description']
+            else:
+                desc = ''
             if element['fct_args']:
                 param_txt = _('Parameters: {}').format(element['fct_args'])
             else:
                 param_txt = _('No parameters')
-            new_iter = self.model.append(parent, [element, param_txt])
+            if desc:
+                good_text = desc + '\n' * 2 + param_txt
+            else:
+                good_text = param_txt
+            new_iter = self.model.append(parent, [element, good_text])
             self.populate_tree(element['children'], new_iter)
 
     def drag_data_get(self, treeview, context, selection, target_id, etime):

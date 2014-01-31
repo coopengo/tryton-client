@@ -233,6 +233,7 @@ class RichTextBox(TextBox):
     def _readonly_set(self, value):
         super(RichTextBox, self)._readonly_set(value)
         self.tool_bar.set_sensitive(not value)
+        self.tool_bar.set_visible(not value)
         if value and self.tools['markup'].get_active():
             self.tools['markup'].set_active(False)
 

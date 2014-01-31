@@ -537,6 +537,7 @@ from progressbar import ProgressBar
 from one2one import One2One
 from richtextbox import RichTextBox
 from dictionary import DictWidget
+from sourceeditor import SourceView
 
 
 WIDGETS_TYPE = {
@@ -566,5 +567,6 @@ WIDGETS_TYPE = {
     'progressbar': (ProgressBar, 1, False, False),
     'one2one': (One2One, 1, False, False),
     'richtext': (RichTextBox, 1, True, True),
+    'source': (SourceView, 1, True, True),
     'dict': (DictWidget, 1, False, False),
 }

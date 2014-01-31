@@ -326,7 +326,8 @@ class SourceView(WidgetInterface):
             line_nbr = message.lineno - 5
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
-            line = self.sourcebuffer.props.text.split('\n')[line_nbr - 1]
+            line = self.sourcebuffer.props.text.split('\n')[line_nbr -
+                1].decode('utf-8')
             line_start = self.sourcebuffer.get_iter_at_line_offset(
                 line_nbr - 1, 0)
             line_end = self.sourcebuffer.get_iter_at_line_offset(

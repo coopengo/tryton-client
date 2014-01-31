@@ -3,7 +3,7 @@
 import gettext
 import itertools
 
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, Gtk, GLib
 
 import tryton.common as common
 from tryton.common.completion import get_completion, update_completion
@@ -171,6 +171,17 @@ class One2Many(Widget):
             breadcrumb=breadcrumb)
         self.screen.pre_validate = bool(int(attrs.get('pre_validate', 0)))
         self.screen.windows.append(self)
+        if self.attrs.get('group'):
+            self.screen._multiview_form = view
+            self.screen._multiview_group = self.attrs['group']
+            wgroup = view.widget_groups.setdefault(self.attrs['group'], [])
+            if self.screen.current_view.view_type == 'tree':
+                if (wgroup
+                        and wgroup[0].screen.current_view.view_type == 'tree'):
+                    raise ValueError("Wrong multiview definition")
+                wgroup.insert(0, self)
+            else:
+                wgroup.append(self)
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True, padding=0)
 
@@ -522,6 +533,28 @@ class One2Many(Widget):
         line = '(%s/%s)' % (name, self._length)
         self.label.set_text(line)
         self._set_button_sensitive()
+
+    def group_sync(self, screen, current_record):
+        if not self.view or not self.view.widgets:
+            return
+        if screen.current_record != current_record:
+            return
+        current_record = self.screen.current_record
+        for widget in self.view.widgets[self.field_name]:
+            if (widget == self
+                    or widget.attrs.get('group') != self.attrs['group']
+                    or not hasattr(widget, 'screen')):
+                continue
+            if widget.screen.current_record == current_record:
+                continue
+            if not widget._validate():
+                def go_previous():
+                    screen.current_record = widget.screen.current_record
+                    screen.display()
+                GLib.idle_add(go_previous)
+                break
+            widget.screen.current_record = current_record
+            widget.screen.display()
 
     def display(self):
         super(One2Many, self).display()

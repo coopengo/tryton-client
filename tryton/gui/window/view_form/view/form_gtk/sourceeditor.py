@@ -142,6 +142,7 @@ class SourceView(WidgetInterface):
         sc_error = gtk.ScrolledWindow()
         sc_error.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         sc_error.add_with_viewport(error_list)
+        self.error_tree = sc_error
 
         error_selection = error_list.get_selection()
         error_selection.connect_after('changed', self.focus_line)
@@ -313,6 +314,7 @@ class SourceView(WidgetInterface):
             tag = tag_table.lookup(tagname)
             self.sourcebuffer.remove_tag(tag, begin, end)
         errors = check_code(self.get_code())
+        has_errors = False
         for idx, message in enumerate(errors):
             if (isinstance(message, pyflakes.messages.UndefinedName)
                     and message.message_args[0] in self.known_funcs):
@@ -320,6 +322,7 @@ class SourceView(WidgetInterface):
             error_type = ERROR2COLOR.get(message.__class__, SYNTAX)
             # "5" is the number of lines of the template before the actual
             # code
+            has_errors = True
             line_nbr = message.lineno - 5
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
@@ -332,6 +335,7 @@ class SourceView(WidgetInterface):
                 line_start)
             tag = tag_table.lookup(error_type)
             self.sourcebuffer.apply_tag(tag, line_start, line_end)
+        self.error_tree.set_visible(has_errors)
 
     def focus_line(self, selection):
         model, tree_iter = selection.get_selected()

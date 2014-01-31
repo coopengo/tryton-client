@@ -444,6 +444,13 @@ class Screen(SignalEvent):
         self.views.append(view)
         return view
 
+    def editable_open_get(self):
+        if hasattr(self.current_view, 'widget_tree'):
+            if hasattr(self.current_view.widget_tree, 'editable'):
+                if hasattr(self.current_view.widget_tree, 'editable_open'):
+                    return self.current_view.widget_tree.editable_open
+        return False
+
     def new(self, default=True):
         previous_view = self.current_view
         if self.current_view.view_type == 'calendar':

@@ -100,8 +100,9 @@ class ParserTree(ParserInterface):
         attrs = node_attributes(root_node)
         on_write = attrs.get('on_write', '')
         editable = attrs.get('editable', False)
+        editable_open = attrs.get('editable_open', False)
         if editable:
-            treeview = EditableTreeView(editable)
+            treeview = EditableTreeView(editable, editable_open=editable_open)
         else:
             treeview = TreeView()
             treeview.cells = {}

@@ -3,7 +3,7 @@
 import gettext
 import itertools
 
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, Gtk, GLib
 
 import tryton.common as common
 from tryton.common.completion import get_completion, update_completion
@@ -171,6 +171,17 @@ class One2Many(Widget):
             breadcrumb=breadcrumb)
         self.screen.pre_validate = bool(int(attrs.get('pre_validate', 0)))
         self.screen.windows.append(self)
+        if self.attrs.get('group'):
+            self.screen._multiview_form = view
+            self.screen._multiview_group = self.attrs['group']
+            wgroup = view.widget_groups.setdefault(self.attrs['group'], [])
+            if self.screen.current_view.view_type == 'tree':
+                if (wgroup
+                        and wgroup[0].screen.current_view.view_type == 'tree'):
+                    raise ValueError("Wrong multiview definition")
+                wgroup.insert(0, self)
+            else:
+                wgroup.append(self)
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True, padding=0)
 

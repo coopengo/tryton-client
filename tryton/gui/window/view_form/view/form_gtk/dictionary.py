@@ -326,27 +326,29 @@ class DictWidget(WidgetInterface):
         self.table.set_border_width(0)
         vbox.pack_start(self.table, expand=True, fill=True)
 
-        hbox = gtk.HBox()
-        hbox.set_border_width(2)
-        self.wid_text = PlaceholderEntry()
-        self.wid_text.set_placeholder_text(_('Search'))
-        self.wid_text.props.width_chars = 13
-        self.wid_text.connect('activate', self._sig_activate)
-        hbox.pack_start(self.wid_text, expand=True, fill=True)
-        self.but_add = gtk.Button()
-        self.but_add.connect('clicked', self._sig_add)
-        img_add = gtk.Image()
-        img_add.set_from_stock('tryton-list-add', gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_add.set_alignment(0.5, 0.5)
-        self.but_add.add(img_add)
-        self.but_add.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_add, expand=False, fill=False)
-        hbox.set_focus_chain([self.wid_text])
-        vbox.pack_start(hbox, expand=True, fill=True)
+        if not attrs.get('no_command', 0.0):
+            hbox = gtk.HBox()
+            hbox.set_border_width(2)
+            self.wid_text = PlaceholderEntry()
+            self.wid_text.set_placeholder_text(_('Search'))
+            self.wid_text.props.width_chars = 13
+            self.wid_text.connect('activate', self._sig_activate)
+            hbox.pack_start(self.wid_text, expand=True, fill=True)
+            self.but_add = gtk.Button()
+            self.but_add.connect('clicked', self._sig_add)
+            img_add = gtk.Image()
+            img_add.set_from_stock(
+                'tryton-list-add', gtk.ICON_SIZE_SMALL_TOOLBAR)
+            img_add.set_alignment(0.5, 0.5)
+            self.but_add.add(img_add)
+            self.but_add.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_add, expand=False, fill=False)
+            self.tooltips = Tooltips()
+            self.tooltips.set_tip(self.but_add, _('Add value'))
+            self.tooltips.enable()
 
-        self.tooltips = Tooltips()
-        self.tooltips.set_tip(self.but_add, _('Add value'))
-        self.tooltips.enable()
+            hbox.set_focus_chain([self.wid_text])
+            vbox.pack_start(hbox, expand=True, fill=True)
 
         self._readonly = False
         self._record_id = None
@@ -401,7 +403,8 @@ class DictWidget(WidgetInterface):
 
     def _sig_remove(self, button, key, modified=True):
         del self.fields[key]
-        del self.buttons[key]
+        if not self.attrs.get('no_command', 0.0):
+            del self.buttons[key]
         for widget in self.rows[key]:
             self.table.remove(widget)
             widget.destroy()
@@ -430,12 +433,14 @@ class DictWidget(WidgetInterface):
         self._set_button_sensitive()
         for widget in self.fields.values():
             widget.set_readonly(readonly)
-        self.wid_text.set_editable(not readonly)
+        if not self.attrs.get('no_command', 0.0):
+            self.wid_text.set_editable(not readonly)
 
     def _set_button_sensitive(self):
-        self.but_add.set_sensitive(bool(
-                not self._readonly
-                and self.attrs.get('create', True)))
+        if not self.attrs.get('no_command', 0.0):
+            self.but_add.set_sensitive(bool(
+                    not self._readonly
+                    and self.attrs.get('create', True)))
         for button in self.buttons.itervalues():
             button.set_sensitive(bool(
                     not self._readonly
@@ -461,20 +466,24 @@ class DictWidget(WidgetInterface):
         label = gtk.Label(text)
         label.set_alignment(1., .5)
         self.table.attach(label, 0, 1, n_rows - 1, n_rows,
-            xoptions=gtk.FILL, yoptions=False, xpadding=2)
+            xoptions=gtk.FILL, yoptions=False, xpadding=4, ypadding=4)
         label.show()
         self.table.attach(alignment, 1, 2, n_rows - 1, n_rows,
-            xoptions=gtk.FILL | gtk.EXPAND, yoptions=False, xpadding=2)
+            xoptions=gtk.FILL | gtk.EXPAND, yoptions=False, xpadding=4,
+            ypadding=3)
         alignment.show_all()
-        remove_but = self._new_remove_btn()
-        self.tooltips.set_tip(remove_but, _('Remove "%s"') %
-            self.keys[key]['string'])
-        self.table.attach(remove_but, 2, 3, n_rows - 1, n_rows,
-            xoptions=gtk.FILL, yoptions=False, xpadding=2)
-        remove_but.connect('clicked', self._sig_remove, key)
-        remove_but.show_all()
-        self.rows[key] = [label, alignment, remove_but]
-        self.buttons[key] = remove_but
+        if not self.attrs.get('no_command', 0.0):
+            remove_but = self._new_remove_btn()
+            self.tooltips.set_tip(remove_but, _('Remove "%s"') %
+                self.keys[key]['string'])
+            self.table.attach(remove_but, 2, 3, n_rows - 1, n_rows,
+                xoptions=gtk.FILL, yoptions=False, xpadding=2)
+            remove_but.connect('clicked', self._sig_remove, key)
+            remove_but.show_all()
+            self.rows[key] = [label, alignment, remove_but]
+            self.buttons[key] = remove_but
+        else:
+            self.rows[key] = [label, alignment]
 
     def add_key(self, key):
         context = self.field.context_get(self.record)

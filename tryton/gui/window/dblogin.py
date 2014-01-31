@@ -6,9 +6,11 @@ import gtk
 import gobject
 import os
 import gettext
+import datetime
 
 from tryton.version import VERSION
 import tryton.common as common
+from tryton.common.date_widget import DateEntry
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
 import tryton.rpc as rpc
 from tryton.gui.window.dbcreate import DBCreate
@@ -452,6 +454,7 @@ class DBLogin(object):
         self.table_main.attach(self.label_database, 0, 1, 5, 6,
             xoptions=gtk.FILL)
         self.table_main.attach(self.entry_database, 1, 3, 5, 6)
+
         self.entry_password = gtk.Entry()
         self.entry_password.set_visibility(False)
         self.entry_password.set_activates_default(True)
@@ -468,6 +471,18 @@ class DBLogin(object):
         label_username.set_alignment(1, 0.5)
         label_username.set_padding(3, 3)
         self.table_main.attach(label_username, 0, 1, 6, 7, xoptions=gtk.FILL)
+
+        # Date stuff
+        if CONFIG['login.date']:
+            self.label_date = gtk.Label(str=_('Date:'))
+            self.label_date.set_justify(gtk.JUSTIFY_RIGHT)
+            self.label_date.set_alignment(1, .5)
+            self.label_date.set_padding(3, 3)
+            self.table_main.attach(self.label_date, 0, 1, 8, 9,
+                xoptions=gtk.FILL)
+            self.date_entry = DateEntry('%d/%m/%Y')
+            self.date_entry.date_set(datetime.date.today())
+            self.table_main.attach(self.date_entry, 1, 3, 8, 9)
 
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
@@ -610,7 +625,7 @@ class DBLogin(object):
         # The previous action did not called expand_hostspec
         self.expand_hostspec(self.expander)
 
-        res, result = None, ('', '', '', '', '')
+        res, result = None, ('', '', '', '', '', '')
         while not all(result):
             res = self.dialog.run()
             if res != gtk.RESPONSE_OK:
@@ -643,9 +658,13 @@ class DBLogin(object):
             result = (self.entry_login.get_text(),
                 self.entry_password.get_text(), host, port, database)
 
+        if CONFIG['login.date']:
+            date = self.date_entry.date_get().date()
+        else:
+            date = None
         self.parent.present()
         self.dialog.destroy()
         if res != gtk.RESPONSE_OK:
             rpc.logout()
             raise TrytonError('QueryCanceled')
-        return result
+        return result + (date,)

@@ -47,6 +47,7 @@ class ConfigManager(object):
             'login.port': '8000',
             'login.db': demo_database,
             'login.expanded': False,
+            'login.date': False,
             'tip.autostart': False,
             'tip.position': 0,
             'form.toolbar': True,

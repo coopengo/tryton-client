@@ -370,10 +370,12 @@ class Main(object):
         self.pane.get_child1().set_expanded(True)
         self.global_search_entry.grab_focus()
 
-    def set_title(self, value=''):
+    def set_title(self, value='', date=''):
         title = 'Tryton'
         if value:
             title += ' - ' + value
+        if date:
+            title += ' (' + date + ')'
         self.window.set_title(title)
 
     def _set_menu_file(self):
@@ -839,7 +841,7 @@ class Main(object):
         page = self.notebook.get_current_page()
         self.notebook.set_current_page(page - 1)
 
-    def get_preferences(self):
+    def get_preferences(self, date=''):
         rpc.context_reload()
         try:
             prefs = RPCExecute('model', 'res.user', 'get_preferences',
@@ -856,7 +858,8 @@ class Main(object):
         self.sig_win_menu(prefs=prefs)
         for action_id in prefs.get('actions', []):
             Action.execute(action_id, {})
-        self.set_title(prefs.get('status_bar', ''))
+        connexion_date = date.strftime('%d/%m/%Y') if date else ''
+        self.set_title(prefs.get('status_bar', ''), connexion_date)
         if prefs and 'language' in prefs:
             translate.setlang(prefs['language'], prefs.get('locale'))
             if CONFIG['client.lang'] != prefs['language']:
@@ -887,12 +890,12 @@ class Main(object):
                 common.process_exception(exception)
                 return
         try:
-            log_response = rpc.login(*res)
+            log_response = rpc.login(*res, set_date=True)
         except TrytonServerError, exception:
             common.process_exception(exception)
             return
         if log_response > 0:
-            self.get_preferences()
+            self.get_preferences(date=res[-1])
         elif log_response == -1:
             common.message(_('Connection error!\n'
                     'Unable to connect to the server!'))

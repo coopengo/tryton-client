@@ -19,6 +19,7 @@ _USERNAME = ''
 _SESSION = ''
 _HOST = ''
 _PORT = None
+_CLIENT_DATE = None
 _DATABASE = ''
 CONTEXT = {}
 _VIEW_CACHE = {}
@@ -71,9 +72,10 @@ def server_version(host, port):
         raise
 
 
-def login(username, password, host, port, database):
+def login(username, password, host, port, database, date=None, set_date=False):
     global CONNECTION, _USER, _USERNAME, _SESSION, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
+    global _CLIENT_DATE
     _VIEW_CACHE = {}
     _TOOLBAR_CACHE = {}
     _KEYWORD_CACHE = {}
@@ -92,14 +94,18 @@ def login(username, password, host, port, database):
     except socket.error:
         _USER = None
         _SESSION = ''
+        _CLIENT_DATE = None
         return -1
     if not result:
         _USER = None
+        _CLIENT_DATE = None
         _SESSION = ''
         return -2
     _USER = result[0]
     _USERNAME = username
     _SESSION = result[1]
+    if set_date:
+        _CLIENT_DATE = date
     _HOST = host
     _PORT = port
     _DATABASE = database
@@ -110,6 +116,7 @@ def login(username, password, host, port, database):
 def logout():
     global CONNECTION, _USER, _USERNAME, _SESSION, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
+    global _CLIENT_DATE
     if IPCServer.instance:
         IPCServer.instance.stop()
     if CONNECTION is not None:
@@ -125,6 +132,7 @@ def logout():
         CONNECTION.close()
         CONNECTION = None
     _USER = None
+    _CLIENT_DATE = None
     _USERNAME = ''
     _SESSION = ''
     _HOST = ''
@@ -136,12 +144,14 @@ def logout():
 
 
 def context_reload():
-    global CONTEXT
+    global CONTEXT, _CLIENT_DATE
     try:
         context = execute('model', 'res.user', 'get_preferences', True, {})
     except Fault:
         return
     CONTEXT = {}
+    if _CLIENT_DATE:
+        CONTEXT = {'client_defined_date': _CLIENT_DATE}
     CONTEXT.update(context)
 
 

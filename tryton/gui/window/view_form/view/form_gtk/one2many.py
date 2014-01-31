@@ -350,7 +350,6 @@ class One2Many(Widget):
             self.wid_text.set_editable(self.but_add.get_sensitive())
 
     def _validate(self):
-        self.view.set_value()
         record = self.screen.current_record
         if record:
             fields = self.screen.current_view.get_fields()
@@ -488,7 +487,6 @@ class One2Many(Widget):
             return
         if not self.write_access or not self.read_access:
             return
-        self.view.set_value()
         domain = self.field.domain_get(self.record)
         context = self.field.get_search_context(self.record)
         domain = [domain, self.record.expr_eval(self.attrs.get('add_remove'))]
@@ -547,7 +545,10 @@ class One2Many(Widget):
             return False
         new_group = self.field.get_client(self.record)
 
-        if id(self.screen.group) != id(new_group):
+        if self.attrs.get('group') and self.attrs.get('mode') == 'form':
+            if self.screen.current_record is None:
+                self.invisible_set(True)
+        elif id(self.screen.group) != id(new_group):
             self.screen.group = new_group
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:

@@ -188,6 +188,7 @@ class FormXMLViewParser(XMLViewParser):
         'reference': Reference,
         'richtext': RichTextBox,
         'selection': Selection,
+        'source': SourceView,  # Coopengo specific
         'sip': SIP,
         'text': TextBox,
         'time': Time,

@@ -80,8 +80,8 @@ class Screen(SignalEvent):
             lambda: collections.defaultdict(lambda: None))
         self.tree_states_done = set()
         self.__group = None
-        self.new_group()
         self.__current_record = None
+        self.new_group()
         self.current_record = None
         self.screen_container = ScreenContainer(tab_domain)
         self.screen_container.alternate_view = alternate_view
@@ -245,10 +245,6 @@ class Screen(SignalEvent):
         self.parent_name = group.parent_name
         if self.parent:
             self.filter_widget = None
-        if len(group):
-            self.current_record = group[0]
-        else:
-            self.current_record = None
         self.__group.signal_connect(self, 'group-cleared', self._group_cleared)
         self.__group.signal_connect(self, 'group-list-changed',
                 self._group_list_changed)
@@ -257,6 +253,10 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
         self.__group.add_fields(fields)
         self.__group.exclude_field = self.exclude_field
+        if len(group):
+            self.current_record = group[0]
+        else:
+            self.current_record = None
 
     group = property(__get_group, __set_group)
 
@@ -288,6 +288,7 @@ class Screen(SignalEvent):
         return self.__current_record
 
     def __set_current_record(self, record):
+        changed = self.__current_record != record
         self.__current_record = record
         try:
             pos = self.group.index(record) + self.offset + 1
@@ -303,6 +304,8 @@ class Screen(SignalEvent):
             pos = tuple(pos)
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
+        if changed:
+            self.signal('current-record-changed')
         attachment_count = 0
         if record and record.attachment_count > 0:
             attachment_count = record.attachment_count

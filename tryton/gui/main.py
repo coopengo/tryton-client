@@ -371,7 +371,7 @@ class Main(object):
         self.global_search_entry.grab_focus()
 
     def set_title(self, value='', date=''):
-        title = 'Tryton'
+        title = 'Coopengo'
         if value:
             title += ' - ' + value
         if date:

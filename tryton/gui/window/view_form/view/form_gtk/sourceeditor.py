@@ -2,7 +2,7 @@ import json
 import gettext
 import _ast
 from pyflakes.checker import Checker
-from pyflakes.messages import *
+import pyflakes.messages
 
 import gobject
 import gtk
@@ -31,28 +31,33 @@ MARKS = {
     }
 
 ERROR2COLOR = {
-    UnusedImport: WARNING,
-    RedefinedWhileUnused: WARNING,
-    ImportShadowedByLoopVar: WARNING,
-    ImportStarUsed: WARNING,
-    UndefinedExport: WARNING,
-    RedefinedFunction: WARNING,
-    LateFutureImport: WARNING,
-    UnusedVariable: WARNING,
-
-    UndefinedName: ERROR,
-    UndefinedLocal: ERROR,
-    DuplicateArgument: ERROR,
-
-    Message: SYNTAX,
     }
+for name, type_ in (
+        ('UnusedImport', WARNING),
+        ('Redefined', WARNING),
+        ('RedefinedInListComp', WARNING),
+        ('RedefinedWhileUnused', WARNING),
+        ('ImportShadowedByLoopVar', WARNING),
+        ('ImportStarUsed', WARNING),
+        ('UndefinedExport', WARNING),
+        ('RedefinedFunction', WARNING),
+        ('LateFutureImport', WARNING),
+        ('UnusedVariable', WARNING),
+        ('UndefinedName', ERROR),
+        ('UndefinedLocal', ERROR),
+        ('DuplicateArgument', ERROR),
+        ('Message', SYNTAX),
+        ):
+    message = getattr(pyflakes.messages, name, None)
+    if message is not None:
+        ERROR2COLOR[message] = type_
 
 
 def check_code(code):
     try:
         tree = compile(code, 'test', 'exec', _ast.PyCF_ONLY_AST)
     except SyntaxError, syn_error:
-        error = Message('test', syn_error.lineno)
+        error = pyflakes.messages.Message('test', syn_error.lineno)
         error.message = 'Syntax Error'
         return [error]
     else:
@@ -78,8 +83,6 @@ class SourceView(WidgetInterface):
         self.sourcebuffer.connect('changed', self._clear_marks)
 
         self.sourceview = gtksourceview.View(self.sourcebuffer)
-        self.sourceview.connect('focus-in-event', lambda x, y:
-            self._focus_in())
         self.sourceview.connect('focus-out-event', lambda x, y:
             self._focus_out())
         self.sourceview.connect('key-press-event', self.send_modified)
@@ -248,6 +251,7 @@ class SourceView(WidgetInterface):
                 self.tree_data = []
                 self.model.clear()
                 self.known_funcs.clear()
+        self.check_code()
 
     def populate_tree(self, tree_data, parent=None):
         for element in tree_data:
@@ -300,7 +304,7 @@ class SourceView(WidgetInterface):
         code = self.sourcebuffer.get_text(begin, end, False)
         return CODE_TEMPLATE % '\n'.join(' ' + l for l in code.splitlines())
 
-    def check_code(self, button):
+    def check_code(self, button=None):
         self.error_store.clear()
         begin, end = self.sourcebuffer.get_bounds()
         tag_table = self.sourcebuffer.get_tag_table()
@@ -310,7 +314,7 @@ class SourceView(WidgetInterface):
             self.sourcebuffer.remove_tag(tag, begin, end)
         errors = check_code(self.get_code())
         for idx, message in enumerate(errors):
-            if (isinstance(message, UndefinedName)
+            if (isinstance(message, pyflakes.messages.UndefinedName)
                     and message.message_args[0] in self.known_funcs):
                 continue
             error_type = ERROR2COLOR.get(message.__class__, SYNTAX)

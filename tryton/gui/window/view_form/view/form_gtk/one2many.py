@@ -291,6 +291,9 @@ class One2Many(Widget):
             o2m_size = None
             size_limit = False
 
+        has_form = ('form' in (x.view_type for x in self.screen.views)
+            or 'form' in self.screen.view_to_load)
+
         first = last = False
         if isinstance(self._position, int):
             first = self._position <= 1
@@ -300,7 +303,8 @@ class One2Many(Widget):
         self.but_new.set_sensitive(bool(
                 not self._readonly
                 and self.create_access
-                and not size_limit))
+                and not size_limit
+                and has_form or self.screen.current_view.editable))
         self.but_del.set_sensitive(bool(
                 not self._readonly
                 and self.delete_access
@@ -312,7 +316,8 @@ class One2Many(Widget):
                 and self._position))
         self.but_open.set_sensitive(bool(
                 self._position
-                and self.read_access))
+                and self.read_access
+                and has_form))
         self.but_next.set_sensitive(bool(
                 self._position
                 and not last))
@@ -435,7 +440,7 @@ class One2Many(Widget):
         search_set()
 
     def _sig_edit(self, widget=None):
-        if not common.MODELACCESS[self.screen.model_name]['read']:
+        if not self.but_open.props.sensitive:
             return
         if not self._validate():
             return

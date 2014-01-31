@@ -75,6 +75,7 @@ class SourceView(WidgetInterface):
         language_manager = gtksourceview.language_manager_get_default()
         python = language_manager.get_language('python')
         self.sourcebuffer = gtksourceview.Buffer(language=python)
+        self.sourcebuffer.connect('changed', self._clear_marks)
 
         self.sourceview = gtksourceview.View(self.sourcebuffer)
         self.sourceview.connect('focus-in-event', lambda x, y:
@@ -337,6 +338,26 @@ class SourceView(WidgetInterface):
         if gtk.gdk.keyval_name(event.keyval) == 'F7':
             self.check_code(None)
             sourceview.emit_stop_by_name('key-press-event')
+
+    def _clear_marks(self, sourcebuffer):
+        tag_table = sourcebuffer.get_tag_table()
+        iters = []
+        insert_mark = sourcebuffer.get_insert()
+        if insert_mark:
+            iters.append(sourcebuffer.get_iter_at_mark(insert_mark))
+        if sourcebuffer.get_has_selection():
+            iters.extend(list(sourcebuffer.get_selection_bounds()))
+        for iter_ in iters:
+            line = iter_.get_line()
+            chars = iter_.get_chars_in_line()
+            if chars > 0:
+                chars -= 1
+            start = sourcebuffer.get_iter_at_line_offset(line, 0)
+            end = sourcebuffer.get_iter_at_line_offset(line, chars)
+            for error_type in MARKS.keys():
+                sourcebuffer.remove_source_marks(start, end, error_type)
+                tag = tag_table.lookup(error_type)
+                sourcebuffer.remove_tag(tag, start, end)
 
     def tree_display_tooltip(self, treeview, x, y, keyboard_mode, tooltip):
         return False

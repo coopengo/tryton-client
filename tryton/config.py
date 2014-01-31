@@ -70,6 +70,8 @@ class ConfigManager(object):
             'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
             'menu.pane': 200,
             'menu.expanded': True,
+            'sentry.dsn': None,
+            'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
         self.options = {

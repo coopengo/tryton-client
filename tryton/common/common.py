@@ -1028,6 +1028,44 @@ def send_bugtracker(title, msg):
             message(_('Exception:') + '\n' + tb_s, msg_type=gtk.MESSAGE_ERROR)
 
 
+class SentryDialog(UniqueDialog):
+
+    def build_dialog(self, parent, sentry_id):
+        dialog = gtk.Dialog(_('Error'), parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+        dialog.set_has_separator(True)
+
+        label_title = gtk.Label()
+        label_title.set_markup('<b>' + _('Application Error!') + '</b>')
+        label_title.set_padding(-1, 5)
+        dialog.vbox.pack_start(label_title, False, False)
+        dialog.vbox.pack_start(gtk.HSeparator(), False, False)
+
+        hbox = gtk.HBox(spacing=2)
+        dialog.vbox.pack_start(hbox)
+        image = gtk.Image()
+        image.set_from_stock('tryton-dialog-error', gtk.ICON_SIZE_DIALOG)
+        hbox.pack_start(image, False, False)
+
+        label_error = gtk.Label()
+        label_error.set_markup(
+            _('For more information press the Sentry button below'))
+        hbox.pack_start(label_error)
+
+        go2sentry_button = gtk.Button(_('Show sentry homepage'))
+        dialog.add_action_widget(go2sentry_button, gtk.RESPONSE_OK)
+        dialog.add_button('gtk-close', gtk.RESPONSE_CANCEL)
+        dialog.set_default_response(gtk.RESPONSE_CANCEL)
+        return dialog
+
+    def __call__(self, sentry_id):
+        response = super(SentryDialog, self).__call__(sentry_id)
+        if response == gtk.RESPONSE_OK:
+            webbrowser.open(CONFIG['sentry.homepage'])
+
+sentry = SentryDialog()
+
+
 def to_xml(string):
     return string.replace('&', '&amp;'
         ).replace('<', '&lt;').replace('>', '&gt;')
@@ -1136,6 +1174,9 @@ def process_exception(exception, *args, **kwargs):
 
     if isinstance(exception, TrytonServerError):
         error_title, error_detail = exception.faultCode, exception.faultString
+    elif CONFIG['sentry.dsn'] and kwargs.get('sentry_id'):
+        sentry(kwargs.get('sentry_id'))
+        return False
     else:
         error_title = str(exception)
         if 'tb' in kwargs:

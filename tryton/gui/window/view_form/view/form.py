@@ -14,9 +14,10 @@ _ = gettext.gettext
 class ViewForm(ParserView):
 
     def __init__(self, screen, widget, children=None, state_widgets=None,
-            notebooks=None, cursor_widget='', children_field=None):
+            notebooks=None, cursor_widget='', children_field=None,
+            children_definitions=None):
         super(ViewForm, self).__init__(screen, widget, children, state_widgets,
-            notebooks, cursor_widget, children_field)
+            notebooks, cursor_widget, children_field, children_definitions)
         self.view_type = 'form'
         self.editable = True
 

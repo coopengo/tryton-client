@@ -265,11 +265,15 @@ class One2Many(WidgetInterface):
         else:
             size_limit = False
 
+        has_form = ('form' in (x.view_type for x in self.screen.views)
+            or 'form' in self.screen.view_to_load)
+
         self.but_new.set_sensitive(bool(
                 not self._readonly
                 and self.attrs.get('create', True)
                 and not size_limit
-                and access['create']))
+                and access['create']
+                and has_form or self.screen.current_view.editable))
         self.but_del.set_sensitive(bool(
                 not self._readonly
                 and self.attrs.get('delete', True)
@@ -281,7 +285,8 @@ class One2Many(WidgetInterface):
                 and self._position))
         self.but_open.set_sensitive(bool(
                 self._position
-                and access['read']))
+                and access['read']
+                and has_form))
         self.but_next.set_sensitive(bool(
                 self._position
                 and self._position < self._length))
@@ -314,7 +319,7 @@ class One2Many(WidgetInterface):
         return True
 
     def _sig_new(self, widget=None):
-        if not common.MODELACCESS[self.screen.model_name]['create']:
+        if not self.but_new.props.sensitive:
             return
         if not self._validate():
             return
@@ -339,7 +344,7 @@ class One2Many(WidgetInterface):
                 many=field_size, context=ctx)
 
     def _sig_edit(self, widget=None):
-        if not common.MODELACCESS[self.screen.model_name]['read']:
+        if not self.but_open.props.sensitive:
             return
         if not self._validate():
             return

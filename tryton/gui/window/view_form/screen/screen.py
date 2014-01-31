@@ -296,6 +296,8 @@ class Screen(SignalEvent):
             i = record
             while i:
                 pos.append(i.group.index(i) + 1)
+                if i.group is self.group:
+                    break
                 i = i.parent
             pos.reverse()
             pos = tuple(pos)
@@ -425,13 +427,15 @@ class Screen(SignalEvent):
                     self.group.fields[field].attrs['loading']
 
         children_field = view.get('field_childs')
+        children_definitions = view.get('children_definitions')
 
         from tryton.gui.window.view_form.view.widget_parse import WidgetParse
         self.group.add_fields(fields)
 
         parser = WidgetParse(parent=self.parent)
         view = parser.parse(self, xml_dom, self.group.fields,
-                children_field=children_field)
+            children_field=children_field,
+            children_definitions=children_definitions)
         view.view_id = view_id
 
         self.views.append(view)
@@ -732,7 +736,8 @@ class Screen(SignalEvent):
             group = self.current_record.group
             record = self.current_record
             while group:
-                children = record.children_group(view.children_field)
+                children = record.children_group(view.children_field,
+                    view.children_definitions)
                 if children:
                     record = children[0]
                     break
@@ -801,7 +806,8 @@ class Screen(SignalEvent):
                 record = group[idx]
                 children = True
                 while children:
-                    children = record.children_group(view.children_field)
+                    children = record.children_group(view.children_field,
+                        view.children_definitions)
                     if children:
                         record = children[-1]
             else:

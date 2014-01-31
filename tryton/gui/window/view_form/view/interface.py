@@ -18,7 +18,8 @@ class ParserInterface(object):
 class ParserView(object):
 
     def __init__(self, screen, widget, children=None, state_widgets=None,
-            notebooks=None, cursor_widget=None, children_field=None):
+            notebooks=None, cursor_widget=None, children_field=None,
+            children_definitions=None):
         self.screen = screen
         self.widget = widget
         self.children = children
@@ -30,6 +31,7 @@ class ParserView(object):
         self.notebooks = notebooks
         self.cursor_widget = cursor_widget
         self.children_field = children_field
+        self.children_definitions = children_definitions
         self.view_id = None
 
     def get_fields(self):

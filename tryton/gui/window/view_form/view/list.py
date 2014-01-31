@@ -31,7 +31,8 @@ def path_convert_id2pos(model, id_path):
         current_id = id_path.pop(0)
         try:
             record = group.get(current_id)
-            group = record.children_group(model.children_field)
+            group = record.children_group(model.children_field,
+                model.children_definitions)
         except (KeyError, AttributeError):
             return None
     return model.on_get_path(record)
@@ -39,11 +40,12 @@ def path_convert_id2pos(model, id_path):
 
 class AdaptModelGroup(gtk.GenericTreeModel):
 
-    def __init__(self, group, children_field=None):
+    def __init__(self, group, children_field=None, children_definitions=None):
         super(AdaptModelGroup, self).__init__()
         self.group = group
         self.set_property('leak_references', False)
         self.children_field = children_field
+        self.children_definitions = children_definitions
         self.__removed = None  # XXX dirty hack to allow update of has_child
 
     def added(self, group, record):
@@ -53,7 +55,8 @@ class AdaptModelGroup(gtk.GenericTreeModel):
             path = self.on_get_path(record)
             iter_ = self.get_iter(path)
             self.row_inserted(path, iter_)
-            if record.children_group(self.children_field):
+            if record.children_group(self.children_field,
+                    self.children_definitions):
                 self.row_has_child_toggled(path, iter_)
             if (record.parent and
                     record.group is not self.group):
@@ -111,7 +114,8 @@ class AdaptModelGroup(gtk.GenericTreeModel):
     def move_into(self, record, path):
         iter_ = self.get_iter(path)
         parent = self.get_value(iter_, 0)
-        group = parent.children_group(self.children_field)
+        group = parent.children_group(self.children_field,
+            self.children_definitions)
         if group is not record.group:
             record.group.remove(record, remove=True, force_remove=True)
             # Don't remove record from previous group
@@ -193,7 +197,10 @@ class AdaptModelGroup(gtk.GenericTreeModel):
             record = group[i]
             if not self.children_field:
                 break
-            group = record.children_group(self.children_field)
+            if self.children_field not in group.fields:
+                break
+            group = record.children_group(self.children_field,
+                self.children_definitions)
         return record
 
     def on_get_value(self, record, column):
@@ -207,7 +214,12 @@ class AdaptModelGroup(gtk.GenericTreeModel):
     def on_iter_has_child(self, record):
         if record is None or not self.children_field:
             return False
-        children = record.children_group(self.children_field)
+        if (record.model_name not in self.children_definitions
+                or self.children_field not in
+                self.children_definitions[record.model_name]):
+            return False
+        children = record.children_group(self.children_field,
+            self.children_definitions)
         if children is None:
             return True
         length = len(children)
@@ -219,7 +231,8 @@ class AdaptModelGroup(gtk.GenericTreeModel):
         if record is None:
             return None
         if self.children_field:
-            children = record.children_group(self.children_field)
+            children = record.children_group(self.children_field,
+                self.children_definitions)
             if children:
                 return children[0]
         return None
@@ -227,15 +240,18 @@ class AdaptModelGroup(gtk.GenericTreeModel):
     def on_iter_n_children(self, record):
         if record is None or not self.children_field:
             return len(self.group)
-        return len(record.children_group(self.children_field))
+        return len(record.children_group(self.children_field,
+            self.children_definitions))
 
     def on_iter_nth_child(self, record, nth):
         if record is None or not self.children_field:
             if nth < len(self.group):
                 return self.group[nth]
             return None
-        if nth < len(record.children_group(self.children_field)):
-            return record.children_group(self.children_field)[nth]
+        if nth < len(record.children_group(self.children_field,
+                    self.children_definitions)):
+            return record.children_group(self.children_field,
+                self.children_definitions)[nth]
         return None
 
     def on_iter_parent(self, record):
@@ -247,9 +263,10 @@ class AdaptModelGroup(gtk.GenericTreeModel):
 class ViewList(ParserView):
 
     def __init__(self, screen, widget, children=None, state_widgets=None,
-            notebooks=None, cursor_widget=None, children_field=None):
+            notebooks=None, cursor_widget=None, children_field=None,
+            children_definitions=None):
         super(ViewList, self).__init__(screen, widget, children, state_widgets,
-            notebooks, cursor_widget, children_field)
+            notebooks, cursor_widget, children_field, children_definitions)
         self.store = None
         self.view_type = 'tree'
 
@@ -296,7 +313,7 @@ class ViewList(ParserView):
         dnd = False
         if self.children_field:
             children_field = self.widget_tree.cells.get(self.children_field)
-            if children_field:
+            if children_field and len(self.children_definitions) > 1:
                 parent_name = children_field.attrs.get('relation_field')
                 dnd = parent_name in self.widget_tree.cells
         elif self.widget_tree.sequence:
@@ -802,7 +819,7 @@ class ViewList(ParserView):
                 or (self.screen.group !=
                     self.widget_tree.get_model().group)):
             self.store = AdaptModelGroup(self.screen.group,
-                    self.children_field)
+                self.children_field, self.children_definitions)
             self.widget_tree.set_model(self.store)
         self.reload = False
         if not self.screen.current_record:

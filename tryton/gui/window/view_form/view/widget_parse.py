@@ -28,7 +28,8 @@ PARSERS2 = {
 
 class WidgetParse(ParserInterface):
 
-    def parse(self, screen, root_node, fields, children_field=None):
+    def parse(self, screen, root_node, fields, children_field=None,
+            children_definitions=None):
         for node in root_node.childNodes:
             if not node.nodeType == node.ELEMENT_NODE:
                 continue
@@ -40,7 +41,8 @@ class WidgetParse(ParserInterface):
                         fields)
                 screen.set_on_write(on_write)
                 res = PARSERS2[node.localName](screen, wid, child,
-                    state_widgets, notebooks, cursor_widget, children_field)
+                    state_widgets, notebooks, cursor_widget, children_field,
+                    children_definitions)
                 res.title = widget.title
                 return res
             else:

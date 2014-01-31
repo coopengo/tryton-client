@@ -173,20 +173,24 @@ class Record(SignalEvent):
         if value:
             self.signal('record-modified')
 
-    def children_group(self, field_name):
-        if not field_name:
-            return []
+    def children_group(self, field_name, children_definitions):
+        if field_name not in self.group.fields:
+            return None
         self._check_load([field_name])
         group = self.value.get(field_name)
         if group is None:
             return None
 
-        if id(group.fields) != id(self.group.fields):
-            self.group.fields.update(group.fields)
-            group.fields = self.group.fields
-        group.on_write = self.group.on_write
-        group.readonly = self.group.readonly
-        group._context.update(self.group._context)
+        if group.model_name == self.group.model_name:
+            if id(group.fields) != id(self.group.fields):
+                self.group.fields.update(group.fields)
+                group.fields = self.group.fields
+            group.on_write = self.group.on_write
+            group.readonly = self.group.readonly
+            group._context.update(self.group._context)
+        else:
+            fields = children_definitions[group.model_name].copy()
+            group.load_fields(fields)
         return group
 
     def get_path(self, group):

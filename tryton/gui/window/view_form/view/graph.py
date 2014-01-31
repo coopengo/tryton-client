@@ -6,9 +6,11 @@ from interface import ParserView
 class ViewGraph(ParserView):
 
     def __init__(self, screen, widget, children=None, state_widgets=None,
-            notebooks=None, cursor_widget=None, children_field=None):
+            notebooks=None, cursor_widget=None, children_field=None,
+            children_definitions=None):
         super(ViewGraph, self).__init__(screen, widget, children,
-            state_widgets, notebooks, cursor_widget, children_field)
+            state_widgets, notebooks, cursor_widget, children_field,
+            children_definitions)
         self.view_type = 'graph'
         self.widgets = children
         self.editable = False

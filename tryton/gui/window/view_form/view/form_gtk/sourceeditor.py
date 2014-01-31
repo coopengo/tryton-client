@@ -119,7 +119,7 @@ class SourceView(WidgetInterface):
 
         error_list = gtk.TreeView(self.error_store)
         error_list.set_enable_search(False)
-        line_col = gtk.TreeViewColumn(_('Line'))
+        line_col = gtk.TreeViewColumn(_('L'))
         renderer = gtk.CellRendererText()
         line_col.pack_start(renderer, True)
         line_col.add_attribute(renderer, 'text', 0)

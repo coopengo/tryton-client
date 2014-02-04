@@ -538,6 +538,7 @@ from one2one import One2One
 from richtextbox import RichTextBox
 from dictionary import DictWidget
 from sourceeditor import SourceView
+from multiselection import MultiSelection
 
 
 WIDGETS_TYPE = {
@@ -569,4 +570,5 @@ WIDGETS_TYPE = {
     'richtext': (RichTextBox, 1, True, True),
     'source': (SourceView, 1, True, True),
     'dict': (DictWidget, 1, False, False),
+    'multiselection': (MultiSelection, 1, True, True),
 }

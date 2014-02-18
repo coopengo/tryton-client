@@ -3,6 +3,7 @@
 import os
 import tempfile
 import locale
+import logging
 from tryton.common import datetime_strftime, \
         domain_inversion, eval_domain, localize_domain, unlocalize_domain, \
         merge, inverse_leaf, EvalEnvironment
@@ -79,6 +80,10 @@ class CharField(object):
         if bool(int(state_attrs.get('required') or 0)):
             if (not self.get_eval(record)
                     and not bool(int(state_attrs.get('readonly') or 0))):
+                logging.getLogger('root').debug('Field %s required on %s : '
+                    'states : %s'
+                    % (self.name, record.model_name,
+                        str(self.attrs.get('states', {}))))
                 return False
         return True
 
@@ -92,8 +97,13 @@ class CharField(object):
             res = res and self.check_required(record)
         if isinstance(domain, bool):
             res = res and domain
+            if not domain:
+                logging.getLogger('root').debug('Invalid domain on Field %s of'
+                    ' %s : %s' % (self.name, record.model_name, str(domain)))
         elif domain == [('id', '=', False)]:
             res = False
+            logging.getLogger('root').debug('Invalid domain on Field %s of'
+                ' %s : %s' % (self.name, record.model_name, str(domain)))
         else:
             if (isinstance(inverted_domain, list)
                     and len(inverted_domain) == 1
@@ -122,6 +132,9 @@ class CharField(object):
                     self.get_state_attrs(record)['domain_readonly'] = (
                         domain_readonly)
             res = res and eval_domain(domain, EvalEnvironment(record))
+            if not res:
+                logging.getLogger('root').debug('Invalid domain on Field %s of'
+                    ' %s : %s' % (self.name, record.model_name, str(domain)))
         self.get_state_attrs(record)['valid'] = res
         return res
 
@@ -275,6 +288,10 @@ class FloatField(CharField):
         if bool(int(state_attrs.get('required') or 0)):
             if (self.get(record) is None
                     and not bool(int(state_attrs.get('readonly') or 0))):
+                logging.getLogger('root').debug('Field %s required on %s : '
+                    'states : %s'
+                    % (self.name, record.model_name,
+                        str(self.attrs.get('states', {}))))
                 return False
         return True
 

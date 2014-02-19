@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Tryton
+Name=Coopengo
 GenericName=Client for the Tryton Application Platform
 GenericName[ca_ES]=Client per l'aplicació Tryton
 GenericName[de]=Client für die Tryton Applikationsplattform
@@ -26,5 +26,5 @@ Keywords=Business;Management;Enterprise;ERP;Framework;Client;
 Exec=tryton %u
 Icon=tryton-icon
 Terminal=false
-MimeType=application/tryton;
+MimeType=application/coopengo
 Categories=Office;Finance;

@@ -3,10 +3,10 @@
     <assemblyIdentity
         version="5.0.0.0"
         processorArchitecture="x86"
-        name="Tryton"
+        name="Coopengo"
         type="win32"
     />
-    <description>Tryton client</description>
+    <description>Coopengo client</description>
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
         <security>
             <requestedPrivileges>

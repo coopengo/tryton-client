@@ -10,18 +10,18 @@
 !include "MUI.nsh"
 
 ;General
-Name "Tryton ${VERSION}"
-OutFile "tryton-setup-${VERSION}.exe"
+Name "Coopengo ${VERSION}"
+OutFile "coopengo-setup-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
 
 ;Default installation folder
-InstallDir "$PROGRAMFILES\tryton-${VERSION}"
+InstallDir "$PROGRAMFILES\coopengo-${VERSION}"
 
 ;Get installation folder from registry if available
-InstallDirRegKey HKCU "Software\tryton-${VERSION}" ""
+InstallDirRegKey HKCU "Software\coopengo-${VERSION}" ""
 
-BrandingText "Tryton ${VERSION}"
+BrandingText "Coopengo ${VERSION}"
 
 ;Vista redirects $SMPROGRAMS to all users without this
 RequestExecutionLevel admin
@@ -80,7 +80,7 @@ Var STARTMENU_FOLDER
 ;Installer Sections
 Function .onInit
     ClearErrors
-    ReadRegStr $0 HKCU "Software\tryton-${VERSION}" ""
+    ReadRegStr $0 HKCU "Software\coopengo-${VERSION}" ""
     IfErrors DoInstall 0
         MessageBox MB_OK "$(PreviousInstall)"
         Quit
@@ -111,12 +111,12 @@ SectionIn 1 2 RO
     WriteRegStr HKCR "tryton\shell\open\command" "" '$INSTDIR\tryton.exe "%1"'
 
     ;Write the installation path into the registry
-    WriteRegStr HKCU "Software\tryton-${VERSION}" "" $INSTDIR
-    WriteRegStr HKLM "Software\tryton-${VERSION}" "" $INSTDIR
+    WriteRegStr HKCU "Software\coopengo-${VERSION}" "" $INSTDIR
+    WriteRegStr HKLM "Software\coopengo-${VERSION}" "" $INSTDIR
 
     ;Write the uninstall keys for Windows
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\tryton-${VERSION}" "DisplayName" "Tryton ${VERSION} (remove only)"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\tryton-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}" "DisplayName" "Coopengo ${VERSION} (remove only)"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
 
     ;Create the uninstaller
     WriteUninstaller uninstall.exe
@@ -130,8 +130,8 @@ SectionIn 1 2
 
         CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
         CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Tryton-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
-        CreateShortCut "$DESKTOP\Tryton-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Coopengo-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
+        CreateShortCut "$DESKTOP\Coopengo-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
 
     !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -148,18 +148,18 @@ Section "Uninstall"
     RMDIR /r "$INSTDIR"
 
     ;remove registry keys
-    DeleteRegKey HKCU "Software\tryton-${VERSION}"
-    DeleteRegKey HKLM "Software\tryton-${VERSION}"
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\tryton-${VERSION}"
+    DeleteRegKey HKCU "Software\coopengo-${VERSION}"
+    DeleteRegKey HKLM "Software\coopengo-${VERSION}"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}"
 
     SetShellVarContext all
-    Delete "$DESKTOP\Tryton-${VERSION}.lnk"
+    Delete "$DESKTOP\Coopengo-${VERSION}.lnk"
 
     !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
 
     StrCmp $MUI_TEMP "" noshortcuts
         Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
-        Delete "$SMPROGRAMS\$MUI_TEMP\Tryton-${VERSION}.lnk"
+        Delete "$SMPROGRAMS\$MUI_TEMP\Coopengo-${VERSION}.lnk"
         RMDir "$SMPROGRAMS\$MUI_TEMP"
     noshortcuts:
 

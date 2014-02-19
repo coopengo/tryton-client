@@ -7,8 +7,8 @@
 !endif
 
 ;General
-Name "Tryton ${VERSION}"
-OutFile "tryton-${VERSION}.exe"
+Name "Coopengo ${VERSION}"
+OutFile "coopengo-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
 SilentInstall silent

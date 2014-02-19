@@ -487,7 +487,7 @@ class DBLogin(object):
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
         self.profiles = ConfigParser.SafeConfigParser({'port': '8000'})
-        if not os.path.exists(self.profile_cfg):
+        if not os.path.exists(self.profile_cfg) and False:
             short_version = '.'.join(VERSION.split('.', 2)[:2])
             name = 'demo%s.tryton.org' % short_version
             self.profiles.add_section(name)

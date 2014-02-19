@@ -120,11 +120,11 @@ elif sys.platform == 'darwin':
 
 execfile(os.path.join('tryton', 'version.py'))
 
-dist = setup(name=PACKAGE,
+dist = setup(name='coopengo',
     version=VERSION,
-    description='Tryton client',
+    description='Coopengo client',
     long_description=read('README'),
-    author='Tryton',
+    author='Coopengo',
     url=WEBSITE,
     download_url=("http://downloads.tryton.org/" +
         VERSION.rsplit('.', 1)[0] + '/'),
@@ -157,6 +157,7 @@ dist = setup(name=PACKAGE,
     install_requires=[
         #"pygtk >= 2.6",
         "python-dateutil",
+        "pyflakes",
         ],
     extras_require={
         'simplejson': ['simplejson'],

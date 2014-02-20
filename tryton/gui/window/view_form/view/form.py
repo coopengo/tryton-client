@@ -1,6 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 import operator
+import logging
 from functools import reduce
 import gtk
 import gettext
@@ -85,8 +86,17 @@ class ViewForm(ParserView):
 
     @property
     def modified(self):
-        return any(w.modified for widgets in self.widgets.itervalues()
+        result = any(w.modified for widgets in self.widgets.itervalues()
             for w in widgets)
+        if not result:
+            return
+        for widgets in self.widgets.itervalues():
+            for w in widgets:
+                if not w.modified:
+                    continue
+                logging.getLogger('root').debug('Widget %s.%s modified' % (
+                        w.model_name, w.field_name))
+        return result
 
     def get_buttons(self):
         return [b for b in self.state_widgets if isinstance(b, gtk.Button)]

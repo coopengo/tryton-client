@@ -1,5 +1,6 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
+import logging
 import tryton.rpc as rpc
 from tryton.signal_event import SignalEvent
 import tryton.common as common
@@ -142,7 +143,12 @@ class Record(SignalEvent):
 
     @property
     def modified(self):
-        return bool(self.modified_fields)
+        result = bool(self.modified_fields)
+        if not result:
+            return result
+        logging.getLogger('root').debug('%s : modfied fields : %s' % (self,
+                self.modified_fields))
+        return result
 
     @property
     def pool(self):

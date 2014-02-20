@@ -116,7 +116,14 @@ class Selection(WidgetInterface, SelectionMixin, PopdownMixin):
     @property
     def modified(self):
         if self.record and self.field:
-            return self.field.get(self.record) != self.get_value()
+            result = self.field.get(self.record) != self.get_value()
+            if not result:
+                return result
+            print self.field.get(self.record)
+            print self.get_value()
+            print self.field_name
+            print self.model_name
+            return result
         return False
 
     def set_value(self, record, field):

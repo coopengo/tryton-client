@@ -171,14 +171,11 @@ class One2Many(WidgetInterface):
 
         self.frame = gtk.Frame()
         self.frame.add(hbox)
-        self.frame.set_shadow_type(gtk.SHADOW_OUT)
-        if attrs.get('expand_toolbar'):
-            self.expander = gtk.Expander()
-            self.expander.connect('notify::expanded', self.expand_bar)
-            self.widget.pack_start(self.expander, expand=False, fill=True)
-        else:
-            self.expander = None
+        if not attrs.get('expand_toolbar'):
             self.widget.pack_start(self.frame, expand=False, fill=True)
+            self.frame.set_shadow_type(gtk.SHADOW_OUT)
+        else:
+            self.frame.set_shadow_type(gtk.SHADOW_NONE)
 
         self.screen = Screen(attrs['relation'],
             mode=attrs.get('mode', 'tree,form').split(','),
@@ -536,8 +533,6 @@ class One2Many(WidgetInterface):
                 self.screen.domain = domain
             if not self.screen.group.readonly and readonly:
                 self.screen.group.readonly = readonly
-            if not new_group and self.expander:
-                self.expander.set_expanded(True)
             self.screen.size_limit = size_limit
         self.screen.display()
         return True
@@ -583,12 +578,3 @@ class One2Many(WidgetInterface):
             self.wid_text.grab_focus()
         elif index == 1:
             self._sig_new()
-
-    def expand_bar(self, expander, expanded):
-        expanded = expander.get_expanded()
-        if expanded and self.expander:
-            self.widget.remove(self.expander)
-            self.widget.pack_start(self.frame, expand=False, fill=True)
-            self.widget.reorder_child(self.frame, 0)
-            self.frame.show_all()
-            self.expander = None

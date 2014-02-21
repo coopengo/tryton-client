@@ -82,14 +82,11 @@ class Many2Many(WidgetInterface):
 
         self.frame = gtk.Frame()
         self.frame.add(hbox)
-        self.frame.set_shadow_type(gtk.SHADOW_OUT)
-        if attrs.get('expand_toolbar'):
-            self.expander = gtk.Expander()
-            self.expander.connect('notify::expanded', self.expand_bar)
-            self.widget.pack_start(self.expander, expand=False, fill=True)
-        else:
-            self.expander = None
+        if not attrs.get('expand_toolbar'):
             self.widget.pack_start(self.frame, expand=False, fill=True)
+            self.frame.set_shadow_type(gtk.SHADOW_OUT)
+        else:
+            self.frame.set_shadow_type(gtk.SHADOW_NONE)
 
         self.screen = Screen(attrs['relation'],
             view_ids=attrs.get('view_ids', '').split(','),
@@ -248,8 +245,6 @@ class Many2Many(WidgetInterface):
         new_group = field.get_client(record)
         if id(self.screen.group) != id(new_group):
             self.screen.group = new_group
-            if not new_group and self.expander:
-                self.expander.set_expanded(True)
         self.screen.display()
         return True
 
@@ -301,12 +296,3 @@ class Many2Many(WidgetInterface):
 
             self.focus_out = False
             WinForm(screen, callback, new=True, save_current=True)
-
-    def expand_bar(self, expander, expanded):
-        expanded = expander.get_expanded()
-        if expanded and self.expander:
-            self.widget.remove(self.expander)
-            self.widget.pack_start(self.frame, expand=False, fill=True)
-            self.widget.reorder_child(self.frame, 0)
-            self.frame.show_all()
-            self.expander = None

@@ -119,10 +119,6 @@ class Selection(WidgetInterface, SelectionMixin, PopdownMixin):
             result = self.field.get(self.record) != self.get_value()
             if not result:
                 return result
-            print self.field.get(self.record)
-            print self.get_value()
-            print self.field_name
-            print self.model_name
             return result
         return False
 

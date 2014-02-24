@@ -4,15 +4,6 @@
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="64px" height="64px" viewBox="0 0 64 64" enable-background="new 0 0 64 64" xml:space="preserve">
 <g>
-	<g>
-		<path fill="#46423D" d="M52.165,2.545H2.546v58.909h58.908V12.628L52.165,2.545z M49.41,59.935H14.59v-25.99h34.82V59.935z
-			 M50.707,27.037H13.293V8.558h37.414V27.037z"/>
-	</g>
-	<g>
-		<rect x="19.312" y="40.066" width="25.286" height="1.294" fill="#0094D2"/>
-	</g>
-	<g>
-		<rect x="19.312" y="49.187" width="25.286" height="1.297" fill="#0094D2"/>
-	</g>
+	<polygon points="18.767,2.57 14.933,6.511 41.175,32.001 14.933,57.484 18.766,61.43 49.067,32.001 	" fill="#0094D2"/>
 </g>
 </svg>

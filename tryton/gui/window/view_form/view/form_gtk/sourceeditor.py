@@ -57,7 +57,7 @@ def check_code(code):
     try:
         tree = compile(code, 'test', 'exec', _ast.PyCF_ONLY_AST)
     except SyntaxError, syn_error:
-        error = pyflakes.messages.Message('test', syn_error.lineno)
+        error = pyflakes.messages.Message('test', syn_error)
         error.message = 'Syntax Error'
         return [error]
     else:

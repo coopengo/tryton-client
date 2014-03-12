@@ -11,7 +11,7 @@ from tryton.gui.window.attachment import Attachment
 _ = gettext.gettext
 
 
-def populate(menu, model, record, title=''):
+def populate(menu, model, record, title='', field=None):
     '''
     Fill menu with the actions of model for the record.
     If title is filled, the actions will be put in a submenu.
@@ -22,10 +22,6 @@ def populate(menu, model, record, title=''):
         if record < 0:
             return
     elif record.id < 0:
-        return
-    try:
-        toolbar = RPCExecute('model', model, 'view_toolbar_get')
-    except RPCException:
         return
 
     def load(record):
@@ -54,6 +50,11 @@ def populate(menu, model, record, title=''):
     def attachment(menuitem):
         Attachment(record, None)
 
+    def edit(menuitem):
+        with Window(hide_current=True, allow_similar=True):
+            Window.create(field.attrs.get('view_ids'), model, record,
+                mode=['form'])
+
     if title:
         if len(menu):
             menu.append(gtk.SeparatorMenuItem())
@@ -67,36 +68,47 @@ def populate(menu, model, record, title=''):
 
     if len(action_menu):
         action_menu.append(gtk.SeparatorMenuItem())
+    if field:
+        edit_item = gtk.MenuItem(_('Edit...'))
+        edit_item.connect('activate', edit)
+        action_menu.append(edit_item)
+        action_menu.append(gtk.SeparatorMenuItem())
     attachment_item = gtk.ImageMenuItem('tryton-attachment')
     attachment_item.set_label(_('Attachments...'))
     action_menu.append(attachment_item)
     attachment_item.connect('activate', attachment)
 
-    for atype, icon, label, flavor in (
-            ('action', 'tryton-executable', _('Actions...'), None),
-            ('relate', 'tryton-go-jump', _('Relate...'), None),
-            ('print', 'tryton-print-open', _('Report...'), 'open'),
-            ('print', 'tryton-print-email', _('E-Mail...'), 'email'),
-            ('print', 'tryton-print', _('Print...'), 'print'),
-            ):
-        if len(action_menu):
-            action_menu.append(gtk.SeparatorMenuItem())
-        title_item = gtk.ImageMenuItem(icon)
-        title_item.set_label(label)
-        action_menu.append(title_item)
-        if not toolbar[atype]:
-            title_item.set_sensitive(False)
-            continue
-        submenu = gtk.Menu()
-        title_item.set_submenu(submenu)
-        for action in toolbar[atype]:
-            action = action.copy()
-            item = gtk.MenuItem(action['name'])
-            submenu.append(item)
-            if flavor == 'print':
-                action['direct_print'] = True
-            elif flavor == 'email':
-                action['email_print'] = True
-            item.connect('activate', activate, action, atype)
-
+    def set_toolbar(toolbar):
+        try:
+            toolbar = toolbar()
+        except RPCException:
+            return
+        for atype, icon, label, flavor in (
+                ('action', 'tryton-executable', _('Actions...'), None),
+                ('relate', 'tryton-go-jump', _('Relate...'), None),
+                ('print', 'tryton-print-open', _('Report...'), 'open'),
+                ('print', 'tryton-print-email', _('E-Mail...'), 'email'),
+                ('print', 'tryton-print', _('Print...'), 'print'),
+                ):
+            if len(action_menu):
+                action_menu.append(gtk.SeparatorMenuItem())
+            title_item = gtk.ImageMenuItem(icon)
+            title_item.set_label(label)
+            action_menu.append(title_item)
+            if not toolbar[atype]:
+                title_item.set_sensitive(False)
+                continue
+            submenu = gtk.Menu()
+            title_item.set_submenu(submenu)
+            for action in toolbar[atype]:
+                action = action.copy()
+                item = gtk.MenuItem(action['name'])
+                submenu.append(item)
+                if flavor == 'print':
+                    action['direct_print'] = True
+                elif flavor == 'email':
+                    action['email_print'] = True
+                item.connect('activate', activate, action, atype)
+            menu.show_all()
+    RPCExecute('model', model, 'view_toolbar_get', callback=set_toolbar)
     menu.show_all()

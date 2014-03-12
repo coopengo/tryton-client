@@ -310,6 +310,8 @@ class Many2One(WidgetInterface):
         value = self.field.get(self.record)
         if self.has_target(value):
             def clean():
+                if not self.wid_text.props.window:
+                    return
                 text = self.wid_text.get_text()
                 position = self.wid_text.get_position()
                 self.field.set_client(self.record,
@@ -362,7 +364,7 @@ class Many2One(WidgetInterface):
         if self.has_target(value):
             # Delay filling of popup as it can take time
             gobject.idle_add(populate, menu, self.get_model(),
-                self.id_from_value(value))
+                self.id_from_value(value), '', self.field)
         return True
 
     def _completion_match_selected(self, completion, model, iter_):
@@ -380,7 +382,8 @@ class Many2One(WidgetInterface):
             return
         if not self.record:
             return
-        if self.field.get(self.record) is not None:
+        id_ = self.id_from_value(self.field.get(self.record))
+        if id_ is not None and id_ >= 0:
             return
         model = self.get_model()
         update_completion(self.wid_text, self.record, self.field, model)

@@ -611,16 +611,19 @@ class ViewList(ParserView):
 
     def __button_press(self, treeview, event):
         if event.button == 3:
-            path = treeview.get_path_at_pos(int(event.x), int(event.y))
+            try:
+                path, col, x, y = treeview.get_path_at_pos(
+                    int(event.x), int(event.y))
+            except TypeError:
+                # Outside row
+                return False
             selection = treeview.get_selection()
             if selection.get_mode() == gtk.SELECTION_SINGLE:
                 model = selection.get_selected()[0]
             elif selection.get_mode() == gtk.SELECTION_MULTIPLE:
                 model = selection.get_selected_rows()[0]
-            if (not path) or not path[0]:
-                return False
-            group = model.group
-            record = group[path[0][0]]
+            record = model.get_value(model.get_iter(path), 0)
+            group = record.group
             menu = gtk.Menu()
             menu.popup(None, None, None, event.button, event.time)
 
@@ -655,7 +658,7 @@ class ViewList(ParserView):
                     if not model:
                         continue
                     label = field.attrs['string']
-                    populate(menu, model, record_id, title=label)
+                    populate(menu, model, record_id, title=label, field=field)
                 menu.show_all()
             # Delay filling of popup as it can take time
             gobject.idle_add(pop, menu, group, record)

@@ -138,18 +138,6 @@ def logout():
     _KEYWORD_CACHE = {}
 
 
-def context_reload():
-    global CONTEXT, _CLIENT_DATE
-    try:
-        context = execute('model', 'res.user', 'get_preferences', True, {})
-    except Fault:
-        return
-    CONTEXT = {}
-    if _CLIENT_DATE:
-        CONTEXT = {'client_defined_date': _CLIENT_DATE}
-    CONTEXT.update(context)
-
-
 def _execute(blocking, *args):
     global CONNECTION, _USER, _SESSION
     if CONNECTION is None:

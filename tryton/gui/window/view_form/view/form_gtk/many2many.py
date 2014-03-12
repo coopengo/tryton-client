@@ -136,8 +136,6 @@ class Many2Many(WidgetInterface):
 
     def destroy(self):
         self.screen.destroy()
-        self.widget.destroy()
-        del self.widget
 
     def color_set(self, name):
         super(Many2Many, self).color_set(name)

@@ -350,7 +350,7 @@ class One2Many(WidgetInterface):
                     or not hasattr(widget, 'screen')):
                 continue
             if (widget.screen.current_view.view_type == 'form'
-                    or widget.screen.editabl_get() and
+                    or widget.screen.current_view.editable and
                     not widget.screen.editable_open_get()):
                 widget.screen.new()
                 widget.screen.current_view.widget.set_sensitive(True)

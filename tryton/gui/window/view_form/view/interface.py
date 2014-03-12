@@ -34,8 +34,15 @@ class ParserView(object):
         self.children_definitions = children_definitions
         self.view_id = None
 
+    @property
+    def selected_records(self):
+        return []
+
     def get_fields(self):
         return self.children.keys()
+
+    def get_buttons(self):
+        return []
 
     @property
     def modified(self):

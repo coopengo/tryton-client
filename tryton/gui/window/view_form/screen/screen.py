@@ -374,7 +374,6 @@ class Screen(SignalEvent):
                 elif self.current_view.view_type == view_type:
                     break
         self.screen_container.set(self.current_view.widget)
-        self.current_view.cancel()
         self.display()
         self.set_cursor()
 
@@ -484,8 +483,6 @@ class Screen(SignalEvent):
             self.current_record.cancel()
             if self.current_record.id < 0:
                 self.remove()
-        if self.current_view:
-            self.current_view.cancel()
 
     def save_current(self):
         if not self.current_record:
@@ -561,16 +558,12 @@ class Screen(SignalEvent):
         self.display()
 
     def unremove(self):
-        records = self.current_view.selected_records()
+        records = self.selected_records
         for record in records:
             self.group.unremove(record)
 
     def remove(self, delete=False, remove=False, force_remove=False):
-        records = None
-        if self.current_view.view_type == 'form' and self.current_record:
-            records = [self.current_record]
-        elif self.current_view.view_type == 'tree':
-            records = self.current_view.selected_records()
+        records = self.selected_records
         if not records:
             return
         if delete:
@@ -615,6 +608,15 @@ class Screen(SignalEvent):
         self.set_cursor()
         self.display()
         return True
+
+    def copy(self):
+        res_ids = self.sel_ids_get()
+        try:
+            new_ids = RPCExecute('model', self.model_name, 'copy', res_ids, {},
+                context=self.context)
+        except RPCException:
+            return
+        self.load(new_ids)
 
     def set_tree_state(self):
         view = self.current_view
@@ -749,7 +751,7 @@ class Screen(SignalEvent):
                     record = group[idx]
                     break
                 parent = record.parent
-                if not parent:
+                if not parent or record.model_name != parent.model_name:
                     break
                 next = parent.next.get(id(parent.group))
                 while not next:
@@ -815,7 +817,7 @@ class Screen(SignalEvent):
                         record = children[-1]
             else:
                 parent = record.parent
-                if parent:
+                if parent and record.model_name == parent.model_name:
                     record = parent
             self.current_record = record
         elif view.view_type == 'calendar':
@@ -844,8 +846,9 @@ class Screen(SignalEvent):
         self.set_cursor(reset_view=False)
         view.display()
 
-    def sel_ids_get(self):
-        return self.current_view.sel_ids_get()
+    @property
+    def selected_records(self):
+        return self.current_view.selected_records
 
     def id_get(self):
         if not self.current_record:
@@ -863,6 +866,20 @@ class Screen(SignalEvent):
         self.current_record.on_change(fieldname, attr)
         self.display()
 
+    def get_buttons(self):
+        'Return active buttons for the current view'
+        def is_active(record, button):
+            states = record.expr_eval(button.attrs.get('states', {}))
+            return not (states.get('invisible') or states.get('readonly'))
+
+        buttons = self.current_view.get_buttons()
+
+        for record in self.selected_records:
+            buttons = [b for b in buttons if is_active(record, b)]
+            if not buttons:
+                break
+        return buttons
+
     def button(self, button):
         'Execute button on the current record'
         if button.get('confirm', False) and not sur(button['confirm']):
@@ -870,19 +887,47 @@ class Screen(SignalEvent):
         record = self.current_record
         if not record.save(force_reload=False):
             return
-        context = record.context_get()
+        ids = [r.id for r in self.selected_records]
         try:
-            action_id = RPCExecute('model', self.model_name, button['name'],
-                [record.id], context=context)
+            action = RPCExecute('model', self.model_name, button['name'],
+                ids, context=self.context)
         except RPCException:
-            action_id = None
-        if action_id:
-            Action.execute(action_id, {
+            action = None
+        self.reload(ids, written=True)
+        if isinstance(action, basestring):
+            self.client_action(action)
+        elif action:
+            Action.execute(action, {
                     'model': self.model_name,
                     'id': record.id,
-                    'ids': [record.id],
-                    }, context=context)
-        self.reload([record.id], written=True)
+                    'ids': ids,
+                    }, context=self.context)
+
+    def client_action(self, action):
+        access = MODELACCESS[self.model_name]
+        if action == 'new':
+            if access['create']:
+                self.new()
+        elif action == 'delete':
+            if access['delete']:
+                self.remove(delete=not self.parent,
+                    force_remove=not self.parent)
+        elif action == 'remove':
+            if access['write'] and access['read'] and self.parent:
+                self.remove(remove=True)
+        elif action == 'copy':
+            if access['create']:
+                self.copy()
+        elif action == 'next':
+            self.display_next()
+        elif action == 'previous':
+            self.display_prev()
+        elif action == 'close':
+            from tryton.gui import Main
+            Main.get_main().sig_win_close()
+        elif action.startswith('switch'):
+            _, view_type = action.split(None, 1)
+            self.switch_view(view_type=view_type)
 
     def get_url(self):
         query_string = []

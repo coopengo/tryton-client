@@ -873,9 +873,9 @@ class Main(object):
             return False
         Preference(rpc._USER, self.get_preferences)
 
-    def sig_win_close(self, widget):
+    def sig_win_close(self, widget=None):
         self._sig_remove_book(widget,
-                self.notebook.get_nth_page(self.notebook.get_current_page()))
+            self.notebook.get_nth_page(self.notebook.get_current_page()))
 
     def sig_login(self, widget=None, res=None):
         if not self.sig_logout(widget, disconnect=False):
@@ -1266,9 +1266,13 @@ class Main(object):
 
         self.current_page = self.notebook.get_current_page()
         current_form = self.get_page(self.current_page)
+
+        def set_cursor():
+            if self.current_page == self.notebook.get_current_page():
+                current_form.set_cursor()
         # Using idle_add because the gtk.TreeView grabs the focus at the
         # end of the event
-        gobject.idle_add(current_form.set_cursor)
+        gobject.idle_add(set_cursor)
         for dialog in current_form.dialogs:
             dialog.show()
 

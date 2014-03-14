@@ -118,6 +118,7 @@ elif sys.platform == 'darwin':
         },
     }
 
+PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
 execfile(os.path.join('tryton', 'version.py'))
 VERSION='1.1.1'
 WEBSITE='http://www.coopengo.com/'
@@ -127,9 +128,11 @@ dist = setup(name='coopengo',
     description='Coopengo client',
     long_description=read('README'),
     author='Coopengo',
+	author_email='info@coopengo.com',
     url=WEBSITE,
     download_url=("http://downloads.tryton.org/" +
         VERSION.rsplit('.', 1)[0] + '/'),
+    keywords='Insurance ERP',
     packages=find_packages(),
     data_files=data_files,
     scripts=['bin/tryton'],
@@ -155,6 +158,7 @@ dist = setup(name='coopengo',
         'Programming Language :: Python :: 2.7',
         'Topic :: Office/Business',
         ],
+    platforms='any',
     license=LICENSE,
     install_requires=[
         #"pygtk >= 2.6",
@@ -166,6 +170,7 @@ dist = setup(name='coopengo',
         'cdecimal': ['cdecimal'],
         'calendar': ['GooCalendar'],
         },
+    zip_safe=False,
     **args
     )
 

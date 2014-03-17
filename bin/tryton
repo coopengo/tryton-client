@@ -15,6 +15,14 @@ if os.name == 'nt' and hasattr(sys, "frozen"):
             '-l' in sys.argv or '--log-level' in sys.argv):
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
+    else:
+        log_path = os.path.join(os.environ.get('COOG_LOG_PATH',
+                os.environ['APPDATA']), 'Coog.log')
+        if not os.path.isdir(os.path.dirname(log_path)):
+            os.makedirs(os.path.dirname(log_path))
+        file_ = open(log_path, 'a')
+        sys.stdout = file_
+        sys.stderr = file_
     etc = os.path.join(os.path.dirname(sys.executable), 'etc')
     os.environ['GTK2_RC_FILES'] = os.path.join(etc, 'gtk-2.0', 'gtkrc')
     os.environ['GDK_PIXBUF_MODULE_FILE'] = os.path.join(etc, 'gtk-2.0',

@@ -268,6 +268,13 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'MS-Windows'),
             os.path.join(dist_dir, 'share', 'themes', 'MS-Windows'))
 
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
+                    'Numix')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
+                    'Numix'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Numix'),
+            os.path.join(dist_dir, 'share', 'themes', 'Numix'))
+
         makensis = find_makensis()
         if makensis:
             from subprocess import Popen

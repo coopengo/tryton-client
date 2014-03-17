@@ -275,6 +275,11 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Numix'),
             os.path.join(dist_dir, 'share', 'themes', 'Numix'))
 
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'gtksourceview-2.0')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'gtksourceview-2.0'),
+            os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
+
         makensis = find_makensis()
         if makensis:
             from subprocess import Popen

@@ -6,6 +6,12 @@ import gobject
 from .interface import WidgetInterface
 from tryton.common.selection import SelectionMixin
 
+MOVEMENT_KEYS = {gtk.keysyms.Up, gtk.keysyms.Down, gtk.keysyms.space,
+    gtk.keysyms.Left, gtk.keysyms.KP_Left,
+    gtk.keysyms.Right, gtk.keysyms.KP_Right,
+    gtk.keysyms.Home, gtk.keysyms.KP_Home,
+    gtk.keysyms.End, gtk.keysyms.KP_End}
+
 
 class MultiSelection(WidgetInterface, SelectionMixin):
 
@@ -89,5 +95,5 @@ class MultiSelection(WidgetInterface, SelectionMixin):
             event.state |= gtk.gdk.CONTROL_MASK
 
     def __key_press(self, treeview, event):
-        if event.keyval in (gtk.keysyms.Up, gtk.keysyms.Down, gtk.keysyms.space):
+        if event.keyval in MOVEMENT_KEYS:
             event.state |= gtk.gdk.CONTROL_MASK

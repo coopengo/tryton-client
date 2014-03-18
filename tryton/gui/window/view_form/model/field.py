@@ -1,11 +1,12 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 import os
+from itertools import chain
 import tempfile
 import locale
 import logging
 from tryton.common import datetime_strftime, \
-        domain_inversion, eval_domain, localize_domain, unlocalize_domain, \
+        domain_inversion, eval_domain, localize_domain, \
         merge, inverse_leaf, EvalEnvironment
 import tryton.common as common
 import time
@@ -63,8 +64,7 @@ class CharField(object):
     def validation_domains(self, record):
         screen_domain, attr_domain = self.domains_get(record)
         if attr_domain:
-            return (screen_domain, [screen_domain,
-                    unlocalize_domain(attr_domain, self.name)])
+            return (screen_domain, [screen_domain, attr_domain])
         else:
             return screen_domain, screen_domain
 
@@ -618,7 +618,8 @@ class O2MField(CharField):
 
         if mode == 'list ids':
             for old_record in group:
-                group.remove(old_record, remove=True, signal=False)
+                if old_record.id not in value:
+                    group.remove(old_record, remove=True, signal=False)
             group.load(value)
         else:
             for vals in value:
@@ -660,7 +661,8 @@ class O2MField(CharField):
 
         previous_ids = [r.id for r in record.value.get(self.name) or []]
         self._set_value(record, value)
-        if previous_ids != value:
+        # The order of the ids is not significant
+        if set(previous_ids) != set(value):
             record.modified_fields.setdefault(self.name)
             record.signal('record-modified')
             self.sig_changed(record)
@@ -685,8 +687,9 @@ class O2MField(CharField):
         if value and (value.get('add') or value.get('update')):
             context = self.context_get(record)
             fields = record.value[self.name].fields
-            field_names = set(f for v in (
-                    value.get('add', []) + value.get('update', []))
+            values = chain(value.get('update', []),
+                (d for _, d in value.get('add', [])))
+            field_names = set(f for v in values
                 for f in v if f not in fields and f != 'id')
             if field_names:
                 try:
@@ -712,9 +715,9 @@ class O2MField(CharField):
 
         if value and (value.get('add') or value.get('update', [])):
             record.value[self.name].add_fields(fields, signal=False)
-            for vals in value.get('add', []):
+            for index, vals in value.get('add', []):
                 new_record = record.value[self.name].new(default=False)
-                record.value[self.name].add(new_record)
+                record.value[self.name].add(new_record, index)
                 new_record.set_on_change(vals)
 
             for vals in value.get('update', []):

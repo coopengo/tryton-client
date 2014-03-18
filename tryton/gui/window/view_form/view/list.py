@@ -788,6 +788,7 @@ class ViewList(ParserView):
     # self.widget.set_model(self.store) could be removed if the store
     # has not changed -> better ergonomy. To test
     def display(self):
+        current_record = self.screen.current_record
         if (self.reload
                 or not self.widget_tree.get_model()
                 or (self.screen.group !=
@@ -795,8 +796,10 @@ class ViewList(ParserView):
             self.store = AdaptModelGroup(self.screen.group,
                 self.children_field, self.children_definitions)
             self.widget_tree.set_model(self.store)
+            # __select_changed resets current_record to None
+            self.screen.current_record = current_record
         self.reload = False
-        if not self.screen.current_record:
+        if not current_record:
             # Should find a simpler solution to do something like
             #self.widget.set_cursor(None,None,False)
             if self.store:

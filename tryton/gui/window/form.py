@@ -331,8 +331,6 @@ class Form(SignalEvent, TabContent):
         self.activate_save()
 
     def sig_reload(self, test_modified=True):
-        if not hasattr(self, 'screen'):
-            return False
         if test_modified and not self.modified_save():
                 return False
         self.screen.cancel_current()

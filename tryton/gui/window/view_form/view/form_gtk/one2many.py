@@ -514,11 +514,14 @@ class One2Many(WidgetInterface):
             self.screen.display()
             return False
         new_group = field.get_client(record)
+
+        set_cursor = False
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
             if self.screen.current_record is None:
                 self.invisible_set(True)
         elif id(self.screen.group) != id(new_group):
             self.screen.group = new_group
+            set_cursor = True
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:
                 self.screen.current_record = None
@@ -534,7 +537,7 @@ class One2Many(WidgetInterface):
             if not self.screen.group.readonly and readonly:
                 self.screen.group.readonly = readonly
             self.screen.size_limit = size_limit
-        self.screen.display()
+        self.screen.display(set_cursor=set_cursor)
         return True
 
     def set_value(self, record, field):

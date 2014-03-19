@@ -281,7 +281,7 @@ class One2Many(WidgetInterface):
                 and self.attrs.get('create', True)
                 and not size_limit
                 and access['create']
-                and has_form or self.screen.current_view.editable))
+                and (has_form or self.screen.current_view.editable)))
         self.but_del.set_sensitive(bool(
                 not self._readonly
                 and self.attrs.get('delete', True)

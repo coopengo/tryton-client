@@ -319,7 +319,7 @@ class One2Many(Widget):
                 not self._readonly
                 and self.create_access
                 and not size_limit
-                and has_form or self.screen.current_view.editable))
+                and (has_form or self.screen.current_view.editable)))
         self.but_del.set_sensitive(bool(
                 not self._readonly
                 and self.delete_access

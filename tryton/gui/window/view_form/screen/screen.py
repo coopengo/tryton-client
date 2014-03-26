@@ -24,7 +24,7 @@ from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
-    node_attributes, sur
+    node_attributes, sur, RPCContextReload
 from tryton.action import Action
 import tryton.rpc as rpc
 
@@ -46,8 +46,6 @@ class Screen(SignalEvent):
             view_ids = []
         if mode is None:
             mode = ['tree', 'form']
-        if context is None:
-            context = {}
         if views_preload is None:
             views_preload = {}
         if domain is None:
@@ -69,7 +67,6 @@ class Screen(SignalEvent):
         self.size_limit = None
         self.views_preload = views_preload
         self.model_name = model_name
-        self.context = context
         self.views = []
         self.view_ids = view_ids[:]
         self.parent = None
@@ -81,7 +78,7 @@ class Screen(SignalEvent):
         self.tree_states_done = set()
         self.__group = None
         self.__current_record = None
-        self.new_group()
+        self.new_group(context or {})
         self.current_record = None
         self.screen_container = ScreenContainer(tab_domain)
         self.screen_container.alternate_view = alternate_view
@@ -230,6 +227,10 @@ class Screen(SignalEvent):
         self.load(ids)
         return bool(ids)
 
+    @property
+    def context(self):
+        return self.group.context
+
     def __get_group(self):
         return self.__group
 
@@ -260,9 +261,10 @@ class Screen(SignalEvent):
 
     group = property(__get_group, __set_group)
 
-    def new_group(self):
+    def new_group(self, context=None):
+        context = context if context is not None else self.context
         self.group = Group(self.model_name, {}, domain=self.domain,
-            context=self.context, readonly=self.readonly)
+            context=context, readonly=self.readonly)
 
     def _group_cleared(self, group, signal):
         for view in self.views:
@@ -610,9 +612,9 @@ class Screen(SignalEvent):
         return True
 
     def copy(self):
-        res_ids = self.sel_ids_get()
+        ids = [r.id for r in self.selected_records]
         try:
-            new_ids = RPCExecute('model', self.model_name, 'copy', res_ids, {},
+            new_ids = RPCExecute('model', self.model_name, 'copy', ids, {},
                 context=self.context)
         except RPCException:
             return
@@ -931,6 +933,11 @@ class Screen(SignalEvent):
         elif action.startswith('switch'):
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
+        elif action == 'reload menu':
+            from tryton.gui import Main
+            RPCContextReload(Main.get_main().sig_win_menu)
+        elif action == 'reload context':
+            RPCContextReload()
 
     def get_url(self):
         query_string = []

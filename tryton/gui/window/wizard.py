@@ -11,7 +11,7 @@ from tryton.gui import Main
 from tryton.exceptions import TrytonServerError
 from tryton.gui.window.nomodal import NoModal
 from tryton.common.button import Button
-from tryton.common import RPCExecute, RPCException, RPCContextReload
+from tryton.common import RPCExecute, RPCException
 from tryton.common import TRYTON_ICON
 _ = gettext.gettext
 
@@ -125,8 +125,6 @@ class Wizard(object):
     def end(self, callback=None):
         RPCExecute('wizard', self.action, 'delete', self.session_id,
             process_exception=False, callback=callback)
-        if self.action == 'ir.module.module.config_wizard':
-            RPCContextReload(Main.get_main().sig_win_menu)
 
     def clean(self):
         for widget in self.widget.get_children():
@@ -363,11 +361,9 @@ class WizardDialog(Wizard, NoModal):
         super(WizardDialog, self).end(callback=end_callback)
 
     def close(self, widget, event=None):
+        widget.emit_stop_by_name('close')
         if self.end_state in self.states:
-            self.state = self.end_state
-            self.process()
-        else:
-            widget.emit_stop_by_name('close')
+            self.states[self.end_state].clicked()
         return True
 
     def show(self):

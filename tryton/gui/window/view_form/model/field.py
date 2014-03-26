@@ -248,6 +248,9 @@ class DateField(Field):
                         date_format())[:3])
             except ValueError:
                 value = self._default
+        elif isinstance(value, datetime.datetime):
+            assert(value.time() == datetime.time())
+            value = value.date()
         super(DateField, self).set_client(record, value,
             force_change=force_change)
 
@@ -269,6 +272,8 @@ class TimeField(Field):
                         self.time_format(record))[3:6])
             except ValueError:
                 value = self._default
+        elif isinstance(value, datetime.datetime):
+            value = value.time()
         super(TimeField, self).set_client(record, value,
             force_change=force_change)
 

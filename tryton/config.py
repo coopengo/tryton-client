@@ -102,7 +102,10 @@ class ConfigManager(object):
             get_config_dir(), 'tryton.conf')
         self.load()
 
-        logging_config = {}
+        logging_config = {
+            'format': '[%(asctime)s] %(levelname)s:%(name)s:%(message)s',
+            'datefmt': '%a %b %d %H:%M:%S %Y',
+            }
         if opt.log_output:
             logging_config['filename'] = opt.log_output
 

@@ -103,8 +103,8 @@ class ConfigManager(object):
         self.load()
 
         logging_config = {
-            'format': '[%(asctime)s] %(levelname)s:%(name)s:%(message)s',
-            'datefmt': '%a %b %d %H:%M:%S %Y',
+            'format': '%(asctime)s %(levelname)s:%(name)s:%(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
             }
         if opt.log_output:
             logging_config['filename'] = opt.log_output

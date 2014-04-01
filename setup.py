@@ -88,6 +88,7 @@ if os.name == 'nt':
                 'pangocairo',
                 'gio',
             ],
+			'includes':  ["raven.events", "raven.processors"],
         }
     }
     args['zipfile'] = 'library.zip'

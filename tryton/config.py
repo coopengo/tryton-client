@@ -111,7 +111,9 @@ class ConfigManager(object):
         self.load()
 
         self.options['dev'] = opt.dev
-        logging.basicConfig()
+        format = '[%(asctime)s] %(levelname)s:%(name)s:%(message)s'
+        datefmt = '%a %b %d %H:%M:%S %Y'
+        logging.basicConfig(format=format, datefmt=datefmt)
         loglevels = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,

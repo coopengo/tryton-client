@@ -7,7 +7,7 @@ import locale
 import logging
 from tryton.common import datetime_strftime, \
         domain_inversion, eval_domain, localize_domain, \
-        merge, inverse_leaf, EvalEnvironment
+        merge, inverse_leaf, concat, simplify, EvalEnvironment
 import tryton.common as common
 import time
 import datetime
@@ -47,7 +47,7 @@ class Field(object):
         screen_domain = domain_inversion(record.group.domain4inversion,
             self.name, EvalEnvironment(record))
         if isinstance(screen_domain, bool) and not screen_domain:
-            screen_domain = [('id', '=', False)]
+            screen_domain = [('id', '=', None)]
         elif isinstance(screen_domain, bool) and screen_domain:
             screen_domain = []
         attr_domain = record.expr_eval(self.attrs.get('domain', []))
@@ -55,14 +55,10 @@ class Field(object):
 
     def domain_get(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return [localize_domain(screen_domain), attr_domain]
+        return concat(localize_domain(screen_domain), attr_domain)
 
     def validation_domains(self, record):
-        screen_domain, attr_domain = self.domains_get(record)
-        if attr_domain:
-            return (screen_domain, [screen_domain, attr_domain])
-        else:
-            return screen_domain, screen_domain
+        return concat(*self.domains_get(record))
 
     def context_get(self, record):
         context = record.context_get().copy()
@@ -88,7 +84,7 @@ class Field(object):
             return True
         res = True
         self.get_state_attrs(record)['domain_readonly'] = False
-        inverted_domain, domain = self.validation_domains(record)
+        domain = simplify(self.validation_domains(record))
         if not softvalidation:
             res = res and self.check_required(record)
         if isinstance(domain, bool):
@@ -101,19 +97,22 @@ class Field(object):
             logging.getLogger('root').debug('Invalid domain on Field %s of'
                 ' %s : %s' % (self.name, record.model_name, str(domain)))
         else:
-            if (isinstance(inverted_domain, list)
-                    and len(inverted_domain) == 1
-                    and inverted_domain[0][1] == '='):
+            if (isinstance(domain, list)
+                    and len(domain) == 1
+                    and domain[0][1] == '='):
                 # If the inverted domain is so constraint that only one value
                 # is possible we should use it. But we must also pay attention
                 # to the fact that the original domain might be a 'OR' domain
                 # and thus not preventing the modification of fields.
-                leftpart, _, value = inverted_domain[0][:3]
+                leftpart, _, value = domain[0][:3]
                 if value is False:
                     # XXX to remove once server domains are fixed
                     value = None
                 setdefault = True
-                original_domain = merge(record.group.domain)
+                if record.group.domain:
+                    original_domain = merge(record.group.domain)
+                else:
+                    original_domain = merge(domain)
                 domain_readonly = original_domain[0] == 'AND'
                 if '.' in leftpart:
                     recordpart, localpart = leftpart.split('.', 1)
@@ -456,12 +455,12 @@ class M2OField(Field):
 
     def validation_domains(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return screen_domain, screen_domain
+        return screen_domain
 
     def domain_get(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return [localize_domain(inverse_leaf(screen_domain), self.name),
-            attr_domain]
+        return concat(localize_domain(inverse_leaf(screen_domain), self.name),
+            attr_domain)
 
     def get_state_attrs(self, record):
         result = super(M2OField, self).get_state_attrs(record)
@@ -738,7 +737,7 @@ class O2MField(Field):
 
     def validation_domains(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return screen_domain, screen_domain
+        return screen_domain
 
     def validate(self, record, softvalidation=False):
         if self.attrs.get('readonly'):
@@ -768,8 +767,8 @@ class O2MField(Field):
 
     def domain_get(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return [localize_domain(inverse_leaf(screen_domain), self.name),
-            attr_domain]
+        return concat(localize_domain(inverse_leaf(screen_domain), self.name),
+            attr_domain)
 
 
 class M2MField(O2MField):
@@ -925,11 +924,12 @@ class DictField(Field):
 
     def validation_domains(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return screen_domain, screen_domain
+        return screen_domain
 
     def domain_get(self, record):
         screen_domain, attr_domain = self.domains_get(record)
-        return [localize_domain(inverse_leaf(screen_domain)), attr_domain]
+        return concat(localize_domain(inverse_leaf(screen_domain)),
+            attr_domain)
 
 TYPES = {
     'char': CharField,

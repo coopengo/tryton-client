@@ -45,6 +45,8 @@ class WinForm(NoModal):
         self.accel_group = gtk.AccelGroup()
         self.win.add_accel_group(self.accel_group)
 
+        readonly = self.screen.readonly or self.screen.group.readonly
+
         self.but_ok = None
         self.but_new = None
 
@@ -122,7 +124,6 @@ class WinForm(NoModal):
             hbox = gtk.HBox(homogeneous=False, spacing=0)
             tooltips = common.Tooltips()
             access = common.MODELACCESS[screen.model_name]
-            readonly = self.screen.group.readonly
 
             if domain is not None:
                 self.wid_text = gtk.Entry()
@@ -400,7 +401,9 @@ class WinForm(NoModal):
         validate = False
         cancel_responses = (gtk.RESPONSE_CANCEL, gtk.RESPONSE_DELETE_EVENT)
         self.screen.current_view.set_value()
+        readonly = self.screen.group.readonly
         if (response_id not in cancel_responses
+                and not readonly
                 and self.screen.current_record is not None):
             validate = self.screen.current_record.validate(
                 self.screen.current_view.get_fields())
@@ -426,6 +429,7 @@ class WinForm(NoModal):
                 self.new()
                 return
         if (self.screen.current_record
+                and not readonly
                 and response_id in cancel_responses):
             if (self.screen.current_record.id < 0
                     or self.save_current):

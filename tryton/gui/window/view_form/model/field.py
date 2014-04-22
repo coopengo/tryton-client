@@ -92,7 +92,7 @@ class Field(object):
             if not domain:
                 logging.getLogger('root').debug('Invalid domain on Field %s of'
                     ' %s : %s' % (self.name, record.model_name, str(domain)))
-        elif domain == [('id', '=', False)]:
+        elif domain == [('id', '=', None)]:
             res = False
             logging.getLogger('root').debug('Invalid domain on Field %s of'
                 ' %s : %s' % (self.name, record.model_name, str(domain)))
@@ -218,9 +218,9 @@ class DateTimeField(Field):
             try:
                 value = datetime.datetime(*time.strptime(value,
                         date_format() + ' ' + self.time_format(record))[:6])
-                value = common.untimezoned_date(value)
             except ValueError:
                 value = self._default
+        value = common.untimezoned_date(value)
         super(DateTimeField, self).set_client(record, value,
             force_change=force_change)
 

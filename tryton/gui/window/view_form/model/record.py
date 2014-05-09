@@ -74,10 +74,7 @@ class Record(SignalEvent):
 
             record_context = self.context_get()
             if loading == 'eager':
-                limit = CONFIG['client.limit']
-                if not self.parent:
-                    # If not a children no need to load too much
-                    limit = int(limit / len(fnames))
+                limit = int(CONFIG['client.limit'] / len(fnames))
 
                 def filter_group(record):
                     return name not in record._loaded and record.id >= 0
@@ -277,10 +274,14 @@ class Record(SignalEvent):
         value['id'] = self.id
         return value
 
-    def get_on_change_value(self):
+    def get_on_change_value(self, skip=None):
         value = {}
         for name, field in self.group.fields.iteritems():
-            if name not in self._loaded and self.id >= 0:
+            if skip and name in skip:
+                continue
+            if (self.id >= 0
+                    and (name not in self._loaded
+                        or name not in self.modified_fields)):
                 continue
             value[name] = field.get_on_change_value(self)
         value['id'] = self.id

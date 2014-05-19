@@ -579,7 +579,8 @@ class O2MField(Field):
         for record2 in record.value[self.name]:
             if not (record2.deleted or record2.removed):
                 result.append(
-                    record2.get_on_change_value())
+                    record2.get_on_change_value(
+                        skip={self.attrs.get('relation_field', '')}))
         return result
 
     def _set_value(self, record, value, default=False):
@@ -645,7 +646,7 @@ class O2MField(Field):
         if isinstance(value, (int, long)):
             value = [value]
 
-        previous_ids = [r.id for r in record.value.get(self.name) or []]
+        previous_ids = self.get_eval(record)
         self._set_value(record, value)
         # The order of the ids is not significant
         if set(previous_ids) != set(value):
@@ -830,7 +831,7 @@ class ReferenceField(Field):
 
     def get_on_change_value(self, record):
         if record.parent_name == self.name and record.parent:
-            return record.parent.get_on_change_value(
+            return record.parent.model_name, record.parent.get_on_change_value(
                 skip={record.group.child_name})
         return super(ReferenceField, self).get_on_change_value(record)
 

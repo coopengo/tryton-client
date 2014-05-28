@@ -7,6 +7,7 @@ import gobject
 import tryton.common as common
 from tryton.common.domain_parser import quote
 from tryton.common.placeholder_entry import PlaceholderEntry
+from tryton.common.treeviewcontrol import TreeViewControl
 from tryton.translate import date_format
 from tryton.config import TRYTON_ICON
 from tryton.pyson import PYSONDecoder
@@ -42,7 +43,7 @@ class Selection(gtk.ScrolledWindow):
 
     def __init__(self, selections):
         super(Selection, self).__init__()
-        self.treeview = gtk.TreeView()
+        self.treeview = TreeViewControl()
         model = gtk.ListStore(gobject.TYPE_STRING)
         for selection in selections:
             model.append((selection,))
@@ -57,6 +58,7 @@ class Selection(gtk.ScrolledWindow):
         self.treeview.set_headers_visible(False)
         self.add(self.treeview)
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 
     def get_value(self):
         values = []
@@ -449,8 +451,9 @@ class ScreenContainer(object):
             self.search_table.fields = []
             for i, field in enumerate(fields):
                 label = gtk.Label(field['string'])
-                label.set_alignment(0.0, 0.5)
-                self.search_table.attach(label, 0, 1, i, i + 1, yoptions=False)
+                label.set_alignment(0.0, 0.0)
+                self.search_table.attach(label, 0, 1, i, i + 1,
+                    yoptions=gtk.FILL)
                 yoptions = False
                 if field['type'] == 'boolean':
                     if hasattr(gtk, 'ComboBoxText'):

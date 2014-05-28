@@ -94,7 +94,7 @@ class AdaptModelGroup(gtk.GenericTreeModel):
             group.add(record)
             if not record.parent_name:
                 record.modified_fields.setdefault(prev_group.parent_name)
-                record.value[prev_group.parent_name] = False
+                record.value[prev_group.parent_name] = None
             else:
                 record.modified_fields.setdefault(record.parent_name)
         group.move(record, pos)
@@ -797,6 +797,7 @@ class ViewList(ParserView):
     # self.widget.set_model(self.store) could be removed if the store
     # has not changed -> better ergonomy. To test
     def display(self):
+        self.widget_tree.display_counter += 1
         current_record = self.screen.current_record
         if (self.reload
                 or not self.widget_tree.get_model()

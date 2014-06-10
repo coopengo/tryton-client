@@ -38,9 +38,8 @@ class Field(object):
     def sig_changed(self, record):
         if self.get_state_attrs(record).get('readonly', False):
             return
-        if self.attrs.get('on_change', False):
-            record.on_change(self.name, self.attrs['on_change'])
-        record.on_change_with(self.name)
+        record.on_change([self.name])
+        record.on_change_with([self.name])
         record.autocomplete_with(self.name)
 
     def domains_get(self, record):
@@ -214,7 +213,7 @@ class DateTimeField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if not isinstance(value, datetime.datetime) and value is not None:
+        if isinstance(value, basestring):
             try:
                 value = datetime.datetime(*time.strptime(value,
                         date_format() + ' ' + self.time_format(record))[:6])
@@ -242,7 +241,7 @@ class DateField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if not isinstance(value, datetime.date) and value is not None:
+        if isinstance(value, basestring):
             try:
                 value = datetime.date(*time.strptime(value,
                         date_format())[:3])
@@ -266,7 +265,7 @@ class TimeField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if not isinstance(value, datetime.time) and value is not None:
+        if isinstance(value, basestring):
             try:
                 value = datetime.time(*time.strptime(value,
                         self.time_format(record))[3:6])
@@ -663,6 +662,7 @@ class O2MField(Field):
         record.modified_fields.setdefault(self.name)
 
     def set_on_change(self, record, value):
+        self._set_default_value(record)
         if isinstance(value, (list, tuple)):
             self._set_value(record, value)
             record.modified_fields.setdefault(self.name)

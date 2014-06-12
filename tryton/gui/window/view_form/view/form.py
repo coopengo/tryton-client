@@ -35,6 +35,7 @@ from .form_gtk.richtextbox import RichTextBox
 from .form_gtk.selection import Selection
 from .form_gtk.state_widget import (
     Expander, Frame, Image, Label, Link, Notebook, ScrolledWindow, VBox)
+from .form_gtk.sourceeditor import SourceView
 from .form_gtk.textbox import TextBox
 from .form_gtk.timedelta import TimeDelta
 from .form_gtk.url import HTML, SIP, URL, CallTo, Email

@@ -35,6 +35,7 @@ from .form_gtk.dictionary import DictWidget
 from .form_gtk.multiselection import MultiSelection
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment)
+from .form_gtk.sourceeditor import SourceView
 
 _ = gettext.gettext
 
@@ -389,6 +390,7 @@ class ViewForm(View):
         'image': Image2,
         'progressbar': ProgressBar,
         'one2one': One2One,
+        'source': SourceView,
         'richtext': RichTextBox,
         'dict': DictWidget,
         'multiselection': MultiSelection,

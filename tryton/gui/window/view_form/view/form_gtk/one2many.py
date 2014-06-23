@@ -542,6 +542,7 @@ class One2Many(Widget):
 
     def set_value(self, record, field):
         if (self.screen.current_view.view_type == 'form'
+                and self.attrs.get('group')
                 and self.screen.model_name != record.model_name):
             return True
         self.screen.current_view.set_value()

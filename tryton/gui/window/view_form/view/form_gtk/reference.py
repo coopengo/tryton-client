@@ -3,7 +3,7 @@
 import gtk
 import gettext
 
-from many2one import Many2One
+from .many2one import Many2One
 from tryton.common.selection import SelectionMixin, PopdownMixin
 
 _ = gettext.gettext
@@ -11,8 +11,8 @@ _ = gettext.gettext
 
 class Reference(Many2One, SelectionMixin, PopdownMixin):
 
-    def __init__(self, field_name, model_name, attrs=None):
-        super(Reference, self).__init__(field_name, model_name, attrs=attrs)
+    def __init__(self, view, attrs):
+        super(Reference, self).__init__(view, attrs)
 
         self.widget_combo = gtk.ComboBoxEntry()
         child = self.widget_combo.get_child()
@@ -38,6 +38,12 @@ class Reference(Many2One, SelectionMixin, PopdownMixin):
             model = self.widget_combo.get_model()
             return model[active][1]
 
+    def get_empty_value(self):
+        for name, model in self.widget_combo.get_model():
+            if model in (None, ''):
+                return model, name
+        return '', ''
+
     def _readonly_set(self, value):
         super(Reference, self)._readonly_set(value)
         if not value:
@@ -53,7 +59,7 @@ class Reference(Many2One, SelectionMixin, PopdownMixin):
             try:
                 model, name = self.field.get_client(self.record)
             except (ValueError, TypeError):
-                model, name = '', ''
+                model, name = self.get_empty_value()
             return (model != self.get_model()
                 or name != self.wid_text.get_text())
         return False
@@ -106,7 +112,7 @@ class Reference(Many2One, SelectionMixin, PopdownMixin):
             try:
                 model, name = field.get_client(record)
             except (ValueError, TypeError):
-                model, name = '', ''
+                model, name = self.get_empty_value()
             if (model != self.get_model()
                     or name != self.wid_text.get_text()):
                 field.set_client(record, None)

@@ -18,6 +18,7 @@ import logging
 
 from tryton.gui.window.view_form.model.group import Group
 from tryton.gui.window.view_form.view.screen_container import ScreenContainer
+from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
 from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
@@ -334,7 +335,7 @@ class Screen(SignalEvent):
 
     def default_row_activate(self):
         if (self.current_view.view_type == 'tree' and
-                self.current_view.widget_tree.keyword_open):
+                self.current_view.attributes.get('keyword_open')):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
                 'id': self.id_get(),
@@ -407,14 +408,13 @@ class Screen(SignalEvent):
         view_id = view['view_id']
 
         xml_dom = xml.dom.minidom.parseString(arch)
-        for node in xml_dom.childNodes:
-            if node.localName == 'tree':
-                self.fields_view_tree = view
-            break
+        root, = xml_dom.childNodes
+        if root.tagName == 'tree':
+            self.fields_view_tree = view
 
         # Ensure that loading is always lazy for fields on form view
         # and always eager for fields on tree or graph view
-        if node.localName == 'form':
+        if root.tagName == 'form':
             loading = 'lazy'
         else:
             loading = 'eager'
@@ -424,27 +424,18 @@ class Screen(SignalEvent):
             else:
                 fields[field]['loading'] = \
                     self.group.fields[field].attrs['loading']
-
-        children_field = view.get('field_childs')
-        children_definitions = view.get('children_definitions')
-
-        from tryton.gui.window.view_form.view.widget_parse import WidgetParse
         self.group.add_fields(fields)
-
-        parser = WidgetParse(parent=self.parent)
-        view = parser.parse(self, xml_dom, self.group.fields,
-            children_field=children_field,
-            children_definitions=children_definitions)
+        view = View.parse(self, xml_dom, view.get('field_childs'),
+            view.get('children_definitions'))
         view.view_id = view_id
-
         self.views.append(view)
+
         return view
 
     def editable_open_get(self):
-        if hasattr(self.current_view, 'widget_tree'):
-            if hasattr(self.current_view.widget_tree, 'editable'):
-                if hasattr(self.current_view.widget_tree, 'editable_open'):
-                    return self.current_view.widget_tree.editable_open
+        if (self.current_view and self.current_view.view_type == 'tree'
+            and self.current_view.attributes.get('editable_open')):
+            return self.current_view.widget_tree.editable_open
         return False
 
     def new(self, default=True):
@@ -471,8 +462,7 @@ class Screen(SignalEvent):
     def new_model_position(self):
         position = -1
         if (self.current_view and self.current_view.view_type == 'tree'
-                and hasattr(self.current_view.widget_tree, 'editable')
-                and self.current_view.widget_tree.editable == 'top'):
+                and self.current_view.attributes.get('editable') == 'top'):
             position = 0
         return position
 
@@ -698,7 +688,7 @@ class Screen(SignalEvent):
         self.tree_states_done.clear()
         self.group.load(ids, modified=modified)
         self.current_view.reset()
-        if ids:
+        if ids and self.current_view.view_type != 'calendar':
             self.display(ids[0])
         else:
             self.current_record = None
@@ -735,8 +725,8 @@ class Screen(SignalEvent):
         view.set_value()
         self.set_cursor(reset_view=False)
         if view.view_type == 'tree' and len(self.group):
-            start, end = view.widget_tree.get_visible_range()
-            vadjustment = view.widget_tree.get_vadjustment()
+            start, end = view.treeview.get_visible_range()
+            vadjustment = view.treeview.get_vadjustment()
             vadjustment.value = vadjustment.value + vadjustment.page_increment
             store = view.store
             iter_ = store.get_iter(end)
@@ -772,7 +762,7 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.children['goocalendar']
+            goocalendar = view.widgets['goocalendar']
             date = goocalendar.selected_date
             year = date.year
             month = date.month
@@ -801,8 +791,8 @@ class Screen(SignalEvent):
         view.set_value()
         self.set_cursor(reset_view=False)
         if view.view_type == 'tree' and len(self.group):
-            start, end = view.widget_tree.get_visible_range()
-            vadjustment = view.widget_tree.get_vadjustment()
+            start, end = view.treeview.get_visible_range()
+            vadjustment = view.treeview.get_vadjustment()
             vadjustment.value = vadjustment.value - vadjustment.page_increment
             store = view.store
             iter_ = store.get_iter(start)
@@ -828,7 +818,7 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.children['goocalendar']
+            goocalendar = view.widgets['goocalendar']
             date = goocalendar.selected_date
             year = date.year
             month = date.month

@@ -9,7 +9,7 @@ import gtk
 import pango
 import gtksourceview2 as gtksourceview
 
-from interface import WidgetInterface
+from .widget import Widget
 
 _ = gettext.gettext
 CODE_TEMPLATE = """
@@ -65,10 +65,11 @@ def check_code(code):
         return warnings.messages
 
 
-class SourceView(WidgetInterface):
+class SourceView(Widget):
+    expand = True
 
-    def __init__(self, field_name, model_name, attrs=None):
-        super(SourceView, self).__init__(field_name, model_name, attrs=attrs)
+    def __init__(self, view, attrs):
+        super(SourceView, self).__init__(view, attrs)
 
         vbox = gtk.VBox(homogeneous=False, spacing=2)
         sc_editor = gtk.ScrolledWindow()

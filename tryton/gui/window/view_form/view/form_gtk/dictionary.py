@@ -9,7 +9,7 @@ import decimal
 import gettext
 from decimal import Decimal
 
-from interface import WidgetInterface
+from .widget import Widget
 from tryton.config import CONFIG
 from tryton.gui.window.win_search import WinSearch
 from tryton.common import RPCExecute, RPCException, timezoned_date, \
@@ -94,8 +94,10 @@ class DictSelectionEntry(DictEntry):
         model.append(('',))
         self._selection = {'': None}
         width = 10
-        for value, name in sorted(self.definition['selection'],
-                key=operator.itemgetter(1)):
+        selection = self.definition['selection']
+        if self.definition.get('sorted', True):
+            selection.sort(key=operator.itemgetter(1))
+        for value, name in selection:
             name = str(name)
             self._selection[name] = value
             model.append((name,))
@@ -304,10 +306,10 @@ DICT_ENTRIES = {
     }
 
 
-class DictWidget(WidgetInterface):
+class DictWidget(Widget):
 
-    def __init__(self, field_name, model_name, attrs=None):
-        super(DictWidget, self).__init__(field_name, model_name, attrs=attrs)
+    def __init__(self, view, attrs):
+        super(DictWidget, self).__init__(view, attrs)
         self.schema_model = attrs['schema_model']
         self.keys = {}
         self.fields = {}
@@ -485,20 +487,24 @@ class DictWidget(WidgetInterface):
         else:
             self.rows[key] = [label, alignment]
 
-    def get_key_descs(self, keys):
+    def add_keys(self, keys):
         context = self.field.context_get(self.record)
-        try:
-            key_ids = RPCExecute('model', self.schema_model, 'search',
-                [('name', 'in', keys)], 0, CONFIG['client.limit'],
-                None, context=context)
-            if not key_ids:
-                return
-            key_descriptions = RPCExecute('model', self.schema_model,
-                'get_keys', key_ids, context=context)
-            for key_desc in key_descriptions:
-                self.keys[key_desc['name']] = key_desc
-        except RPCException:
-            pass
+        batchlen = min(10, CONFIG['client.limit'])
+        for i in xrange(0, len(keys), batchlen):
+            sub_keys = keys[i:i + batchlen]
+            try:
+                key_ids = RPCExecute('model', self.schema_model, 'search',
+                    [('name', 'in', sub_keys)], 0, CONFIG['client.limit'],
+                    None, context=context)
+                if not key_ids:
+                    continue
+                values = RPCExecute('model', self.schema_model,
+                    'get_keys', key_ids, context=context)
+                if not values:
+                    continue
+            except RPCException:
+                pass
+            self.keys.update({k['name']: k for k in values})
 
     def display(self, record, field):
         super(DictWidget, self).display(record, field)
@@ -513,14 +519,14 @@ class DictWidget(WidgetInterface):
             self._record_id = record_id
 
         value = field.get_client(record) if field else {}
-        value_keys = sorted(value.iterkeys())
-        new_keys = [key for key in value_keys if not key in self.keys]
-        if new_keys:
-            self.get_key_descs(new_keys)
-        for key in value_keys:
-            val = value[key]
+        new_key_names = set(value.iterkeys()) - set(self.keys)
+        if new_key_names:
+            self.add_keys(list(new_key_names))
+        for key, val in sorted(value.iteritems()):
             if key not in self.fields:
                 self.add_line(key)
+            if key not in self.keys:
+                continue
             widget = self.fields[key]
             widget.set_value(val)
             widget.set_readonly(self._readonly)

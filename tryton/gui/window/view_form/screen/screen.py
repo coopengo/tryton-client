@@ -688,7 +688,7 @@ class Screen(SignalEvent):
         self.tree_states_done.clear()
         self.group.load(ids, modified=modified)
         self.current_view.reset()
-        if ids:
+        if ids and self.current_view.view_type != 'calendar':
             self.display(ids[0])
         else:
             self.current_record = None
@@ -762,7 +762,7 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.children['goocalendar']
+            goocalendar = view.widgets['goocalendar']
             date = goocalendar.selected_date
             year = date.year
             month = date.month
@@ -818,7 +818,7 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.children['goocalendar']
+            goocalendar = view.widgets['goocalendar']
             date = goocalendar.selected_date
             year = date.year
             month = date.month

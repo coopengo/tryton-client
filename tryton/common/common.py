@@ -1105,7 +1105,6 @@ def process_exception(exception, *args, **kwargs):
                 'until its fingerprint is fixed.'), _('Security risk!'))
             from tryton.gui.main import Main
             Main.sig_quit()
-            sys.exit()
         elif exception.faultCode == 'NotLogged':
             if rpc.CONNECTION is None:
                 message(_('Connection error!\n'
@@ -1169,8 +1168,7 @@ def process_exception(exception, *args, **kwargs):
                 while True:
                     password = ask(_('Password:'), visibility=False)
                     if password is None:
-                        Main.get_main().sig_logout()
-                        return False
+                        Main.get_main().sig_quit()
                     res = rpc.login(rpc._USERNAME, password, hostname, port,
                             rpc._DATABASE)
                     if res == -1:

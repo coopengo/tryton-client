@@ -1,6 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of this
 # repository contains the full copyright notices and license terms.
 import gtk
+import gobject
 
 MOVEMENT_KEYS = {gtk.keysyms.Up, gtk.keysyms.Down, gtk.keysyms.space,
     gtk.keysyms.Left, gtk.keysyms.KP_Left,
@@ -21,9 +22,11 @@ class TreeViewControl(gtk.TreeView):
         self.grab_focus()  # grab focus because it doesn't whith CONTROL MASK
         if event.button == 1:
             event.state ^= gtk.gdk.CONTROL_MASK
-        return super(TreeViewControl, self).do_button_press_event(self, event)
+        return gtk.TreeView.do_button_press_event(self, event)
 
     def do_key_press_event(self, event):
         if event.keyval in MOVEMENT_KEYS:
             event.state ^= gtk.gdk.CONTROL_MASK
-        return super(TreeViewControl, self).do_key_press_event(self, event)
+        return gtk.TreeView.do_key_press_event(self, event)
+
+gobject.type_register(TreeViewControl)

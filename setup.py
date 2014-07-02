@@ -276,6 +276,13 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Numix'),
             os.path.join(dist_dir, 'share', 'themes', 'Numix'))
 
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
+                    'Rezlooks-Snow')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
+                    'Rezlooks-Snow'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Rezlooks-Snow'),
+            os.path.join(dist_dir, 'share', 'themes', 'Rezlooks-Snow'))
+
         if os.path.isdir(os.path.join(dist_dir, 'share', 'gtksourceview-2.0')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
         shutil.copytree(os.path.join(gtk_dir, 'share', 'gtksourceview-2.0'),

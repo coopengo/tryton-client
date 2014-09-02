@@ -17,6 +17,7 @@ class LogDialog(NoModal):
         self.name = name
         self.result = result
 
+
         self.win = gtk.Dialog(_('JSON Export'), self.parent,
             gtk.DIALOG_DESTROY_WITH_PARENT)
         self.win.set_icon(TRYTON_ICON)
@@ -51,9 +52,10 @@ class LogDialog(NoModal):
         img_save = gtk.Image()
         img_save.set_from_stock('tryton-save', gtk.ICON_SIZE_BUTTON)
         but_ok.set_image(img_save)
-        self.win.add_action_widget(but_ok, gtk.RESPONSE_OK)
         self.win.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        self.win.add_action_widget(but_ok, gtk.RESPONSE_OK)
         self.win.connect('response', self.response)
+        but_ok.grab_focus()
 
         sensible_allocation = self.sensible_widget.get_allocation()
         self.win.set_default_size(int(sensible_allocation.width * 0.95),

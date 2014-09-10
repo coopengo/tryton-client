@@ -17,8 +17,10 @@ _ = gettext.gettext
 CODE_TEMPLATE = """
 from decimal import Decimal
 import datetime
+from dateutil.relativedelta import relativedelta
 Decimal(0)
 datetime.date(2000, 1, 1)
+relativedelta()
 
 def test():
 %s
@@ -325,10 +327,10 @@ class SourceView(Widget):
                     and message.message_args[0] in self.known_funcs):
                 continue
             error_type = ERROR2COLOR.get(message.__class__, SYNTAX)
-            # "7" is the number of lines of the template before the actual
+            # "9" is the number of lines of the template before the actual
             # code
             has_errors = True
-            line_nbr = message.lineno - 7
+            line_nbr = message.lineno - 9
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
             line = self.sourcebuffer.props.text.split('\n')[line_nbr -

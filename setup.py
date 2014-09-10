@@ -121,7 +121,7 @@ elif sys.platform == 'darwin':
 
 PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
 execfile(os.path.join('tryton', 'version.py'))
-VERSION='1.1.1'
+VERSION='1.2'
 WEBSITE='http://www.coopengo.com/'
 
 dist = setup(name='coopengo',

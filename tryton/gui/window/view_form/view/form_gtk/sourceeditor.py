@@ -12,9 +12,13 @@ import gtksourceview2 as gtksourceview
 from .widget import Widget
 
 _ = gettext.gettext
+# For each imported module, we need to use it once, to prevent
+# 'imported but no used' error to be displayed
 CODE_TEMPLATE = """
 from decimal import Decimal
+import datetime
 Decimal(0)
+datetime.date(2000, 1, 1)
 
 def test():
 %s
@@ -321,10 +325,10 @@ class SourceView(Widget):
                     and message.message_args[0] in self.known_funcs):
                 continue
             error_type = ERROR2COLOR.get(message.__class__, SYNTAX)
-            # "5" is the number of lines of the template before the actual
+            # "7" is the number of lines of the template before the actual
             # code
             has_errors = True
-            line_nbr = message.lineno - 5
+            line_nbr = message.lineno - 7
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
             line = self.sourcebuffer.props.text.split('\n')[line_nbr -

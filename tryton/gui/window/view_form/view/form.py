@@ -300,6 +300,10 @@ class ViewForm(View):
         if 'widget' not in attributes:
             attributes['widget'] = field.attrs['type']
 
+        for i_field in ('width', 'height'):
+            if i_field in attributes:
+                attributes[i_field] = int(attributes[i_field])
+
         for attr in ('relation', 'domain', 'selection',
                 'relation_field', 'string', 'help', 'views',
                 'add_remove', 'sort', 'context', 'size', 'filename',
@@ -521,15 +525,8 @@ class ViewForm(View):
             focus_widget.grab_focus()
 
     def button_clicked(self, widget):
-        record = self.screen.current_record
-        self.set_value()
-        fields = self.get_fields()
-        if not record.validate(fields):
-            self.screen.display(set_cursor=True)
-            return
-        else:
-            widget.handler_block_by_func(self.button_clicked)
-            try:
-                self.screen.button(widget.attrs)
-            finally:
-                widget.handler_unblock_by_func(self.button_clicked)
+        widget.handler_block_by_func(self.button_clicked)
+        try:
+            self.screen.button(widget.attrs)
+        finally:
+            widget.handler_unblock_by_func(self.button_clicked)

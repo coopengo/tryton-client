@@ -1,7 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 from record import Record
-from field import Field, O2MField, M2OField, ReferenceField
+from field import Field, M2OField, ReferenceField
 from tryton.signal_event import SignalEvent
 from tryton.common.domain_inversion import is_leaf
 from tryton.common import RPCExecute, RPCException, MODELACCESS
@@ -77,9 +77,13 @@ class Group(SignalEvent, list):
         return [head] + self.clean4inversion(tail)
 
     def __get_domain4inversion(self):
-        if self.__domain4inversion is None:
-            self.__domain4inversion = self.clean4inversion(self.domain)
-        return self.__domain4inversion
+        domain = self.domain
+        if (self.__domain4inversion is None
+                or self.__domain4inversion[0] != domain):
+            self.__domain4inversion = (
+                domain, self.clean4inversion(domain))
+        domain, domain4inversion = self.__domain4inversion
+        return domain4inversion
 
     domain4inversion = property(__get_domain4inversion)
 
@@ -150,11 +154,6 @@ class Group(SignalEvent, list):
             field = Field.get_field(attr['type'])
             attr['name'] = name
             self.fields[name] = field(attr)
-            if isinstance(self.fields[name], O2MField) \
-                    and '_datetime' in self._context:
-                self.fields[name].context.update({
-                    '_datetime': self._context['_datetime'],
-                    })
 
     def save(self):
         saved = []

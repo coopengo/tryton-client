@@ -277,8 +277,8 @@ class Screen(SignalEvent):
             if hasattr(view, 'group_list_changed'):
                 view.group_list_changed(group, signal)
 
-    def _record_modified(self, group, signal, *args):
-        self.signal('record-modified')
+    def _record_modified(self, group, signal):
+        self.signal('record-modified', signal)
 
     def _group_changed(self, group, record):
         if not self.parent:
@@ -754,7 +754,9 @@ class Screen(SignalEvent):
         if view.view_type == 'tree' and len(self.group):
             start, end = view.treeview.get_visible_range()
             vadjustment = view.treeview.get_vadjustment()
-            vadjustment.value = vadjustment.value + vadjustment.page_increment
+            vadjustment.value = min(
+                vadjustment.value + vadjustment.page_increment,
+                vadjustment.get_upper())
             model = view.treeview.get_model()
             iter_ = model.get_iter(end)
             self.current_record = model.get_value(iter_, 0)
@@ -820,7 +822,9 @@ class Screen(SignalEvent):
         if view.view_type == 'tree' and len(self.group):
             start, end = view.treeview.get_visible_range()
             vadjustment = view.treeview.get_vadjustment()
-            vadjustment.value = vadjustment.value - vadjustment.page_increment
+            vadjustment.value = min(
+                vadjustment.value - vadjustment.page_increment,
+                vadjustment.get_lower())
             model = view.treeview.get_model()
             iter_ = model.get_iter(start)
             self.current_record = model.get_value(iter_, 0)
@@ -909,12 +913,22 @@ class Screen(SignalEvent):
         return buttons
 
     def button(self, button):
-        'Execute button on the current record'
+        'Execute button on the selected records'
         if button.get('confirm', False) and not sur(button['confirm']):
             return
-        record = self.current_record
-        if not record.save(force_reload=False):
+        self.current_view.set_value()
+        if not self.current_record.save(force_reload=False):
             return
+        fields = self.current_view.get_fields()
+        for record in self.selected_records:
+            domain = record.expr_eval(
+                button.get('states', {})).get('pre_validate', [])
+            if not record.validate(fields, pre_validate=domain):
+                self.display(set_cursor=True)
+                if domain:
+                    # Reset valid state with normal domain
+                    record.validate(fields)
+                return
         ids = [r.id for r in self.selected_records]
         try:
             action = RPCExecute('model', self.model_name, button['name'],

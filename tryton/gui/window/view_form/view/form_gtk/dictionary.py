@@ -371,16 +371,8 @@ class DictWidget(Widget):
 
     def _sig_add(self, *args):
         context = self.field.context_get(self.record)
-        value = self.wid_text.get_text()
+        value = self.wid_text.get_text().decode('utf-8')
         domain = self.field.domain_get(self.record)
-        dom = [('rec_name', 'ilike', '%%%s%%' % value)] if value else []
-        dom.append(('id', 'not in',
-                [self.keys[f]['id'] for f in self.fields]))
-        try:
-            ids = RPCExecute('model', self.schema_model, 'search',
-                domain + dom, 0, CONFIG['client.limit'], None, context=context)
-        except RPCException:
-            return False
 
         def callback(result):
             if result:
@@ -397,11 +389,9 @@ class DictWidget(Widget):
                         self.add_line(new_field['name'])
             self.wid_text.set_text('')
 
-        if len(ids) != 1:
-            WinSearch(self.schema_model, callback, sel_multi=True, ids=ids,
-                context=context, domain=domain, new=False)
-        else:
-            callback([(id, None) for id in ids])
+        win = WinSearch(self.schema_model, callback, sel_multi=True,
+            context=context, domain=domain, new=False)
+        win.screen.search_filter(value)
 
     def _sig_remove(self, button, key, modified=True):
         del self.fields[key]
@@ -489,13 +479,14 @@ class DictWidget(Widget):
 
     def add_keys(self, keys):
         context = self.field.context_get(self.record)
+        domain = self.field.domain_get(self.record)
         batchlen = min(10, CONFIG['client.limit'])
         for i in xrange(0, len(keys), batchlen):
             sub_keys = keys[i:i + batchlen]
             try:
                 key_ids = RPCExecute('model', self.schema_model, 'search',
-                    [('name', 'in', sub_keys)], 0, CONFIG['client.limit'],
-                    None, context=context)
+                    [('name', 'in', sub_keys), domain], 0,
+                    CONFIG['client.limit'], None, context=context)
                 if not key_ids:
                     continue
                 values = RPCExecute('model', self.schema_model,
@@ -523,10 +514,10 @@ class DictWidget(Widget):
         if new_key_names:
             self.add_keys(list(new_key_names))
         for key, val in sorted(value.iteritems()):
-            if key not in self.fields:
-                self.add_line(key)
             if key not in self.keys:
                 continue
+            if key not in self.fields:
+                self.add_line(key)
             widget = self.fields[key]
             widget.set_value(val)
             widget.set_readonly(self._readonly)

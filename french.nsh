@@ -10,8 +10,8 @@
 
 LangString LicenseText ${CURLANG} "Tryton est publié sous la GNU General Public License comme publiée par la Free Software Foundation, soit la version 3 de la License, ou (à votre choix) toute version ultérieure. S'il vous plaît lisez attentivement la license. Cliquez sur Suivant pour continuer."
 LangString LicenseNext ${CURLANG} "&Suivant"
-LangString PreviousInstall ${CURLANG} "Veuillez désinstaller la précédente installation de Coopengo"
-LangString SecTrytonName ${CURLANG} "Coopengo"
+LangString PreviousInstall ${CURLANG} "Veuillez désinstaller la précédente installation de coog"
+LangString SecTrytonName ${CURLANG} "coog"
 LangString SecTrytonDesc ${CURLANG} "Installe tryton.exe et d'autres fichiers requis"
 LangString SecStartMenuName ${CURLANG} "Raccourcis dans le menu Démarrer et sur le bureau"
 LangString SecStartMenuDesc ${CURLANG} "Créé les raccourcis dans le menu Démarrer et sur le bureau"

@@ -433,7 +433,7 @@ class ScreenContainer(object):
             self.search_window.set_type_hint(
                 gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
             self.search_window.set_destroy_with_parent(True)
-            self.search_window.set_title('Tryton')
+            self.search_window.set_title('coog')
             self.search_window.set_icon(TRYTON_ICON)
             self.search_window.set_decorated(False)
             self.search_window.set_deletable(False)

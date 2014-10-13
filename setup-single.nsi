@@ -7,8 +7,8 @@
 !endif
 
 ;General
-Name "Coopengo ${VERSION}"
-OutFile "coopengo-${VERSION}.exe"
+Name "coog ${VERSION}"
+OutFile "coog-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
 SilentInstall silent

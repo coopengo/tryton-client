@@ -3,10 +3,10 @@
     <assemblyIdentity
         version="5.0.0.0"
         processorArchitecture="x86"
-        name="Coopengo"
+        name="coog"
         type="win32"
     />
-    <description>Coopengo client</description>
+    <description>coog client</description>
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
         <security>
             <requestedPrivileges>

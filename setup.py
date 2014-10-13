@@ -124,9 +124,9 @@ execfile(os.path.join('tryton', 'version.py'))
 VERSION='1.2'
 WEBSITE='http://www.coopengo.com/'
 
-dist = setup(name='coopengo',
+dist = setup(name='coog',
     version=VERSION,
-    description='Coopengo client',
+    description='coog client',
     long_description=read('README'),
     author='Coopengo',
 	author_email='info@coopengo.com',

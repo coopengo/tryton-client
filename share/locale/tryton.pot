@@ -1,13 +1,13 @@
-# Translations template for coopengo.
+# Translations template for coog.
 # Copyright (C) 2014 Tryton
-# This file is distributed under the same license as the coopengo project.
+# This file is distributed under the same license as the coog project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: coopengo 1.1.1\n"
-"Report-Msgid-Bugs-To: issue_tracker@tryton.org\n"
+"Project-Id-Version: coog 1.2\n"
+"Report-Msgid-Bugs-To: redmine@coopengo.com\n"
 "POT-Creation-Date: 2014-05-07 18:51+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"

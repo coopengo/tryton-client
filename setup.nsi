@@ -10,18 +10,18 @@
 !include "MUI.nsh"
 
 ;General
-Name "Coopengo ${VERSION}"
-OutFile "coopengo-setup-${VERSION}.exe"
+Name "coog ${VERSION}"
+OutFile "coog-setup-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
 
 ;Default installation folder
-InstallDir "$PROGRAMFILES\coopengo-${VERSION}"
+InstallDir "$PROGRAMFILES\coog-${VERSION}"
 
 ;Get installation folder from registry if available
-InstallDirRegKey HKCU "Software\coopengo-${VERSION}" ""
+InstallDirRegKey HKCU "Software\coog-${VERSION}" ""
 
-BrandingText "Coopengo ${VERSION}"
+BrandingText "coog ${VERSION}"
 
 ;Vista redirects $SMPROGRAMS to all users without this
 RequestExecutionLevel admin
@@ -55,20 +55,15 @@ Var STARTMENU_FOLDER
 
 ;Languages
 
-!insertmacro MUI_LANGUAGE "Catalan"
-!include "catalan.nsh"
+
 !insertmacro MUI_LANGUAGE "English"
 !include "english.nsh"
 !insertmacro MUI_LANGUAGE "French"
 !include "french.nsh"
 !insertmacro MUI_LANGUAGE "German"
 !include "german.nsh"
-!insertmacro MUI_LANGUAGE "Slovenian"
-!include "slovenian.nsh"
 !insertmacro MUI_LANGUAGE "Spanish"
 !include "spanish.nsh"
-!insertmacro MUI_LANGUAGE "Russian"
-!include "russian.nsh"
 
 ;Reserve Files
 
@@ -80,7 +75,7 @@ Var STARTMENU_FOLDER
 ;Installer Sections
 Function .onInit
     ClearErrors
-    ReadRegStr $0 HKCU "Software\coopengo-${VERSION}" ""
+    ReadRegStr $0 HKCU "Software\coog-${VERSION}" ""
     IfErrors DoInstall 0
         MessageBox MB_OK "$(PreviousInstall)"
         Quit
@@ -111,12 +106,12 @@ SectionIn 1 2 RO
     WriteRegStr HKCR "tryton\shell\open\command" "" '$INSTDIR\tryton.exe "%1"'
 
     ;Write the installation path into the registry
-    WriteRegStr HKCU "Software\coopengo-${VERSION}" "" $INSTDIR
-    WriteRegStr HKLM "Software\coopengo-${VERSION}" "" $INSTDIR
+    WriteRegStr HKCU "Software\coog-${VERSION}" "" $INSTDIR
+    WriteRegStr HKLM "Software\coog-${VERSION}" "" $INSTDIR
 
     ;Write the uninstall keys for Windows
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}" "DisplayName" "Coopengo ${VERSION} (remove only)"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "DisplayName" "coog ${VERSION} (remove only)"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
 
     ;Create the uninstaller
     WriteUninstaller uninstall.exe
@@ -130,8 +125,8 @@ SectionIn 1 2
 
         CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
         CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Coopengo-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
-        CreateShortCut "$DESKTOP\Coopengo-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\coog-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
+        CreateShortCut "$DESKTOP\coog-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
 
     !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -148,18 +143,18 @@ Section "Uninstall"
     RMDIR /r "$INSTDIR"
 
     ;remove registry keys
-    DeleteRegKey HKCU "Software\coopengo-${VERSION}"
-    DeleteRegKey HKLM "Software\coopengo-${VERSION}"
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coopengo-${VERSION}"
+    DeleteRegKey HKCU "Software\coog-${VERSION}"
+    DeleteRegKey HKLM "Software\coog-${VERSION}"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}"
 
     SetShellVarContext all
-    Delete "$DESKTOP\Coopengo-${VERSION}.lnk"
+    Delete "$DESKTOP\coog-${VERSION}.lnk"
 
     !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
 
     StrCmp $MUI_TEMP "" noshortcuts
         Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
-        Delete "$SMPROGRAMS\$MUI_TEMP\Coopengo-${VERSION}.lnk"
+        Delete "$SMPROGRAMS\$MUI_TEMP\coog-${VERSION}.lnk"
         RMDir "$SMPROGRAMS\$MUI_TEMP"
     noshortcuts:
 

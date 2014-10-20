@@ -1152,14 +1152,6 @@ class Main(object):
     def sig_window_state(self, widget, event):
         CONFIG['client.maximize'] = (event.new_window_state ==
                 gtk.gdk.WINDOW_STATE_MAXIMIZED)
-
-        if event.new_window_state == gtk.gdk.WINDOW_STATE_ICONIFIED:
-            meth = 'iconify'
-        else:
-            meth = 'deiconify'
-        for toplevel in gtk.window_list_toplevels():
-            getattr(toplevel, meth)()
-
         return False
 
     def win_add(self, page, hide_current=False, allow_similar=True):

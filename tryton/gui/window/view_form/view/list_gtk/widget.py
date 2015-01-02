@@ -93,7 +93,8 @@ class CellCache(list):
                 self.cell_caches = {}
             record = store.get_value(iter, 0)
             counter = self.view.treeview.display_counter
-            if (self.display_counters.get(record.id) != counter):
+            if (self.display_counters.get((record.model_name, record.id)) !=
+                    counter):
                 if getattr(cell, 'decorated', None):
                     func(self, column, cell, store, iter)
                 else:
@@ -101,10 +102,11 @@ class CellCache(list):
                     cache.decorate(cell)
                     func(self, column, cell, store, iter)
                     cache.undecorate(cell)
-                    self.cell_caches[record.id] = cache
-                    self.display_counters[record.id] = counter
+                    self.cell_caches[(record.model_name, record.id)] = cache
+                    self.display_counters[(record.model_name, record.id)] = \
+                        counter
             else:
-                self.cell_caches[record.id].apply(cell)
+                self.cell_caches[(record.model_name, record.id)].apply(cell)
         return wrapper
 
 

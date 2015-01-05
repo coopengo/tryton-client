@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import xmlrpclib
 try:
     import simplejson as json
@@ -15,6 +15,7 @@ import StringIO
 import hashlib
 import base64
 import threading
+import errno
 from functools import partial
 from contextlib import contextmanager
 
@@ -192,6 +193,7 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
             self._connection[1].connect()
             sock = self._connection[1].sock
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         def https_connection():
             self._connection = host, HTTPSConnection(host,
@@ -200,6 +202,7 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
                 self._connection[1].connect()
                 sock = self._connection[1].sock
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 try:
                     peercert = sock.getpeercert(True)
                 except socket.error:
@@ -261,8 +264,8 @@ class ServerProxy(xmlrpclib.ServerProxy):
                 verbose=self.__verbose
                 )
         except (socket.error, httplib.HTTPException), v:
-            # trap  'Broken pipe'
-            if isinstance(v, socket.error) and v.args[0] != 32:
+            if (isinstance(v, socket.error)
+                    and v.args[0] == errno.EPIPE):
                 raise
             # try one more time
             self.__transport.close()

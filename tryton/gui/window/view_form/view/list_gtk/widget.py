@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 
 import os
 import tempfile
@@ -31,6 +31,7 @@ from tryton.translate import date_format
 from tryton.common import data2pixbuf
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.selection import SelectionMixin, PopdownMixin
+from tryton.common.domain_parser import quote
 
 _ = gettext.gettext
 
@@ -613,7 +614,7 @@ class M2O(Char):
                 callback()
         win = WinSearch(relation, search_callback, sel_multi=False,
             context=context, domain=domain)
-        win.screen.search_filter(text.decode('utf-8'))
+        win.screen.search_filter(quote(text.decode('utf-8')))
         return win
 
     def set_completion(self, entry, path):
@@ -816,6 +817,7 @@ class ProgressBar(object):
 
     def __init__(self, view, attrs):
         super(ProgressBar, self).__init__()
+        self.view = view
         self.attrs = attrs
         self.renderer = gtk.CellRendererProgress()
         orientation = self.orientations.get(self.attrs.get('orientation',

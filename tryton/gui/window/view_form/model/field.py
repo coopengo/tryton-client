@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import os
 from itertools import chain
 import tempfile
@@ -641,6 +641,9 @@ class O2MField(Field):
         self._connect_value(group)
 
     def set_client(self, record, value, force_change=False):
+        # domain inversion could try to set None as value
+        if value is None:
+            value = []
         # domain inversion could try to set id as value
         if isinstance(value, (int, long)):
             value = [value]

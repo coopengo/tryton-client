@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import gtk
 import gettext
 import gobject
@@ -11,6 +11,7 @@ from tryton.gui.window.win_form import WinForm
 import tryton.common as common
 from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.common.completion import get_completion, update_completion
+from tryton.common.domain_parser import quote
 
 _ = gettext.gettext
 
@@ -438,7 +439,7 @@ class One2Many(Widget):
             view_ids=self.attrs.get('view_ids', '').split(','),
             views_preload=self.attrs.get('views', {}),
             new=self.but_new.get_property('sensitive'))
-        win.screen.search_filter(text)
+        win.screen.search_filter(quote(text))
         win.show()
 
     def _sig_label(self, screen, signal_data):

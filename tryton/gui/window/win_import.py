@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import gtk
 import gobject
 import gettext
@@ -238,6 +238,9 @@ class WinImport(NoModal):
 
     def on_row_expanded(self, treeview, iter, path):
         child = self.model1.iter_children(iter)
+        # autodetect could call for node without children
+        if child is None:
+            return
         if self.model1.get_value(child, 0) is None:
             prefix_field = self.model1.get_value(iter, 1)
             name, model = self.fields[prefix_field]

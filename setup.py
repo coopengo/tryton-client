@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 
 from setuptools import setup, find_packages
 import os
@@ -18,15 +18,15 @@ try:
     from babel.messages import frontend as babel
 
     args['cmdclass'] = {
-            'compile_catalog': babel.compile_catalog,
-            'extract_messages': babel.extract_messages,
-            'init_catalog': babel.init_catalog,
-            'update_catalog': babel.update_catalog,
+        'compile_catalog': babel.compile_catalog,
+        'extract_messages': babel.extract_messages,
+        'init_catalog': babel.init_catalog,
+        'update_catalog': babel.update_catalog,
         }
 
     args['message_extractors'] = {
-            'tryton': [
-                ('**.py', 'python', None),
+        'tryton': [
+            ('**.py', 'python', None),
             ],
         }
 
@@ -88,6 +88,7 @@ if os.name == 'nt':
                 'pangocairo',
                 'gio',
             ],
+            'dll_excludes': ['dnsapi.dll', 'usp10.dll', 'iphlpapi.dll'],
             'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
 			'includes':  ["raven.events", "raven.processors"],
         }
@@ -123,7 +124,7 @@ elif sys.platform == 'darwin':
 
 PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
 execfile(os.path.join('tryton', 'version.py'))
-VERSION='1.2'
+VERSION='1.3'
 WEBSITE='http://www.coopengo.com/'
 
 dist = setup(name='coog',
@@ -164,7 +165,7 @@ dist = setup(name='coog',
     platforms='any',
     license=LICENSE,
     install_requires=[
-        #"pygtk >= 2.6",
+        # "pygtk >= 2.6",
         "python-dateutil",
         "pyflakes",
         ],
@@ -411,8 +412,8 @@ elif sys.platform == 'darwin':
             for lib in libs.keys():
                 fixed = lib.replace(gtk_dir + '/lib',
                     '@executable_path/../Frameworks')
-                Popen(['install_name_tool', '-change', lib, fixed,
-                        library]).wait()
+                Popen(['install_name_tool', '-change', lib, fixed, library]
+                    ).wait()
 
         for file in ('CHANGELOG', 'COPYRIGHT', 'LICENSE', 'README', 'TODO'):
             shutil.copyfile(os.path.join(os.path.dirname(__file__), file),

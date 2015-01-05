@@ -339,14 +339,14 @@ class DictWidget(Widget):
             self.wid_text.connect('activate', self._sig_activate)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
-		    if int(self.attrs.get('completion', 1)):
-		        self.wid_completion = get_completion()
-		        self.wid_completion.connect('match-selected',
-		            self._completion_match_selected)
-		        self.wid_text.set_completion(self.wid_completion)
-		        self.wid_text.connect('changed', self._update_completion)
-		    else:
-		        self.wid_completion = None
+            if int(self.attrs.get('completion', 1)):
+                self.wid_completion = get_completion()
+                self.wid_completion.connect('match-selected',
+                    self._completion_match_selected)
+                self.wid_text.set_completion(self.wid_completion)
+                self.wid_text.connect('changed', self._update_completion)
+            else:
+                self.wid_completion = None
 
             self.but_add = gtk.Button()
             self.but_add.connect('clicked', self._sig_add)
@@ -358,13 +358,12 @@ class DictWidget(Widget):
             self.but_add.set_relief(gtk.RELIEF_NONE)
             hbox.pack_start(self.but_add, expand=False, fill=False)
 
-		    hbox.set_focus_chain([self.wid_text])
-		    vbox.pack_start(hbox, expand=True, fill=True)
+            hbox.set_focus_chain([self.wid_text])
+            vbox.pack_start(hbox, expand=True, fill=True)
 
             self.tooltips = Tooltips()
             self.tooltips.set_tip(self.but_add, _('Add value'))
             self.tooltips.enable()
-
 
         self._readonly = False
         self._record_id = None

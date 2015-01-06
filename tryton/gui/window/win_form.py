@@ -39,6 +39,7 @@ class WinForm(NoModal):
         self.win.set_has_separator(False)
         self.win.set_deletable(False)
         self.win.connect('close', self.close)
+        self.win.connect('delete-event', self.delete_event)
         self.win.connect('response', self.response)
 
         self.accel_group = gtk.AccelGroup()
@@ -386,6 +387,10 @@ class WinForm(NoModal):
         self.response(self.win, gtk.RESPONSE_CANCEL)
         return True
 
+    def delete_event(self, widget, event):
+        widget.emit_stop_by_name('delete-event')
+        return True
+
     def response(self, win, response_id):
         validate = False
         cancel_responses = (gtk.RESPONSE_CANCEL, gtk.RESPONSE_DELETE_EVENT)
@@ -428,6 +433,8 @@ class WinForm(NoModal):
                             )):
                     self.screen.group.remove(self.screen.current_record,
                         remove=True)
+                elif not self.save_current:
+                    return
             elif self.screen.current_record.modified:
                 self.screen.current_record.cancel()
                 self.screen.current_record.reload()

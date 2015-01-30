@@ -1,7 +1,24 @@
 # Coog GTK Theme, based on Numix
 # fg_color =  Font Color
 
-gtk_color_scheme = "base_color:#FCFEFF\nbg_color:#FCFEFF\ntooltip_bg_color:#2d2d2d\nselected_bg_color:#00AEE5\ntext_color:#333333\nfg_color:#46423D\ntooltip_fg_color:#f9f9f9\nselected_fg_color:#f9f9f9\nmenubar_bg_color:#2d2d2d\nmenubar_fg_color:#dcdcdc\ntoolbar_bg_color:#FCFEFF\ntoolbar_fg_color:#46423D\nmenu_bg_color:#FCFEFF\nmenu_fg_color:#46423D\npanel_bg_color:#555555\npanel_fg_color:#dcdcdc\nlink_color:#fc6f5d"
+gtk_color_scheme = "base_color:#FCFEFF
+bg_color:#FCFEFF
+tooltip_bg_color:#2d2d2d
+selected_bg_color:#00AEE5
+text_color:#333333
+fg_color:#46423D
+tooltip_fg_color:#f9f9f9
+selected_fg_color:#f9f9f9
+menubar_bg_color:#FCFEFF
+menubar_fg_color:#46423D
+toolbar_bg_color:#FCFEFF
+toolbar_fg_color:#46423D
+menu_bg_color:#FCFEFF
+menu_fg_color:#46423D
+panel_bg_color:#555555
+panel_fg_color:#dcdcdc
+link_color:#fc6f5d"
+
 
 gtk-icon-sizes = "panel=16,16:gtk-button=16,16" # Icon sizes
 gtk-button-images = 0 # Disables icons in buttons
@@ -73,6 +90,9 @@ style "murrine-default" {
 
 	GtkTreeView::expander-size = 11
 	GtkTreeView::vertical-separator = 0
+	GtkTreeView::allow-rules = 1
+	GtkTreeView::odd-row-color = shade(1.20, "#A2DAF4")
+	# GtkTreeView::even-row-color = shade(1.9, @base_color)
 
 	GtkWidget::focus-padding = 2
 	GtkWidget::new-tooltip-style = 0
@@ -114,7 +134,7 @@ style "murrine-default" {
 	text[INSENSITIVE] = mix (0.5, @base_color, @text_color)
 
 	engine "murrine" {
-		animation = TRUE
+		animation = FALSE
 		arrowstyle = 1 # 0 = normal arrows, 1 = filled arrows
 		colorize_scrollbar = TRUE
 		comboboxstyle = 0 # 0 = normal combobox, 1 = colorized combobox below arrow
@@ -155,6 +175,9 @@ style "murrine-wider" {
 # Notebook
 
 style "murrine-notebook-bg" {
+	xthickness = 2
+	ythickness = 2
+
 	bg[NORMAL] = shade (1.08, @bg_color)
 	bg[ACTIVE] = shade (0.90, @bg_color)
 
@@ -164,11 +187,11 @@ style "murrine-notebook-bg" {
 }
 
 style "murrine-notebook" = "murrine-notebook-bg" {
-	xthickness = 2
-	ythickness = 2
+	xthickness = 4
+	ythickness = 4
 
 	engine "murrine" {
-		roundness = 2
+		roundness = 0
 	}
 }
 
@@ -181,6 +204,7 @@ style "murrine-button" = "murrine-wider" {
 	bg[INSENSITIVE] = shade (0.85, @bg_color)
 
   	engine "murrine" {
+		roundness = 0
 	}
 }
 
@@ -358,8 +382,8 @@ style "murrine-separator-menu-item" {
 
 style "murrine-menubar" {
 	bg[NORMAL] = @menubar_bg_color
-	bg[PRELIGHT] =  mix (0.21, @menubar_fg_color, @menubar_bg_color)
-	bg[SELECTED] =  mix (0.21, @menubar_fg_color, @menubar_bg_color)
+	bg[PRELIGHT] =  shade (1.9, @selected_bg_color)
+	bg[SELECTED] =  shade (1.7, @selected_bg_color)
 	bg[ACTIVE] = shade (0.9, @menubar_bg_color)
 	bg[INSENSITIVE] = @menubar_bg_color
 
@@ -398,7 +422,7 @@ style "murrine-menubaritem" {
 style "murrine-toolbar" = "murrine-default" {
 
 	bg[NORMAL] = @toolbar_bg_color
-    bg[PRELIGHT] = shade (1.02, @toolbar_bg_color)
+	bg[PRELIGHT] = shade (1.02, @toolbar_bg_color)
 	bg[SELECTED] = @selected_bg_color
 	bg[ACTIVE] = shade (0.9, @toolbar_bg_color)
 	bg[INSENSITIVE] = @toolbar_bg_color
@@ -416,7 +440,7 @@ style "murrine-toolbar" = "murrine-default" {
 style "murrine-toolbutton" = "murrine-button" {
 
 	bg[NORMAL] = shade (1.08, @toolbar_bg_color)
-    bg[PRELIGHT] = shade (1.9, @selected_bg_color)
+	bg[PRELIGHT] = shade (1.9, @selected_bg_color)
 	bg[SELECTED] = @selected_bg_color
 	bg[ACTIVE] = shade (0.95, @toolbar_bg_color)
 	bg[INSENSITIVE] = shade (0.85, @toolbar_bg_color)

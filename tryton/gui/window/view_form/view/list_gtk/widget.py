@@ -13,11 +13,9 @@ from functools import wraps, partial
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-import tryton.rpc as rpc
 from tryton.common import COLORS, file_selection, file_open, slugify
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
-from tryton.common.cellrendererdate import CellRendererDate
 from tryton.common.cellrenderertext import CellRendererText, \
     CellRendererTextCompletion
 from tryton.common.cellrenderertoggle import CellRendererToggle
@@ -27,10 +25,11 @@ from tryton.common.cellrendererfloat import CellRendererFloat
 from tryton.common.cellrendererbinary import CellRendererBinary
 from tryton.common.cellrendererclickablepixbuf import \
     CellRendererClickablePixbuf
-from tryton.translate import date_format
 from tryton.common import data2pixbuf
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.selection import SelectionMixin, PopdownMixin
+from tryton.common.datetime_ import CellRendererDate, CellRendererTime
+from tryton.common.datetime_strftime import datetime_strftime
 from tryton.common.domain_parser import quote
 
 _ = gettext.gettext
@@ -166,10 +165,10 @@ class Affix(object):
             webbrowser.open(value, new=2)
 
 
-class Char(object):
+class GenericText(object):
 
     def __init__(self, view, attrs, renderer=None):
-        super(Char, self).__init__()
+        super(GenericText, self).__init__()
         self.attrs = attrs
         if renderer is None:
             renderer = CellRendererText
@@ -213,7 +212,7 @@ class Char(object):
 
         if self.attrs.get('type', field.attrs.get('type')) in \
                 ('float', 'integer', 'biginteger', 'boolean',
-                'numeric', 'float_time'):
+                'numeric', 'timedelta'):
             align = 1
         else:
             align = 0
@@ -286,7 +285,16 @@ class Char(object):
         return record, field
 
 
-class Int(Char):
+class Char(GenericText):
+
+    @realized
+    @CellCache.cache
+    def setter(self, column, cell, store, iter_):
+        super(Char, self).setter(column, cell, store, iter_)
+        cell.set_property('single-paragraph-mode', True)
+
+
+class Int(GenericText):
 
     def __init__(self, view, attrs, renderer=None):
         if renderer is None:
@@ -307,7 +315,7 @@ class Int(Char):
             callback()
 
 
-class Boolean(Char):
+class Boolean(GenericText):
 
     def __init__(self, view, attrs=None,
             renderer=None):
@@ -341,35 +349,61 @@ class URL(Char):
         cell.set_property('visible', not readonly)
 
 
-class Date(Char):
+class Date(GenericText):
 
     def __init__(self, view, attrs, renderer=None):
         if renderer is None:
-            renderer = partial(CellRendererDate, date_format())
+            renderer = CellRendererDate
         super(Date, self).__init__(view, attrs, renderer=renderer)
-        self.renderer.connect('editing-started', self.editing_started)
-
-
-class Datetime(Date):
 
     @realized
     def setter(self, column, cell, store, iter):
-        super(Datetime, self).setter(column, cell, store, iter)
         record = store.get_value(iter, 0)
         field = record[self.attrs['name']]
-        time_format = field.time_format(record)
-        self.renderer.format = date_format() + ' ' + time_format
+        self.renderer.props.format = self.get_format(record, field)
+        super(Date, self).setter(column, cell, store, iter)
+
+    def get_format(self, record, field):
+        if field and record:
+            return field.date_format(record)
+        else:
+            return '%x'
+
+    def get_textual_value(self, record):
+        if not record:
+            return ''
+        value = record[self.attrs['name']].get_client(record)
+        if value:
+            return datetime_strftime(value, self.renderer.props.format)
+        else:
+            return ''
 
 
 class Time(Date):
 
-    @realized
-    def setter(self, column, cell, store, iter):
-        super(Time, self).setter(column, cell, store, iter)
-        record = store.get_value(iter, 0)
-        field = record[self.attrs['name']]
-        time_format = field.time_format(record)
-        self.renderer.format = time_format
+    def __init__(self, view, attrs, renderer=None):
+        if renderer is None:
+            renderer = CellRendererTime
+        super(Time, self).__init__(view, attrs, renderer=renderer)
+
+    def get_format(self, record, field):
+        if field and record:
+            return field.time_format(record)
+        else:
+            return '%X'
+
+    def get_textual_value(self, record):
+        if not record:
+            return ''
+        value = record[self.attrs['name']].get_client(record)
+        if value:
+            return value.strftime(self.renderer.props.format)
+        else:
+            return ''
+
+
+class TimeDelta(GenericText):
+    pass
 
 
 class Float(Int):
@@ -388,28 +422,7 @@ class Float(Int):
         cell.digits = digits
 
 
-class FloatTime(Char):
-
-    def __init__(self, view, attrs, renderer=None):
-        super(FloatTime, self).__init__(view, attrs, renderer=renderer)
-        self.conv = None
-        if attrs and attrs.get('float_time'):
-            self.conv = rpc.CONTEXT.get(attrs['float_time'])
-
-    def get_textual_value(self, record):
-        val = record[self.attrs['name']].get(record)
-        return common.float_time_to_text(val, self.conv)
-
-    def value_from_text(self, record, text, callback=None):
-        field = record[self.attrs['name']]
-        digits = field.digits(record)
-        field.set_client(record,
-            common.text_to_float_time(text, self.conv, digits[1]))
-        if callback:
-            callback()
-
-
-class Binary(Char):
+class Binary(GenericText):
 
     def __init__(self, view, attrs, renderer=None):
         self.filename = attrs.get('filename')
@@ -512,7 +525,7 @@ class Binary(Char):
         field.set_client(record, False)
 
 
-class Image(Char):
+class Image(GenericText):
 
     def __init__(self, view, attrs=None, renderer=None):
         if renderer is None:
@@ -533,13 +546,14 @@ class Image(Char):
             else:
                 value = field.get_data(record)
         pixbuf = data2pixbuf(value)
-        if self.attrs['width'] != -1 or self.attrs['height'] != -1:
+        if (self.attrs.get('width', -1) != -1 or
+                self.attrs.get('height', -1) != -1):
             pixbuf = common.resize_pixbuf(pixbuf,
                 self.attrs['width'], self.attrs['height'])
         cell.set_property('pixbuf', pixbuf)
 
 
-class M2O(Char):
+class M2O(GenericText):
 
     def __init__(self, view, attrs, renderer=None):
         if renderer is None and int(attrs.get('completion', 1)):
@@ -570,7 +584,8 @@ class M2O(Char):
         relation = field.attrs['relation']
 
         access = common.MODELACCESS[relation]
-        if create and not access['create']:
+        if (create
+                and not (self.attrs.get('create', True) and access['create'])):
             return
         elif not access['read']:
             return
@@ -620,7 +635,10 @@ class M2O(Char):
     def set_completion(self, entry, path):
         if entry.get_completion():
             entry.set_completion(None)
-        completion = get_completion()
+        access = common.MODELACCESS[self.attrs['relation']]
+        completion = get_completion(
+            search=access['read'],
+            create=self.attrs.get('create', True) and access['create'])
         completion.connect('match-selected', self._completion_match_selected,
             path)
         completion.connect('action-activated',
@@ -673,7 +691,7 @@ class O2O(M2O):
     pass
 
 
-class O2M(Char):
+class O2M(GenericText):
 
     @realized
     def setter(self, column, cell, store, iter):
@@ -731,7 +749,7 @@ class M2M(O2M):
             context=context)
 
 
-class Selection(Char, SelectionMixin, PopdownMixin):
+class Selection(GenericText, SelectionMixin, PopdownMixin):
 
     def __init__(self, *args):
         super(Selection, self).__init__(*args)
@@ -783,7 +801,7 @@ class Selection(Char, SelectionMixin, PopdownMixin):
         return False
 
 
-class Reference(Char, SelectionMixin):
+class Reference(GenericText, SelectionMixin):
 
     def __init__(self, view, attrs, renderer=None):
         super(Reference, self).__init__(view, attrs, renderer=renderer)

@@ -90,20 +90,20 @@ class TrytonClient(object):
             signal.signal(signal.SIGQUIT,
                 lambda signum, frame: main.sig_quit())
 
-        def excepthook(exctyp, exception, tb):
+        def excepthook(*args):
             import common
             import traceback
             from tryton.exceptions import TrytonServerError
             if (CONFIG['sentry.dsn']
                     and not isinstance(exception, TrytonServerError)):
                 log = logging.getLogger(__name__)
-                log.error('\n'.join(traceback.format_tb(tb)) + '\n'
-                    + str(exception))
+                log.error(''.join(traceback.format_exception(*args)) +
+                    '\n' + str(exception))
                 sentry = Client(CONFIG['sentry.dsn'])
                 sentry_id = sentry.captureException((exctyp, exception, tb))
             else:
                 sentry_id = None
-            tb = '\n'.join(traceback.format_tb(tb))
+            tb = ''.join(traceback.format_exception(*args))
             common.process_exception(exception, tb=tb, sentry_id=sentry_id)
 
         sys.excepthook = excepthook

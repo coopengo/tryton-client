@@ -68,7 +68,7 @@ class Action(object):
                     action, = actions()
                 except RPCException:
                     return
-                Action._exec_action(action, data)
+                Action._exec_action(action, data, context=context)
 
             RPCExecute('model', action_type, 'search_read',
                 [('action', '=', act_id)], 0, 1, None, None,
@@ -103,7 +103,7 @@ class Action(object):
 
             action.setdefault('pyson_domain', '[]')
             ctx = {
-                'active_model': data.get('res_model'),
+                'active_model': data.get('model'),
                 'active_id': data.get('id'),
                 'active_ids': data.get('ids', []),
             }
@@ -114,6 +114,9 @@ class Action(object):
             ctx.update(action_ctx)
             ctx.update(context)
             action_ctx.update(context)
+            if 'date_format' not in action_ctx:
+                action_ctx['date_format'] = rpc.CONTEXT.get(
+                    'locale', {}).get('date', '%x')
 
             ctx['context'] = ctx
             decoder = PYSONDecoder(ctx)

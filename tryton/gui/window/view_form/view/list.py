@@ -10,6 +10,7 @@ except ImportError:
 import locale
 import gettext
 from functools import wraps
+from collections import defaultdict
 
 from tryton.config import CONFIG
 from tryton.common.cellrendererbutton import CellRendererButton
@@ -17,10 +18,11 @@ from tryton.common.cellrenderertoggle import CellRendererToggle
 from tryton.gui.window import Window
 from tryton.common.popup_menu import populate
 from tryton.common import RPCExecute, RPCException, node_attributes, Tooltips
+import tryton.common as common
 from . import View
 from .list_gtk.editabletree import EditableTreeView, TreeView
-from .list_gtk.widget import (Affix, Char, Int, Boolean, URL, Date, Datetime,
-    Time, Float, FloatTime, Binary, M2O, O2O, O2M, M2M, Selection, Reference,
+from .list_gtk.widget import (Affix, Char, Int, Boolean, URL, Date,
+    Time, Float, TimeDelta, Binary, M2O, O2O, O2M, M2M, Selection, Reference,
     ProgressBar, Button, Image)
 
 _ = gettext.gettext
@@ -280,7 +282,7 @@ class ViewTree(View):
     def __init__(self, screen, xml, children_field, children_definitions=None):
         super(ViewTree, self).__init__(screen, xml)
         self.view_type = 'tree'
-        self.widgets = {}
+        self.widgets = defaultdict(list)
         self.state_widgets = []
         self.children_field = children_field
         self.children_definitions = children_definitions
@@ -363,8 +365,7 @@ class ViewTree(View):
 
         Widget = self.get_widget(node_attrs['widget'])
         widget = Widget(self, node_attrs)
-        assert name not in self.widgets
-        self.widgets[name] = widget
+        self.widgets[name].append(widget)
 
         column = gtk.TreeViewColumn(field.attrs['string'])
         column._type = 'field'
@@ -442,10 +443,9 @@ class ViewTree(View):
         'selection': Selection,
         'float': Float,
         'numeric': Float,
-        'float_time': FloatTime,
+        'timedelta': TimeDelta,
         'integer': Int,
         'biginteger': Int,
-        'datetime': Datetime,
         'time': Time,
         'boolean': Boolean,
         'text': Char,
@@ -493,7 +493,7 @@ class ViewTree(View):
             'biginteger': 60,
             'float': 80,
             'numeric': 80,
-            'float_time': 100,
+            'timedelta': 100,
             'date': 110,
             'datetime': 160,
             'selection': 90,
@@ -522,6 +522,12 @@ class ViewTree(View):
         column.set_expand(expand)
         column.set_resizable(True)
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+
+    def get_column_widget(self, column):
+        'Return the widget of the column'
+        idx = [c for c in self.treeview.get_columns()
+            if c.name == column.name].index(column)
+        return self.widgets[column.name][idx]
 
     def add_sum(self, attributes):
         if 'sum' not in attributes:
@@ -560,7 +566,7 @@ class ViewTree(View):
                 column.arrow.hide()
         model = self.treeview.get_model()
         unsaved_records = [x for x in model.group if x.id < 0]
-        search_string = self.screen.screen_container.get_text() or None
+        search_string = self.screen.screen_container.get_text() or u''
         if (self.screen.search_count == len(model)
                 or unsaved_records
                 or self.screen.parent):
@@ -726,7 +732,7 @@ class ViewTree(View):
         for col in self.treeview.get_columns():
             if not col.get_visible() or not col.name:
                 continue
-            widget = self.widgets[col.name]
+            widget = self.get_column_widget(col)
             values.append('"'
                 + str(widget.get_textual_value(record)).replace('"', '""')
                 + '"')
@@ -785,7 +791,7 @@ class ViewTree(View):
                 group.add(record)
             record = group[idx]
             for col, value in zip(columns, line):
-                widget = self.widgets[col.name]
+                widget = self.get_column_widget(col)
                 if widget.get_textual_value(record) != value:
                     widget.value_from_text(record, value)
                     if value and not widget.get_textual_value(record):
@@ -1111,26 +1117,42 @@ class ViewTree(View):
     def update_sum(self):
         selected_records = self.selected_records
         for name, label in self.sum_widgets:
-            sum_ = 0
-            selected_sum = 0
+            sum_ = None
+            selected_sum = None
             loaded = True
             digit = 0
+            field = self.screen.group.fields[name]
             for record in self.screen.group:
                 if not record.get_loaded([name]) and record.id >= 0:
                     loaded = False
                     break
-                field = record[name]
                 value = field.get(record)
                 if value is not None:
-                    sum_ += value
+                    if sum_ is None:
+                        sum_ = value
+                    else:
+                        sum_ += value
                     if record in selected_records or not selected_records:
-                        selected_sum += value
-                    digit = max(field.digits(record)[1], digit)
+                        if selected_sum is None:
+                            selected_sum = value
+                        else:
+                            selected_sum += value
+                    if hasattr(field, 'digits'):
+                        digit = max(field.digits(record)[1], digit)
 
             if loaded:
-                text = '%s / %s' % (
-                    locale.format('%.*f', (digit, selected_sum), True),
-                    locale.format('%.*f', (digit, sum_), True))
+                if field.attrs['type'] == 'timedelta':
+                    converter = self.screen.context.get(
+                        field.attrs.get('converter'))
+                    selected_sum = common.timedelta.format(
+                        selected_sum, converter)
+                    sum_ = common.timedelta.format(sum_, converter)
+                else:
+                    selected_sum = locale.format(
+                        '%.*f', (digit, selected_sum or 0), True)
+                    sum_ = locale.format('%.*f', (digit, sum_ or 0), True)
+
+                text = '%s / %s' % (selected_sum, sum_)
             else:
                 text = '-'
             label.set_text(text)

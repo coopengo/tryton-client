@@ -12,12 +12,12 @@ from tryton.common.focus import (get_invisible_ancestor, find_focused_child,
 from tryton.common import Tooltips, node_attributes, ICONFACTORY
 from tryton.common.button import Button
 from tryton.config import CONFIG
-from .form_gtk.calendar import Calendar, DateTime, Time
+from .form_gtk.calendar import Date, Time, DateTime
 from .form_gtk.float import Float
 from .form_gtk.integer import Integer
 from .form_gtk.selection import Selection
 from .form_gtk.char import Char, Password
-from .form_gtk.float_time import FloatTime
+from .form_gtk.timedelta import TimeDelta
 from .form_gtk.checkbox import CheckBox
 from .form_gtk.reference import Reference
 from .form_gtk.binary import Binary
@@ -366,7 +366,7 @@ class ViewForm(View):
         pack(container.table, resize=True, shrink=True)
 
     WIDGETS = {
-        'date': Calendar,
+        'date': Date,
         'datetime': DateTime,
         'time': Time,
         'float': Float,
@@ -376,7 +376,7 @@ class ViewForm(View):
         'selection': Selection,
         'char': Char,
         'password': Password,
-        'float_time': FloatTime,
+        'timedelta': TimeDelta,
         'boolean': CheckBox,
         'reference': Reference,
         'binary': Binary,

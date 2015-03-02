@@ -914,11 +914,7 @@ class Screen(SignalEvent):
 
     def button(self, button):
         'Execute button on the selected records'
-        if button.get('confirm', False) and not sur(button['confirm']):
-            return
         self.current_view.set_value()
-        if not self.current_record.save(force_reload=False):
-            return
         fields = self.current_view.get_fields()
         for record in self.selected_records:
             domain = record.expr_eval(
@@ -929,6 +925,10 @@ class Screen(SignalEvent):
                     # Reset valid state with normal domain
                     record.validate(fields)
                 return
+        if button.get('confirm', False) and not sur(button['confirm']):
+            return
+        if not self.current_record.save(force_reload=False):
+            return
         ids = [r.id for r in self.selected_records]
         try:
             action = RPCExecute('model', self.model_name, button['name'],
@@ -970,6 +970,10 @@ class Screen(SignalEvent):
         elif action.startswith('switch'):
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
+        elif action == 'reload':
+            if (self.current_view.view_type in ['tree', 'graph', 'calendar']
+                    and not self.parent):
+                self.search_filter()
         elif action == 'reload menu':
             from tryton.gui import Main
             RPCContextReload(Main.get_main().sig_win_menu)

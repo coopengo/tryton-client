@@ -6,7 +6,7 @@ import gobject
 from itertools import islice, cycle
 
 from tryton.common import MODELACCESS
-from tryton.common.date_widget import DateEntry
+from tryton.common.datetime_ import Date, Time
 
 _ = gettext.gettext
 
@@ -55,9 +55,9 @@ class EditableTreeView(TreeView):
         self.editable_open = editable_open
         self.view = view
 
-    def on_quit_cell(self, current_record, fieldname, value, callback=None):
-        field = current_record[fieldname]
-        widget = self.view.widgets[fieldname]
+    def on_quit_cell(self, current_record, column, value, callback=None):
+        field = current_record[column.name]
+        widget = self.view.get_column_widget(column)
 
         # The value has not changed and is valid ... do nothing.
         if value == widget.get_textual_value(current_record) \
@@ -67,9 +67,9 @@ class EditableTreeView(TreeView):
             return
         widget.value_from_text(current_record, value, callback=callback)
 
-    def on_open_remote(self, current_record, fieldname, create, value,
+    def on_open_remote(self, current_record, column, create, value,
             entry=None, callback=None):
-        widget = self.view.widgets[fieldname]
+        widget = self.view.get_column_widget(column)
         if value != widget.get_textual_value(current_record) or not value:
             changed = True
         else:
@@ -111,11 +111,13 @@ class EditableTreeView(TreeView):
         field = record[column.name]
         if hasattr(field, 'editabletree_entry'):
             entry = field.editabletree_entry
+            if isinstance(entry, (Date, Time)):
+                txt = entry.props.value
             if isinstance(entry, gtk.Entry):
                 txt = entry.get_text()
             else:
                 txt = entry.get_active_text()
-            self.on_quit_cell(record, column.name, txt)
+            self.on_quit_cell(record, column, txt)
         return True
 
     def on_keypressed(self, entry, event):
@@ -142,9 +144,9 @@ class EditableTreeView(TreeView):
                 leaving = True
 
         if event.keyval in self.leaving_events or leaving:
-            if isinstance(entry, gtk.Entry):
-                if isinstance(entry, DateEntry):
-                    entry.date_get()
+            if isinstance(entry, (Date, Time)):
+                txt = entry.props.value
+            elif isinstance(entry, gtk.Entry):
                 txt = entry.get_text()
             else:
                 txt = entry.get_active_text()
@@ -196,7 +198,7 @@ class EditableTreeView(TreeView):
                         entry.handler_unblock(entry.editing_done_id)
                 else:
                     gobject.idle_add(self.set_cursor, path, column, True)
-            self.on_quit_cell(record, column.name, txt, callback=callback)
+            self.on_quit_cell(record, column, txt, callback=callback)
             return True
         elif event.keyval in (gtk.keysyms.F3, gtk.keysyms.F2):
             if isinstance(entry, gtk.Entry):
@@ -206,14 +208,14 @@ class EditableTreeView(TreeView):
             entry.handler_block(entry.editing_done_id)
 
             def callback():
-                widget = self.view.widgets[column.name]
+                widget = self.view.get_column_widget(column)
                 value = widget.get_textual_value(record)
                 if isinstance(entry, gtk.Entry):
                     entry.set_text(value)
                 else:
                     entry.set_active_text(value)
                 entry.handler_unblock(entry.editing_done_id)
-            self.on_open_remote(record, column.name,
+            self.on_open_remote(record, column,
                 create=(event.keyval == gtk.keysyms.F3), value=value,
                 callback=callback)
         else:
@@ -261,9 +263,9 @@ class EditableTreeView(TreeView):
             return True
         model = self.get_model()
         record = model.get_value(model.get_iter(path), 0)
-        if isinstance(entry, gtk.Entry):
-            if isinstance(entry, DateEntry):
-                entry.date_get()
-            self.on_quit_cell(record, column.name, entry.get_text())
+        if isinstance(entry, (Date, Time)):
+            self.on_quit_cell(record, column, entry.props.value)
+        elif isinstance(entry, gtk.Entry):
+            self.on_quit_cell(record, column, entry.get_text())
         elif isinstance(entry, (gtk.ComboBoxEntry, gtk.ComboBox)):
-            self.on_quit_cell(record, column.name, entry.get_active_text())
+            self.on_quit_cell(record, column, entry.get_active_text())

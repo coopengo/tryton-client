@@ -5,17 +5,16 @@ from itertools import chain
 import tempfile
 import locale
 import logging
-from tryton.common import datetime_strftime, \
+from tryton.common import \
         domain_inversion, eval_domain, localize_domain, \
         merge, inverse_leaf, concat, simplify, EvalEnvironment
 import tryton.common as common
-import time
 import datetime
 import decimal
 from decimal import Decimal
 import math
-from tryton.translate import date_format
 from tryton.common import RPCExecute, RPCException
+import tryton.rpc as rpc
 
 
 class Field(object):
@@ -215,12 +214,18 @@ class DateTimeField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if isinstance(value, basestring):
-            try:
-                value = datetime.datetime(*time.strptime(value,
-                        date_format() + ' ' + self.time_format(record))[:6])
-            except ValueError:
-                value = self._default
+        if isinstance(value, datetime.time):
+            current_value = self.get_client(record)
+            if current_value:
+                value = datetime.datetime.combine(
+                    current_value.date(), value)
+            else:
+                value = None
+        elif value and not isinstance(value, datetime.datetime):
+            current_value = self.get_client(record)
+            if current_value:
+                value = datetime.datetime.combine(
+                    value, current_value.time())
         if value:
             value = common.untimezoned_date(value)
         super(DateTimeField, self).set_client(record, value,
@@ -229,10 +234,11 @@ class DateTimeField(Field):
     def get_client(self, record):
         value = super(DateTimeField, self).get_client(record)
         if value:
-            value = common.timezoned_date(value)
-            return datetime_strftime(value, date_format() + ' ' +
-                self.time_format(record))
-        return ''
+            return common.timezoned_date(value)
+
+    def date_format(self, record):
+        context = self.context_get(record)
+        return context.get('date_format', '%x')
 
     def time_format(self, record):
         return record.expr_eval(self.attrs['format'])
@@ -243,23 +249,15 @@ class DateField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if isinstance(value, basestring):
-            try:
-                value = datetime.date(*time.strptime(value,
-                        date_format())[:3])
-            except ValueError:
-                value = self._default
-        elif isinstance(value, datetime.datetime):
+        if isinstance(value, datetime.datetime):
             assert(value.time() == datetime.time())
             value = value.date()
         super(DateField, self).set_client(record, value,
             force_change=force_change)
 
-    def get_client(self, record):
-        value = super(DateField, self).get_client(record)
-        if value:
-            return datetime_strftime(value, date_format())
-        return ''
+    def date_format(self, record):
+        context = self.context_get(record)
+        return context.get('date_format', '%x')
 
 
 class TimeField(Field):
@@ -267,25 +265,32 @@ class TimeField(Field):
     _default = None
 
     def set_client(self, record, value, force_change=False):
-        if isinstance(value, basestring):
-            try:
-                value = datetime.time(*time.strptime(value,
-                        self.time_format(record))[3:6])
-            except ValueError:
-                value = self._default
-        elif isinstance(value, datetime.datetime):
+        if isinstance(value, datetime.datetime):
             value = value.time()
         super(TimeField, self).set_client(record, value,
             force_change=force_change)
 
-    def get_client(self, record):
-        value = super(TimeField, self).get_client(record)
-        if value is not None:
-            return value.strftime(self.time_format(record))
-        return ''
-
     def time_format(self, record):
         return record.expr_eval(self.attrs['format'])
+
+
+class TimeDeltaField(Field):
+
+    _default = None
+
+    def converter(self, record):
+        # TODO allow local context converter
+        return rpc.CONTEXT.get(self.attrs.get('converter'))
+
+    def set_client(self, record, value, force_change=False):
+        if isinstance(value, basestring):
+            value = common.timedelta.parse(value, self.converter(record))
+        super(TimeDeltaField, self).set_client(
+            record, value, force_change=force_change)
+
+    def get_client(self, record):
+        value = super(TimeDeltaField, self).get_client(record)
+        return common.timedelta.format(value, self.converter(record))
 
 
 class FloatField(Field):
@@ -917,9 +922,15 @@ class DictField(Field):
         return concat(localize_domain(inverse_leaf(screen_domain)),
             attr_domain)
 
+    def date_format(self, record):
+        context = self.context_get(record)
+        return context.get('date_format', '%x')
+
+    def time_format(self, record):
+        return '%X'
+
 TYPES = {
     'char': CharField,
-    'float_time': FloatField,
     'integer': IntegerField,
     'biginteger': IntegerField,
     'float': FloatField,
@@ -933,6 +944,7 @@ TYPES = {
     'datetime': DateTimeField,
     'date': DateField,
     'time': TimeField,
+    'timedelta': TimeDeltaField,
     'one2one': O2OField,
     'binary': BinaryField,
     'dict': DictField,

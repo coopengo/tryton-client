@@ -333,14 +333,14 @@ class DictWidget(Widget):
             self.wid_text.connect('activate', self._sig_activate)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
-		    if int(self.attrs.get('completion', 1)):
-		        self.wid_completion = get_completion(search=False, create=False)
-		        self.wid_completion.connect('match-selected',
-		            self._completion_match_selected)
-		        self.wid_text.set_completion(self.wid_completion)
-		        self.wid_text.connect('changed', self._update_completion)
-		    else:
-		        self.wid_completion = None
+            if int(self.attrs.get('completion', 1)):
+                self.wid_completion = get_completion(search=False, create=False)
+                self.wid_completion.connect('match-selected',
+                    self._completion_match_selected)
+                self.wid_text.set_completion(self.wid_completion)
+                self.wid_text.connect('changed', self._update_completion)
+            else:
+                self.wid_completion = None
 
             self.but_add = gtk.Button()
             self.but_add.connect('clicked', self._sig_add)
@@ -444,7 +444,7 @@ class DictWidget(Widget):
         for widget in self.fields.values():
             widget.set_readonly(readonly)
         if not self.attrs.get('no_command', 0.0):
-            self.wid_text.set_editable(not readonly)
+            self.wid_text.set_sensitive(not readonly)
 
     def _set_button_sensitive(self):
         if not self.attrs.get('no_command', 0.0):

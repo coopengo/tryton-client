@@ -90,7 +90,7 @@ if os.name == 'nt':
             ],
             'dll_excludes': ['dnsapi.dll', 'usp10.dll', 'iphlpapi.dll'],
             'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
-			'includes':  ["raven.events", "raven.processors"],
+            'includes':  ["raven.events", "raven.processors"],
         }
     }
     args['zipfile'] = 'library.zip'
@@ -132,7 +132,7 @@ dist = setup(name='coog',
     description='coog client',
     long_description=read('README'),
     author='Coopengo',
-	author_email='info@coopengo.com',
+    author_email='info@coopengo.com',
     url=WEBSITE,
     download_url=("http://downloads.tryton.org/" +
         VERSION.rsplit('.', 1)[0] + '/'),

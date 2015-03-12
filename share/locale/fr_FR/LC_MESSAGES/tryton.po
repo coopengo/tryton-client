@@ -1893,7 +1893,7 @@ msgstr "Paramètres : {}"
 
 #: tryton/gui/window/view_form/view/form_gtk/sourceeditor.py:275
 msgid "No parameters"
-msgstr "Pas de paremètres"
+msgstr "Pas de paramètres"
 
 #: tryton/gui/window/view_form/view/form_gtk/widget.py:175
 msgid "Translation"

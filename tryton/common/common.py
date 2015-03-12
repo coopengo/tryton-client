@@ -704,9 +704,10 @@ class UserWarningDialog(WarningDialog):
             label=_('Do you want to proceed?'),
             halign=Gtk.Align.FILL, valign=Gtk.Align.END)
         dialog.vbox.pack_start(label, expand=True, fill=True, padding=0)
-        self.always = Gtk.CheckButton(
-            label=_('Always ignore this warning.'), halign=Gtk.Align.START)
-        dialog.vbox.pack_start(self.always, expand=True, fill=False, padding=0)
+        # Disable Warning Automatic By Pass
+        # self.always = Gtk.CheckButton(
+        #     label=_('Always ignore this warning.'), halign=Gtk.Align.START)
+        # dialog.vbox.pack_start(self.always, expand=True, fill=False, padding=0)
         return dialog
 
     def process_response(self, response):

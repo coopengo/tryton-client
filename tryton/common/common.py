@@ -660,11 +660,12 @@ class UserWarningDialog(WarningDialog):
     def build_dialog(self, parent, message, title):
         dialog = super(UserWarningDialog, self).build_dialog(parent, message,
             title, gtk.BUTTONS_YES_NO)
-        check = gtk.CheckButton(_('Always ignore this warning.'))
-        check.connect_after('toggled', self._set_always)
-        alignment = gtk.Alignment(0, 0.5)
-        alignment.add(check)
-        dialog.vbox.pack_start(alignment, True, False)
+        # Disable Warning Automatic By Pass
+        # check = gtk.CheckButton(_('Always ignore this warning.'))
+        # check.connect_after('toggled', self._set_always)
+        # alignment = gtk.Alignment(0, 0.5)
+        # alignment.add(check)
+        # dialog.vbox.pack_start(alignment, True, False)
         label = gtk.Label(_('Do you want to proceed?'))
         label.set_alignment(1, 0.5)
         dialog.vbox.pack_start(label, True, True)

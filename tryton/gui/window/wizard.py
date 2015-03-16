@@ -76,6 +76,8 @@ class Wizard(object):
         ctx['active_ids'] = self.ids
         ctx['active_model'] = self.model
         ctx['action_id'] = self.action_id
+        ctx['direct_print'] = self.direct_print
+        ctx['email_print'] = self.email_print
         if self.screen:
             data = {
                 self.screen_state: self.screen.get_on_change_value(),

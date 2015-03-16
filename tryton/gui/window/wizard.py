@@ -63,6 +63,8 @@ class Wizard(InfoBar):
         self.context['active_ids'] = self.ids
         self.context['active_model'] = self.model
         self.context['action_id'] = self.action_id
+        self.context['direct_print'] = self.direct_print
+        self.context['email_print'] = self.email_print
 
         def callback(result):
             try:

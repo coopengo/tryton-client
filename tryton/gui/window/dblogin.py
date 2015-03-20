@@ -10,7 +10,7 @@ import datetime
 
 from tryton.version import VERSION
 import tryton.common as common
-from tryton.common.date_widget import DateEntry
+from tryton.common.datetime_ import Date
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
 import tryton.rpc as rpc
 from tryton.gui.window.dbcreate import DBCreate
@@ -467,8 +467,9 @@ class DBLogin(object):
             self.label_date.set_padding(3, 3)
             self.table_main.attach(self.label_date, 0, 1, 8, 9,
                 xoptions=gtk.FILL)
-            self.date_entry = DateEntry('%d/%m/%Y')
-            self.date_entry.date_set(datetime.date.today())
+            self.date_entry = Date()
+            self.date_entry.props.format = '%d/%m/%Y'
+            self.date_entry.props.value = datetime.date.today()
             self.table_main.attach(self.date_entry, 1, 3, 8, 9)
 
         # Profile informations
@@ -623,7 +624,7 @@ class DBLogin(object):
                 self.entry_password.get_text(), host, port, database)
 
         if CONFIG['login.date']:
-            date = self.date_entry.date_get().date()
+            date = self.date_entry.props.value
         else:
             date = None
         self.parent.present()

@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 import gettext
 import datetime
+import re
 
 import pygtk
 
@@ -23,7 +24,15 @@ _ = gettext.gettext
 def date_parse(text, format_='%x'):
     dayfirst = datetime.date(1988, 8, 16).strftime(format_).index('16') == 0
     yearfirst = datetime.date(1988, 8, 16).strftime(format_).index('88') <= 2
-    return parse(text, dayfirst=dayfirst, yearfirst=yearfirst, ignoretz=True)
+    if len(text) == 6 and re.search('[0-9]{6}', text):
+        text = '%s/%s/%s' % (text[:2], text[2:4], text[4:6])
+    elif len(text) == 8 and re.search('[0-9]{8}', text):
+        if yearfirst:
+            text = '%s/%s/%s' % (text[:4], text[4:6], text[6:8])
+        else:
+            text = '%s/%s/%s' % (text[:2], text[2:4], text[4:8])
+    return parse(text, dayfirst=dayfirst, yearfirst=yearfirst,
+        ignoretz=True)
 
 
 class Date(gtk.Entry):

@@ -8,6 +8,8 @@ class CellRendererToggle(gtk.GenericCellRenderer):
     __gproperties__ = {
         'activatable': (gobject.TYPE_INT, 'Activatable',
             'Activatable', 0, 10, 0, gobject.PARAM_READWRITE),
+        'yalign': (gobject.TYPE_FLOAT, 'YAlign',
+            'YAlign', 0, 1, 0.5, gobject.PARAM_READWRITE),
         'visible': (gobject.TYPE_INT, 'Visible',
             'Visible', 0, 10, 0, gobject.PARAM_READWRITE),
         }

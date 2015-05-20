@@ -21,6 +21,8 @@ class CellRendererText(gtk.GenericCellRenderer):
             'Editable', 0, 10, 0, gobject.PARAM_READWRITE),
         'xalign': (gobject.TYPE_FLOAT, 'XAlign',
             'XAlign', 0, 1, 0, gobject.PARAM_READWRITE),
+        'yalign': (gobject.TYPE_FLOAT, 'YAlign',
+            'YAlign', 0, 1, 0.5, gobject.PARAM_READWRITE),
         'visible': (gobject.TYPE_INT, 'Visible',
             'Visible', 0, 10, 0, gobject.PARAM_READWRITE),
         'strikethrough': (gobject.TYPE_BOOLEAN, 'Strikethrough',

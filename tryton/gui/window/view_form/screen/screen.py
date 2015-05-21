@@ -911,6 +911,8 @@ class Screen(SignalEvent):
         def is_active(record, button):
             if record.group.readonly or record.readonly:
                 return False
+            if button.attrs.get('type', 'class') == 'instance':
+                return False
             states = record.expr_eval(button.attrs.get('states', {}))
             return not (states.get('invisible') or states.get('readonly'))
 
@@ -940,12 +942,35 @@ class Screen(SignalEvent):
                 return
         if button.get('confirm', False) and not sur(button['confirm']):
             return
-        if not self.current_record.save(force_reload=False):
+        if button.get('type', 'class') == 'class':
+            if not self.current_record.save(force_reload=False):
+                return
+        if button.get('type', 'class') == 'class':
+            self._button_class(button)
+        else:
+            self._button_instance(button)
+
+    def _button_instance(self, button):
+        record = self.current_record
+        args = record.expr_eval(button.get('change', []))
+        values = record._get_on_change_args(args)
+        try:
+            changes = RPCExecute('model', self.model_name, button['name'],
+                values, context=self.context)
+        except RPCException:
             return
+        record.set_on_change(changes)
+        record.signal('record-changed')
+
+    def _button_class(self, button):
         ids = [r.id for r in self.selected_records]
+        context = self.context.copy()
+        context['_timestamp'] = {}
+        for record in self.selected_records:
+            context['_timestamp'].update(record.get_timestamp())
         try:
             action = RPCExecute('model', self.model_name, button['name'],
-                ids, context=self.context)
+                ids, context=context)
         except RPCException:
             action = None
         self.reload(ids, written=True)
@@ -954,7 +979,7 @@ class Screen(SignalEvent):
         elif action:
             Action.execute(action, {
                     'model': self.model_name,
-                    'id': record.id,
+                    'id': self.current_record.id,
                     'ids': ids,
                     }, context=self.context)
 

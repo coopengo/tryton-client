@@ -8,7 +8,7 @@ import os
 import gettext
 import datetime
 
-from tryton.version import VERSION
+from tryton import __version__
 import tryton.common as common
 from tryton.common.datetime_ import Date
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
@@ -441,7 +441,6 @@ class DBLogin(object):
         self.table_main.attach(self.label_database, 0, 1, 5, 6,
             xoptions=gtk.FILL)
         self.table_main.attach(self.entry_database, 1, 3, 5, 6)
-
         self.entry_password = gtk.Entry()
         self.entry_password.set_visibility(False)
         self.entry_password.set_activates_default(True)
@@ -476,7 +475,7 @@ class DBLogin(object):
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
         self.profiles = ConfigParser.SafeConfigParser({'port': '8000'})
         if not os.path.exists(self.profile_cfg) and False:
-            short_version = '.'.join(VERSION.split('.', 2)[:2])
+            short_version = '.'.join(__version__.split('.', 2)[:2])
             name = 'demo%s.tryton.org' % short_version
             self.profiles.add_section(name)
             self.profiles.set(name, 'host', name)

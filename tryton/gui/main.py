@@ -43,9 +43,9 @@ from tryton.common.placeholder_entry import PlaceholderEntry
 import pango
 import time
 try:
-    import gtk_osxapplication
+    import gtkosx_application
 except ImportError:
-    gtk_osxapplication = None
+    gtkosx_application = None
 try:
     import gtkspell
 except ImportError:
@@ -84,8 +84,8 @@ class Main(object):
         self.window.add_accel_group(self.accel_group)
 
         self.macapp = None
-        if gtk_osxapplication is not None:
-            self.macapp = gtk_osxapplication.OSXApplication()
+        if gtkosx_application is not None:
+            self.macapp = gtkosx_application.Application()
             self.macapp.connect("NSApplicationBlockTermination",
                 self.sig_close)
 
@@ -94,9 +94,9 @@ class Main(object):
         gtk.accel_map_add_entry('<tryton>/File/Quit', gtk.keysyms.Q,
                 gtk.gdk.CONTROL_MASK)
         if sys.platform != 'darwin':
-            gtk.accel_map_add_entry('<tryton>/User/Menu Reload', gtk.keysyms.T,
+            gtk.accel_map_add_entry('<tryton>/User/Reload Menu', gtk.keysyms.T,
                     gtk.gdk.MOD1_MASK)
-        gtk.accel_map_add_entry('<tryton>/User/Menu Toggle', gtk.keysyms.T,
+        gtk.accel_map_add_entry('<tryton>/User/Toggle Menu', gtk.keysyms.T,
                 gtk.gdk.CONTROL_MASK)
         gtk.accel_map_add_entry('<tryton>/User/Global Search', gtk.keysyms.K,
             gtk.gdk.CONTROL_MASK)
@@ -283,7 +283,6 @@ class Main(object):
 
     def set_global_search(self):
         self.global_search_entry = PlaceholderEntry()
-        self.global_search_entry.set_placeholder_text(_('Search'))
         global_search_completion = gtk.EntryCompletion()
         global_search_completion.set_match_func(lambda *a: True)
         global_search_completion.set_model(gtk.ListStore(
@@ -645,52 +644,6 @@ class Main(object):
             if CONFIG['client.spellcheck']:
                 checkmenuitem_spellcheck.set_active(True)
 
-        menuitem_tab = gtk.MenuItem(_('Tabs Position'))
-        menu_form.add(menuitem_tab)
-
-        menu_tab = gtk.Menu()
-        menu_tab.set_accel_group(self.accel_group)
-        menu_tab.set_accel_path('<tryton>/Options/Tabs Position')
-        menuitem_tab.set_submenu(menu_tab)
-
-        radiomenuitem_top = gtk.RadioMenuItem(label=_('Top'))
-        radiomenuitem_top.connect('activate',
-                lambda x: CONFIG.__setitem__('client.form_tab', 'top'))
-        radiomenuitem_top.set_accel_path('<tryton>/Options/Tabs Position/Top')
-        menu_tab.add(radiomenuitem_top)
-        if (CONFIG['client.form_tab'] or 'left') == 'top':
-            radiomenuitem_top.set_active(True)
-
-        radiomenuitem_left = gtk.RadioMenuItem(group=radiomenuitem_top,
-                label=_('Left'))
-        radiomenuitem_left.connect('activate',
-                lambda x: CONFIG.__setitem__('client.form_tab', 'left'))
-        radiomenuitem_left.set_accel_path(
-            '<tryton>/Options/Tabs Position/Left')
-        menu_tab.add(radiomenuitem_left)
-        if (CONFIG['client.form_tab'] or 'left') == 'left':
-            radiomenuitem_left.set_active(True)
-
-        radiomenuitem_right = gtk.RadioMenuItem(group=radiomenuitem_top,
-                label=_('Right'))
-        radiomenuitem_right.connect('activate',
-                lambda x: CONFIG.__setitem__('client.form_tab', 'right'))
-        radiomenuitem_right.set_accel_path(
-            '<tryton>/Options/Tabs Position/Right')
-        menu_tab.add(radiomenuitem_right)
-        if (CONFIG['client.form_tab'] or 'left') == 'right':
-            radiomenuitem_right.set_active(True)
-
-        radiomenuitem_bottom = gtk.RadioMenuItem(group=radiomenuitem_top,
-                label=_('Bottom'))
-        radiomenuitem_bottom.connect('activate',
-                lambda x: CONFIG.__setitem__('client.form_tab', 'bottom'))
-        radiomenuitem_bottom.set_accel_path(
-            '<tryton>/Options/Tabs Position/Bottom')
-        menu_tab.add(radiomenuitem_bottom)
-        if (CONFIG['client.form_tab'] or 'left') == 'bottom':
-            radiomenuitem_bottom.set_active(True)
-
         imagemenuitem_win_prev = gtk.ImageMenuItem(_('_Previous Tab'),
             self.accel_group)
         imagemenuitem_win_prev.connect('activate', self.sig_win_prev)
@@ -895,6 +848,8 @@ class Main(object):
                     self.set_menubar()
                     self.favorite_unset()
                 CONFIG['client.lang'] = prefs['language']
+            # Set placeholder after language is set to get correct translation
+            self.global_search_entry.set_placeholder_text(_('Search'))
             CONFIG.save()
 
         def _get_preferences():

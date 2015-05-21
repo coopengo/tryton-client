@@ -112,7 +112,7 @@ elif sys.platform == 'darwin':
                 'gobject, gio, gtk.keysyms'),
             'resources': 'tryton/plugins',
             'frameworks':
-            'librsvg-2.2.dylib, libjpeg.8.dylib, libtiff.3.dylib',
+            'librsvg-2.2.dylib, libjpeg.9.dylib, libtiff.5.dylib',
             'plist': {
                 'CFBundleIdentifier': 'org.tryton',
                 'CFBundleName': 'Tryton',
@@ -122,14 +122,23 @@ elif sys.platform == 'darwin':
         },
     }
 
-PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
-execfile(os.path.join('tryton', 'version.py'))
-VERSION='1.3'
-WEBSITE='http://www.coopengo.com/'
 
-dist = setup(name='coog',
-    version=VERSION,
-    description='coog client',
+def get_version():
+    init = read(os.path.join('tryton', '__init__.py'))
+    return re.search('__version__ = "([0-9.]*)"', init).group(1)
+
+PACKAGE=None
+WEBSITE='http://www.coopengo.com/'
+LICENSE=None
+version = '1.3'
+major_version, minor_version, _ = version.split('.', 2)
+major_version = int(major_version)
+minor_version = int(minor_version)
+name = 'tryton'
+
+dist = setup(name=name,
+    version=version,
+    description='Coog client',
     long_description=read('README'),
     author='Coopengo',
     author_email='info@coopengo.com',
@@ -277,10 +286,10 @@ if os.name == 'nt':
         makensis = find_makensis()
         if makensis:
             from subprocess import Popen
-            Popen([makensis, "/DVERSION=" + VERSION,
+            Popen([makensis, "/DVERSION=" + version,
                 str(os.path.join(os.path.dirname(__file__),
                     'setup.nsi'))]).wait()
-            Popen([makensis, "/DVERSION=" + VERSION,
+            Popen([makensis, "/DVERSION=" + version,
                 str(os.path.join(os.path.dirname(__file__),
                     'setup-single.nsi'))]).wait()
         else:
@@ -425,9 +434,9 @@ elif sys.platform == 'darwin':
         shutil.copytree(os.path.join(os.path.dirname(__file__), 'doc'),
                 doc_dist_dir)
 
-        dmg_file = os.path.join(os.path.dirname(__file__), 'tryton-' + VERSION
+        dmg_file = os.path.join(os.path.dirname(__file__), 'tryton-' + version
                 + '.dmg')
         if os.path.isfile(dmg_file):
             os.remove(dmg_file)
         Popen(['hdiutil', 'create', dmg_file, '-volname', 'Tryton Client '
-                + VERSION, '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()
+                + version, '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()

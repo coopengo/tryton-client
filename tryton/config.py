@@ -5,7 +5,6 @@ import ConfigParser
 import optparse
 import os
 import gettext
-from version import VERSION
 import logging
 import sys
 import locale
@@ -13,6 +12,7 @@ import gtk
 import site
 
 from tryton.exceptions import TrytonError
+from tryton import __version__
 
 _ = gettext.gettext
 
@@ -26,9 +26,9 @@ def get_home_dir():
 def get_config_dir():
     if os.name == 'nt':
         return os.path.join(os.environ['APPDATA'], '.config', 'tryton',
-                VERSION.rsplit('.', 1)[0])
+                __version__.rsplit('.', 1)[0])
     return os.path.join(os.environ['HOME'], '.config', 'tryton',
-            VERSION.rsplit('.', 1)[0])
+            __version__.rsplit('.', 1)[0])
 if not os.path.isdir(get_config_dir()):
     os.makedirs(get_config_dir(), 0700)
 
@@ -37,10 +37,9 @@ class ConfigManager(object):
     "Config manager"
 
     def __init__(self):
-        short_version = '.'.join(VERSION.split('.', 2)[:2])
+        short_version = '.'.join(__version__.split('.', 2)[:2])
         demo_server = 'demo%s.tryton.org' % short_version
         demo_database = 'demo%s' % short_version
-        form_tab = 'left' if os.name != 'nt' else 'top'
         self.defaults = {
             'login.profile': demo_server,
             'login.login': 'demo',
@@ -56,7 +55,6 @@ class ConfigManager(object):
             'client.default_height': 750,
             'client.modepda': False,
             'client.toolbar': 'default',
-            'client.form_tab': form_tab,
             'client.maximize': False,
             'client.save_width_height': True,
             'client.save_tree_state': True,
@@ -81,7 +79,7 @@ class ConfigManager(object):
         self.arguments = []
 
     def parse(self):
-        parser = optparse.OptionParser(version=("Tryton %s" % VERSION),
+        parser = optparse.OptionParser(version=("Tryton %s" % __version__),
                 usage="Usage: %prog [options] [url]")
         parser.add_option("-c", "--config", dest="config",
                 help=_("specify alternate config file"))

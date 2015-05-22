@@ -22,7 +22,7 @@ from tryton.common import domain_inversion, simplify, unique_value
 import tryton.common as common
 from . import View
 from .list_gtk.editabletree import EditableTreeView, TreeView
-from .list_gtk.widget import (Affix, Char, Text, Int, Boolean, URL, Date,
+from .list_gtk.widget import (Affix, Char, Int, Boolean, URL, Date,
     Time, Float, TimeDelta, Binary, M2O, O2O, O2M, M2M, Selection, Reference,
     ProgressBar, Button, Image)
 
@@ -300,9 +300,7 @@ class ViewTree(View):
         self.parse(xml)
 
         self.treeview.set_property('rules-hint', True)
-        self.treeview.set_fixed_height_mode(
-            all(c.get_sizing() == gtk.TREE_VIEW_COLUMN_FIXED
-                for c in self.treeview.get_columns()))
+        self.treeview.set_fixed_height_mode(True)
         self.treeview.connect('button-press-event', self.__button_press)
         self.treeview.connect('key-press-event', self.on_keypress)
         self.treeview.connect_after('row-activated', self.__sig_switch)
@@ -448,7 +446,7 @@ class ViewTree(View):
         'biginteger': Int,
         'time': Time,
         'boolean': Boolean,
-        'text': Text,
+        'text': Char,
         'url': URL,
         'email': URL,
         'callto': URL,
@@ -522,8 +520,7 @@ class ViewTree(View):
         expand = attributes.get('expand', False)
         column.set_expand(expand)
         column.set_resizable(True)
-        if field and field.attrs['type'] != 'text':
-            column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 
     def get_column_widget(self, column):
         'Return the widget of the column'

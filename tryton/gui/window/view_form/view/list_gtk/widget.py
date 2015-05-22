@@ -189,7 +189,6 @@ class GenericText(Cell):
         if not isinstance(self.renderer, CellRendererBinary):
             self.renderer.connect_after('editing-started', send_keys,
                 view.treeview)
-        self.renderer.set_property('yalign', 0)
         self.view = view
 
     @property
@@ -302,10 +301,6 @@ class Char(GenericText):
     def setter(self, column, cell, store, iter_):
         super(Char, self).setter(column, cell, store, iter_)
         cell.set_property('single-paragraph-mode', True)
-
-
-class Text(GenericText):
-    pass
 
 
 class Int(GenericText):
@@ -855,7 +850,6 @@ class ProgressBar(object):
         orientation = self.orientations.get(self.attrs.get('orientation',
             'left_to_right'), gtk.PROGRESS_LEFT_TO_RIGHT)
         self.renderer.set_property('orientation', orientation)
-        self.renderer.set_property('yalign', 0)
 
     @realized
     @CellCache.cache
@@ -891,7 +885,6 @@ class Button(object):
         self.view = view
 
         self.renderer.connect('clicked', self.button_clicked)
-        self.renderer.set_property('yalign', 0)
 
     @realized
     @CellCache.cache

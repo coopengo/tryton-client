@@ -1,5 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import copy
 import gettext
 import webbrowser
 
@@ -150,6 +151,8 @@ class Action(object):
             name = action.get('name', '')
             if action.get('keyword', 'form_action') == 'form_action':
                 name = add_name_suffix(name, context)
+            context = copy.deepcopy(context)
+            context.update(data.get('extra_context', {}))
             Window.create_wizard(action['wiz_name'], data,
                 direct_print=action.get('direct_print', False),
                 name=name,

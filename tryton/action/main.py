@@ -1,5 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import copy
 import tryton.rpc as rpc
 from tryton.common import message, selection, file_open, mailto
 from tryton.gui.window import Window
@@ -139,6 +140,8 @@ class Action(object):
                     icon=(action.get('icon.rec_name') or ''),
                     tab_domain=tab_domain)
         elif action['type'] == 'ir.action.wizard':
+            context = copy.deepcopy(context)
+            context.update(data.get('extra_context', {}))
             Window.create_wizard(action['wiz_name'], data,
                 direct_print=action.get('direct_print', False),
                 email_print=action.get('email_print', False),

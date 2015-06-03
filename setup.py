@@ -144,7 +144,7 @@ dist = setup(name=name,
     author_email='info@coopengo.com',
     url=WEBSITE,
     download_url=("http://downloads.tryton.org/" +
-        VERSION.rsplit('.', 1)[0] + '/'),
+        version.rsplit('.', 1)[0] + '/'),
     keywords='Insurance ERP',
     packages=find_packages(),
     data_files=data_files,

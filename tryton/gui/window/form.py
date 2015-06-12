@@ -253,7 +253,7 @@ class Form(SignalEvent, TabContent):
                 if line.get(key, False) \
                         and key in ('create_date', 'write_date'):
                     date = timezoned_date(line[key])
-                    value = common.datetime_strftime(date, '%X')
+                    value = common.datetime_strftime(date, '%x %X')
                 message_str += val + ' ' + value + '\n'
         message_str += _('Model:') + ' ' + self.model
         message(message_str)

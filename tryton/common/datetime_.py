@@ -115,6 +115,7 @@ class Date(gtk.Entry):
             self.__calendar.select_month(
                 self.__date.month - 1, self.__date.year)
             self.__calendar.select_day(self.__date.day)
+        self.__cal_popup.set_transient_for(self.get_toplevel())
         popup_position(self, self.__cal_popup)
         popup_show(self.__cal_popup)
 
@@ -162,7 +163,7 @@ class Date(gtk.Entry):
         self.emit('date-changed')
         return False
 
-    def activate(self, entry):
+    def activate(self, entry=None):
         self.parse()
         self.update_label()
         self.emit('date-changed')
@@ -301,7 +302,7 @@ class Time(gtk.ComboBoxEntry):
         self.emit('time-changed')
         return False
 
-    def activate(self, entry):
+    def activate(self, entry=None):
         self.parse()
         self.update_label()
         self.emit('time-changed')

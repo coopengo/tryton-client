@@ -1331,6 +1331,11 @@ class Screen:
 
     def client_action(self, action):
         access = MODELACCESS[self.model_name]
+        # Coog : Allow multiple actions (review 10530001)
+        for single_action in action.split(','):
+            self.do_single_action(single_action, access)
+
+    def do_single_action(self, action, access):
         if action == 'new':
             if access['create']:
                 self.new()

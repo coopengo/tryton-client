@@ -105,6 +105,8 @@ class Field(object):
         if not softvalidation:
             if not self.check_required(record):
                 invalid = 'required'
+                logging.getLogger('root').debug('Field %s of %s is required' %
+                    (self.name, record.model_name))
         if isinstance(domain, bool):
             if not domain:
                 logging.getLogger('root').debug('Invalid domain on Field %s of'

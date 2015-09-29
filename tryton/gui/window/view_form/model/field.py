@@ -88,6 +88,9 @@ class Field(object):
         domain = simplify(self.validation_domains(record, pre_validate))
         if not softvalidation:
             res = res and self.check_required(record)
+            if not res:
+                logging.getLogger('root').debug('Field %s of %s is required' %
+                    (self.name, record.model_name))
         if isinstance(domain, bool):
             res = res and domain
             if not domain:

@@ -437,7 +437,7 @@ class Screen(SignalEvent):
 
     def editable_open_get(self):
         if (self.current_view and self.current_view.view_type == 'tree'
-            and self.current_view.attributes.get('editable_open')):
+                and self.current_view.attributes.get('editable_open')):
             return self.current_view.widget_tree.editable_open
         return False
 
@@ -632,7 +632,8 @@ class Screen(SignalEvent):
             if (timestamp != state_timestamp
                     and view.view_type != 'form'):
                 state = None
-        if state is None and CONFIG['client.save_tree_state']:
+        if state is None and CONFIG['client.save_tree_state'] and (
+                view.view_type != 'tree' or not view.always_expand):
             json_domain = self.get_tree_domain(parent)
             try:
                 expanded_nodes, selected_nodes = RPCExecute('model',

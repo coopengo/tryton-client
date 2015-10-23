@@ -303,6 +303,7 @@ class ViewTree(View):
                 self.attributes.get('editable_open'))
         else:
             self.treeview = TreeView()
+        self.always_expand = self.attributes.get('always_expand', False)
 
         self.parse(xml)
 
@@ -1277,7 +1278,34 @@ class ViewTree(View):
 
     def expand_nodes(self, nodes):
         model = self.treeview.get_model()
-        for node in nodes:
-            expand_path = path_convert_id2pos(model, node)
-            if expand_path:
-                self.treeview.expand_to_path(expand_path)
+        if self.view_type == 'tree' and self.always_expand:
+            group = model.group
+
+            def get_all_sub_records(group, record, cur_expand_path,
+                    to_expand):
+                if group is None:
+                    try:
+                        group = record.children_group(model.children_field,
+                            model.children_definitions)
+                    except AttributeError:
+                        return
+                if group is None:
+                    return
+                cur_expand_path.append(0)
+                for i in range(len(group)):
+                    cur_expand_path[-1] = i
+                    to_expand += [list(cur_expand_path)]
+                    get_all_sub_records(None, group[i], cur_expand_path,
+                        to_expand)
+                cur_expand_path.pop(-1)
+
+            cur_expand_path = []
+            to_expand = []
+            get_all_sub_records(group, None, cur_expand_path, to_expand)
+            for path in to_expand:
+                self.treeview.expand_to_path(tuple(path))
+        else:
+            for node in nodes:
+                expand_path = path_convert_id2pos(model, node)
+                if expand_path:
+                    self.treeview.expand_to_path(expand_path)

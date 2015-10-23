@@ -475,6 +475,7 @@ class ViewTree(View):
         self.set_drag_and_drop()
 
         self.mnemonic_widget = self.treeview
+        self.always_expand = bool(xml.getAttribute('always_expand'))
 
         self.treeview.set_property('enable-grid-lines', grid_lines)
         self.treeview.set_fixed_height_mode(
@@ -640,19 +641,11 @@ class ViewTree(View):
     def set_drag_and_drop(self):
         dnd = False
         if self.children_field:
-<<<<<<< HEAD
             children = self.group.fields.get(self.children_field)
             if children:
                 parent_name = children.attrs.get('relation_field')
                 dnd = parent_name in self.widgets
         elif self.attributes.get('sequence'):
-=======
-            children_field = self.widget_tree.cells.get(self.children_field)
-            if children_field and len(self.children_definitions) > 1:
-                parent_name = children_field.attrs.get('relation_field')
-                dnd = parent_name in self.widget_tree.cells
-        elif self.widget_tree.sequence:
->>>>>>> 26474c5c6 (Add multi model view tree management http://codereview.tryton.org/issue664003)
             dnd = True
         # Disable DnD on mac until it is fully supported
         if sys.platform == 'darwin':
@@ -1382,7 +1375,36 @@ class ViewTree(View):
 
     def expand_nodes(self, nodes):
         model = self.treeview.get_model()
-        for node in nodes:
-            expand_path = path_convert_id2pos(model, node)
-            if expand_path:
-                self.treeview.expand_to_path(Gtk.TreePath(expand_path))
+        # JCA : Manage always_expand attribute to force tree expansion
+        if self.view_type == 'tree' and self.always_expand:
+            group = model.group
+
+            def get_all_sub_records(group, record, cur_expand_path,
+                    to_expand):
+                if group is None:
+                    try:
+                        group = record.children_group(model.children_field,
+                            model.children_definitions)
+                    except AttributeError:
+                        return
+                if group is None:
+                    return
+                cur_expand_path.append(0)
+                for i in range(len(group)):
+                    cur_expand_path[-1] = i
+                    to_expand += [list(cur_expand_path)]
+                    get_all_sub_records(None, group[i], cur_expand_path,
+                        to_expand)
+                cur_expand_path.pop(-1)
+
+            cur_expand_path = []
+            to_expand = []
+            get_all_sub_records(group, None, cur_expand_path, to_expand)
+            for path in to_expand:
+                tree_path = Gtk.TreePath.new_from_indices(path)
+                self.treeview.expand_to_path(tree_path)
+        else:
+            for node in nodes:
+                expand_path = path_convert_id2pos(model, node)
+                if expand_path:
+                    self.treeview.expand_to_path(Gtk.TreePath(expand_path))

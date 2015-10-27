@@ -1463,3 +1463,5 @@ msgstr "Pas d'autre langue disponible !"
 msgid "Translate view"
 msgstr "Traduire la vue"
 
+msgid "Add a note to the record"
+msgstr "Ajouter une note à l'enregistrement"

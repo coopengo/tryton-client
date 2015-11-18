@@ -477,6 +477,7 @@ class DictWidget(Widget):
         label.set_alignment(1., .5)
         self.table.attach(label, 0, 1, n_rows - 1, n_rows,
             xoptions=gtk.FILL, yoptions=False, xpadding=4, ypadding=4)
+        label.set_mnemonic_widget(field.widget)
         label.show()
         self.table.attach(alignment, 1, 2, n_rows - 1, n_rows,
             xoptions=gtk.FILL | gtk.EXPAND, yoptions=False, xpadding=4,

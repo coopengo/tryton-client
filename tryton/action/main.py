@@ -85,6 +85,11 @@ class Action(object):
     def _exec_action(action, data=None, context=None):
         if context is None:
             context = {}
+        else:
+            context = context.copy()
+        if 'date_format' not in context:
+            context['date_format'] = rpc.CONTEXT.get(
+                'locale', {}).get('date', '%x')
         if data is None:
             data = {}
         else:
@@ -115,9 +120,6 @@ class Action(object):
             ctx.update(action_ctx)
             ctx.update(context)
             action_ctx.update(context)
-            if 'date_format' not in action_ctx:
-                action_ctx['date_format'] = rpc.CONTEXT.get(
-                    'locale', {}).get('date', '%x')
 
             ctx['context'] = ctx
             decoder = PYSONDecoder(ctx)

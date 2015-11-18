@@ -1,8 +1,11 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
+import gettext
+
 from .widget import Widget
-import locale
+
+_ = gettext.gettext
 
 
 class ProgressBar(Widget):
@@ -16,7 +19,7 @@ class ProgressBar(Widget):
 
     def __init__(self, view, attrs):
         super(ProgressBar, self).__init__(view, attrs)
-        self.widget = gtk.ProgressBar()
+        self.widget = self.mnemonic_widget = gtk.ProgressBar()
         orientation = self.orientations.get(attrs.get('orientation',
             'left_to_right'), gtk.PROGRESS_LEFT_TO_RIGHT)
         self.widget.set_orientation(orientation)
@@ -27,7 +30,9 @@ class ProgressBar(Widget):
             self.widget.set_text('')
             self.widget.set_fraction(0.0)
             return False
-        value = float(field.get(record) or 0.0)
-        digits = field.digits(record)
-        self.widget.set_text(locale.format('%.*f', (digits[1], value), True))
-        self.widget.set_fraction(value / 100.0)
+        text = field.get_client(record, factor=100)
+        if text:
+            text = _('%s%%') % text
+        self.widget.set_text(text)
+        value = field.get(record) or 0.0
+        self.widget.set_fraction(value)

@@ -23,7 +23,11 @@ class One2Many(Widget):
     def __init__(self, view, attrs):
         super(One2Many, self).__init__(view, attrs)
 
-        self.widget = gtk.VBox(homogeneous=False, spacing=2)
+        self.widget = gtk.Frame()
+        self.widget.set_shadow_type(gtk.SHADOW_NONE)
+        self.widget.get_accessible().set_name(attrs.get('string', ''))
+        vbox = gtk.VBox(homogeneous=False, spacing=2)
+        self.widget.add(vbox)
         self._readonly = True
         self._position = 0
         self._length = 0
@@ -173,13 +177,17 @@ class One2Many(Widget):
 
         tooltips.enable()
 
-        self.frame = gtk.Frame()
-        self.frame.add(hbox)
+        frame = gtk.Frame()
+        frame.add(hbox)
+
         if not attrs.get('expand_toolbar'):
-            self.widget.pack_start(self.frame, expand=False, fill=True)
-            self.frame.set_shadow_type(gtk.SHADOW_OUT)
+            self.widget.pack_start(frame, expand=False, fill=True)
+            frame.set_shadow_type(gtk.SHADOW_OUT)
         else:
-            self.frame.set_shadow_type(gtk.SHADOW_NONE)
+            frame.set_shadow_type(gtk.SHADOW_NONE)
+
+        frame.set_shadow_type(gtk.SHADOW_OUT)
+        vbox.pack_start(frame, expand=False, fill=True)
 
         self.screen = Screen(attrs['relation'],
             mode=attrs.get('mode', 'tree,form').split(','),
@@ -195,18 +203,13 @@ class One2Many(Widget):
                 lambda screen, _: gobject.idle_add(self.group_sync, screen,
                     screen.current_record))
 
-        self.widget.pack_start(self.screen.widget, expand=True, fill=True)
+        vbox.pack_start(self.screen.widget, expand=True, fill=True)
 
         self.screen.widget.connect('key_press_event', self.on_keypress)
         if self.attrs.get('add_remove'):
             self.wid_text.connect('key_press_event', self.on_keypress)
 
         but_switch.props.sensitive = self.screen.number_of_views > 1
-
-    def _color_widget(self):
-        if hasattr(self.screen.current_view, 'treeview'):
-            return self.screen.current_view.treeview
-        return super(One2Many, self)._color_widget()
 
     def on_keypress(self, widget, event):
         if (event.keyval == gtk.keysyms.F3) \
@@ -246,20 +249,10 @@ class One2Many(Widget):
 
     def switch_view(self, widget):
         self.screen.switch_view()
-        self.color_set(self.color_name)
 
     @property
     def modified(self):
         return self.screen.current_view.modified
-
-    def color_set(self, name):
-        super(One2Many, self).color_set(name)
-        widget = self._color_widget()
-        # if the style to apply is different from readonly then insensitive
-        # cellrenderers should use the default insensitive color
-        if name != 'readonly':
-            widget.modify_text(gtk.STATE_INSENSITIVE,
-                    self.colors['text_color_insensitive'])
 
     def _readonly_set(self, value):
         self._readonly = value
@@ -583,18 +576,17 @@ class One2Many(Widget):
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:
                 self.screen.current_record = None
-            readonly = False
-            domain = []
-            size_limit = None
-            if record:
-                readonly = field.get_state_attrs(record).get('readonly', False)
-                domain = field.domain_get(record)
-                size_limit = record.expr_eval(self.attrs.get('size'))
-            if self.screen.domain != domain:
-                self.screen.domain = domain
-            if not self.screen.group.readonly and readonly:
-                self.screen.group.readonly = readonly
-            self.screen.size_limit = size_limit
+        readonly = False
+        domain = []
+        size_limit = None
+        if record:
+            readonly = field.get_state_attrs(record).get('readonly', False)
+            domain = field.domain_get(record)
+            size_limit = record.expr_eval(self.attrs.get('size'))
+        if self.screen.domain != domain:
+            self.screen.domain = domain
+        self.screen.group.readonly = readonly
+        self.screen.size_limit = size_limit
         self.screen.display()
         return True
 

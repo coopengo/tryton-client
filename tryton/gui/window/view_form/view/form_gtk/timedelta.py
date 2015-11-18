@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 import gtk
 
+from tryton.config import CONFIG
 from .widget import Widget
 
 
@@ -11,7 +12,7 @@ class TimeDelta(Widget):
         super(TimeDelta, self).__init__(view, attrs)
 
         self.widget = gtk.HBox()
-        self.entry = gtk.Entry()
+        self.entry = self.mnemonic_widget = gtk.Entry()
         self.entry.set_alignment(1.0)
         self.entry.set_property('activates_default', True)
 
@@ -19,9 +20,6 @@ class TimeDelta(Widget):
         self.entry.connect('focus-out-event', lambda x, y: self._focus_out())
         self.entry.connect('key-press-event', self.send_modified)
         self.widget.pack_start(self.entry)
-
-    def _color_widget(self):
-        return self.entry
 
     @property
     def modified(self):
@@ -48,7 +46,7 @@ class TimeDelta(Widget):
     def _readonly_set(self, value):
         super(TimeDelta, self)._readonly_set(value)
         self.entry.set_editable(not value)
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.entry])
+            self.widget.unset_focus_chain()

@@ -435,7 +435,6 @@ def file_selection(title, filename='',
     win = gtk.FileChooserDialog(title, None, action, buttons)
     win.set_transient_for(parent)
     win.set_icon(TRYTON_ICON)
-    win.set_current_folder(CONFIG['client.default_path'])
     if filename:
         if action in (gtk.FILE_CHOOSER_ACTION_SAVE,
                 gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER):
@@ -453,8 +452,8 @@ def file_selection(title, filename='',
         filename = win.get_preview_filename()
         if filename:
             try:
-                pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(filename.decode(
-                        sys.getfilesystemencoding().encode('utf-8')), 128, 128)
+                pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(
+                    filename, 128, 128)
                 img.set_from_pixbuf(pixbuf)
                 have_preview = True
             except (IOError, glib.GError):
@@ -469,34 +468,14 @@ def file_selection(title, filename='',
 
     button = win.run()
     if button != gtk.RESPONSE_OK:
-        parent.present()
-        win.destroy()
-        return False
-    if not multi:
-        filepath = win.get_filename()
-        if filepath:
-            filepath = filepath.decode('utf-8')
-            try:
-                CONFIG['client.default_path'] = \
-                    os.path.dirname(filepath)
-                CONFIG.save()
-            except IOError:
-                pass
-        parent.present()
-        win.destroy()
-        return filepath
+        result = False
+    elif not multi:
+        result = win.get_filename()
     else:
-        filenames = win.get_filenames()
-        if filenames:
-            filenames = [x.decode('utf-8') for x in filenames]
-            try:
-                CONFIG['client.default_path'] = \
-                    os.path.dirname(filenames[0])
-            except IOError:
-                pass
-        parent.present()
-        win.destroy()
-        return filenames
+        result = win.get_filenames()
+    parent.present()
+    win.destroy()
+    return result
 
 
 _slugify_strip_re = re.compile(r'[^\w\s-]')
@@ -1409,11 +1388,6 @@ COLOR_SCHEMES = {
     'grey': '#444444',
     'black': '#000000',
     'darkcyan': '#305755',
-}
-
-COLORS = {
-    'invalid': '#ff6969',
-    'required': '#d2d2ff',
 }
 
 

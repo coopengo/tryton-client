@@ -24,6 +24,10 @@ class View(object):
     def get_fields(self):
         raise NotImplementedError
 
+    @property
+    def selected_records(self):
+        return []
+
     def get_buttons(self):
         raise NotImplementedError
 

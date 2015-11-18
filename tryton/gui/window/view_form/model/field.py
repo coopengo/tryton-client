@@ -83,21 +83,21 @@ class Field(object):
     def validate(self, record, softvalidation=False, pre_validate=None):
         if self.attrs.get('readonly'):
             return True
-        res = True
+        invalid = False
         self.get_state_attrs(record)['domain_readonly'] = False
         domain = simplify(self.validation_domains(record, pre_validate))
         if not softvalidation:
-            res = res and self.check_required(record)
-            if not res:
+            if not self.check_required(record):
+                invalid = 'required'
                 logging.getLogger('root').debug('Field %s of %s is required' %
                     (self.name, record.model_name))
         if isinstance(domain, bool):
-            res = res and domain
             if not domain:
+                invalid = 'domain'
                 logging.getLogger('root').debug('Invalid domain on Field %s of'
                     ' %s : %s' % (self.name, record.model_name, str(domain)))
         elif domain == [('id', '=', None)]:
-            res = False
+            invalid = 'domain'
             logging.getLogger('root').debug('Invalid domain on Field %s of'
                 ' %s : %s' % (self.name, record.model_name, str(domain)))
         else:
@@ -128,12 +128,12 @@ class Field(object):
                     self.set_client(record, value)
                     self.get_state_attrs(record)['domain_readonly'] = (
                         domain_readonly)
-            res = res and eval_domain(domain, EvalEnvironment(record))
-            if not res:
+            if not eval_domain(domain, EvalEnvironment(record)):
+                invalid = domain
                 logging.getLogger('root').debug('Invalid domain on Field %s of'
                     ' %s : %s' % (self.name, record.model_name, str(domain)))
-        self.get_state_attrs(record)['valid'] = res
-        return res
+        self.get_state_attrs(record)['invalid'] = invalid
+        return not invalid
 
     def set(self, record, value):
         record.value[self.name] = value
@@ -299,7 +299,6 @@ class TimeDeltaField(Field):
 
 class FloatField(Field):
     _default = None
-    default_digits = (16, 2)
 
     def check_required(self, record):
         state_attrs = self.get_state_attrs(record)
@@ -317,10 +316,9 @@ class FloatField(Field):
         return record.value.get(self.name, self._default)
 
     def digits(self, record, factor=1):
-        digits = tuple(y if x is None else x for x, y in zip(
-                record.expr_eval(
-                    self.attrs.get('digits', self.default_digits)),
-                self.default_digits))
+        digits = record.expr_eval(self.attrs.get('digits'))
+        if not digits or any(d is None for d in digits):
+            return
         shift = int(round(math.log(abs(factor), 10)))
         return (digits[0] + shift, digits[1] - shift)
 
@@ -341,8 +339,15 @@ class FloatField(Field):
     def get_client(self, record, factor=1):
         value = record.value.get(self.name)
         if value is not None:
-            digit = self.digits(record, factor=factor)[1]
-            return locale.format('%.*f', (digit, value * factor), True)
+            digits = self.digits(record, factor=factor)
+            if digits:
+                p = digits[1]
+            else:
+                d = value * factor
+                if not isinstance(d, Decimal):
+                    d = Decimal(repr(d))
+                p = -int(d.as_tuple().exponent)
+            return locale.format('%.*f', (p, value * factor), True)
         else:
             return ''
 
@@ -365,7 +370,6 @@ class NumericField(FloatField):
 
 
 class IntegerField(FloatField):
-    default_digits = (16, 0)
 
     def convert(self, value):
         try:
@@ -727,7 +731,7 @@ class O2MField(Field):
     def validate(self, record, softvalidation=False, pre_validate=None):
         if self.attrs.get('readonly'):
             return True
-        test = True
+        invalid = False
         ldomain = localize_domain(domain_inversion(
                 record.group.clean4inversion(pre_validate or []), self.name,
                 EvalEnvironment(record)), self.name)
@@ -739,11 +743,14 @@ class O2MField(Field):
         for record2 in record.value.get(self.name, []):
             if not record2.loaded and record2.id >= 0 and not pre_validate:
                 continue
-            test &= record2.validate(softvalidation=softvalidation,
-                pre_validate=ldomain)
-        test &= super(O2MField, self).validate(record, softvalidation,
+            if not record2.validate(softvalidation=softvalidation,
+                    pre_validate=ldomain):
+                invalid = 'children'
+        test = super(O2MField, self).validate(record, softvalidation,
             pre_validate)
-        self.get_state_attrs(record)['valid'] = test
+        if test and invalid:
+            self.get_state_attrs(record)['invalid'] = invalid
+            return False
         return test
 
     def state_set(self, record, states=('readonly', 'required', 'invisible')):
@@ -856,7 +863,8 @@ class ReferenceField(Field):
             model = None
         screen_domain, attr_domain = self.domains_get(record)
         return concat(localize_domain(
-                filter_leaf(screen_domain, self.name, model)), attr_domain)
+                filter_leaf(screen_domain, self.name, model),
+                strip_target=True), attr_domain)
 
 
 class _FileCache(object):

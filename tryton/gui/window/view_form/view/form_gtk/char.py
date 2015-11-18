@@ -8,6 +8,7 @@ from .widget import Widget, TranslateMixin
 from tryton.common import Tooltips
 from tryton.common.entry_position import manage_entry_position
 from tryton.common.selection import PopdownMixin, selection_shortcuts
+from tryton.config import CONFIG
 
 _ = gettext.gettext
 
@@ -29,6 +30,7 @@ class Char(Widget, TranslateMixin, PopdownMixin):
         else:
             self.entry = gtk.Entry()
             focus_entry = self.entry
+        self.mnemonic_widget = focus_entry
 
         focus_entry.set_property('activates_default', True)
         focus_entry.connect('activate', self.sig_activate)
@@ -40,7 +42,6 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             expand, fill = False, False
         self.widget.pack_start(self.entry, expand=expand, fill=fill)
 
-        self.button = None
         if attrs.get('translate'):
             self.entry.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
                 'tryton-locale')
@@ -76,11 +77,6 @@ class Char(Widget, TranslateMixin, PopdownMixin):
         if not combobox.get_child().has_focus():
             # Must be deferred because it triggers a display of the form
             gobject.idle_add(focus_out)
-
-    def _color_widget(self):
-        if self.autocomplete:
-            return self.entry.get_child()
-        return self.entry
 
     @property
     def modified(self):
@@ -142,12 +138,10 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             self.entry.set_button_sensitivity(sensitivity[value])
         else:
             self.entry.set_editable(not value)
-        if self.button:
-            self.button.set_sensitive(not value)
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.entry])
+            self.widget.unset_focus_chain()
 
 
 class Password(Char):
@@ -165,10 +159,10 @@ class Password(Char):
         super(Char, self)._readonly_set(value)
         self.entry.set_editable(not value)
         self.visibility_checkbox.props.visible = not value
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.entry, self.visibility_checkbox])
+            self.widget.unset_focus_chain()
 
     def toggle_visibility(self, button):
         self.entry.props.visibility = not self.entry.props.visibility

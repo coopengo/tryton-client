@@ -4,7 +4,6 @@
 import os
 import tempfile
 import gtk
-import locale
 import gettext
 import webbrowser
 
@@ -13,7 +12,7 @@ from functools import wraps, partial
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-from tryton.common import COLORS, file_selection, file_open, slugify
+from tryton.common import file_selection, file_open, slugify
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
@@ -111,9 +110,7 @@ class CellCache(list):
 
 
 class Cell(object):
-
-    def get_color(self, record):
-        return record.expr_eval(self.view.attributes.get('colors', '"black"'))
+    pass
 
 
 class Affix(Cell):
@@ -156,12 +153,6 @@ class Affix(Cell):
             if not text:
                 text = field.get_client(record) or ''
             cell.set_property('text', text)
-            fg_color = self.get_color(record)
-            cell.set_property('foreground', fg_color)
-            if fg_color == 'black':
-                cell.set_property('foreground-set', False)
-            else:
-                cell.set_property('foreground-set', True)
 
     def clicked(self, renderer, path):
         store = self.view.treeview.get_model()
@@ -213,12 +204,6 @@ class GenericText(Cell):
                     (CellRendererText, CellRendererDate, CellRendererCombo)):
                 cell.set_property('strikethrough', record.deleted)
             cell.set_property('text', text)
-            fg_color = self.get_color(record)
-            cell.set_property('foreground', fg_color)
-            if fg_color == 'black':
-                cell.set_property('foreground-set', False)
-            else:
-                cell.set_property('foreground-set', True)
 
         field = record[self.attrs['name']]
 
@@ -243,21 +228,6 @@ class GenericText(Cell):
                 field.get_state_attrs(record).get('readonly', False))
             if invisible:
                 readonly = True
-
-            if not isinstance(cell, CellRendererToggle):
-                bg_color = 'white'
-                if not field.get_state_attrs(record).get('valid', True):
-                    bg_color = COLORS.get('invalid', 'white')
-                elif bool(int(
-                            field.get_state_attrs(record).get('required', 0))):
-                    bg_color = COLORS.get('required', 'white')
-                cell.set_property('background', bg_color)
-                if bg_color == 'white':
-                    cell.set_property('background-set', False)
-                else:
-                    cell.set_property('background-set', True)
-                    cell.set_property('foreground-set',
-                        not (record.deleted or record.removed))
 
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', not readonly)
@@ -565,6 +535,11 @@ class Image(GenericText):
                 self.attrs['width'], self.attrs['height'])
         cell.set_property('pixbuf', pixbuf)
 
+    def get_textual_value(self, record):
+        if not record:
+            return ''
+        return str(record[self.attrs['name']].get_size(record))
+
 
 class M2O(GenericText):
 
@@ -632,6 +607,9 @@ class M2O(GenericText):
     def search_remote(self, record, relation, text, domain=None,
             context=None, callback=None):
         field = record.group.fields[self.attrs['name']]
+        relation = field.attrs['relation']
+        access = common.MODELACCESS[relation]
+        create_access = self.attrs.get('create', True) and access['create']
 
         def search_callback(found):
             value = None
@@ -641,7 +619,7 @@ class M2O(GenericText):
             if callback:
                 callback()
         win = WinSearch(relation, search_callback, sel_multi=False,
-            context=context, domain=domain)
+            context=context, domain=domain, new=create_access)
         win.screen.search_filter(quote(text.decode('utf-8')))
         return win
 
@@ -690,14 +668,18 @@ class M2O(GenericText):
     def _completion_action_activated(self, completion, index, path):
         record, field = self._get_record_field(path)
         entry = completion.get_entry()
+        entry.handler_block(entry.editing_done_id)
 
         def callback():
+            entry.handler_unblock(entry.editing_done_id)
             entry.set_text(field.get_client(record))
         if index == 0:
             self.open_remote(record, create=False, changed=True,
                 text=entry.get_text(), callback=callback)
         elif index == 1:
             self.open_remote(record, create=True, callback=callback)
+        else:
+            entry.handler_unblock(entry.editing_done_id)
 
 
 class O2O(M2O):
@@ -764,10 +746,10 @@ class M2M(O2M):
 
 class Selection(GenericText, SelectionMixin, PopdownMixin):
 
-    def __init__(self, *args):
-        super(Selection, self).__init__(*args)
-        self.renderer = CellRendererCombo()
-        self.renderer.connect('editing-started', self.editing_started)
+    def __init__(self, *args, **kwargs):
+        if 'renderer' not in kwargs:
+            kwargs['renderer'] = CellRendererCombo
+        super(Selection, self).__init__(*args, **kwargs)
         self.init_selection()
         self.renderer.set_property('model',
             self.get_popdown_model(self.selection)[0])
@@ -860,18 +842,22 @@ class ProgressBar(object):
     def setter(self, column, cell, store, iter):
         record = store.get_value(iter, 0)
         field = record[self.attrs['name']]
-        value = float(self.get_textual_value(record) or 0.0)
-        cell.set_property('value', value)
-        digit = field.digits(record)[1]
-        text = locale.format('%.*f', (digit, value), True)
-        cell.set_property('text', text + '%')
+        field.state_set(record, states=('invisible',))
+        invisible = field.get_state_attrs(record).get('invisible', False)
+        cell.set_property('visible', not invisible)
+        text = self.get_textual_value(record)
+        if text:
+            text = _('%s%%') % text
+        cell.set_property('text', text)
+        value = field.get(record) or 0.0
+        cell.set_property('value', value * 100)
 
     def open_remote(self, record, create, changed=False, text=None,
             callback=None):
         raise NotImplementedError
 
     def get_textual_value(self, record):
-        return record[self.attrs['name']].get_client(record) or ''
+        return record[self.attrs['name']].get_client(record, factor=100) or ''
 
     def value_from_text(self, record, text, callback=None):
         field = record[self.attrs['name']]

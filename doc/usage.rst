@@ -49,6 +49,11 @@ Options
 
 -s SERVER, --server=SERVER           Specify the server hostname
 
+Environment
+***********
+
+`GTKOSXAPPLICATION`                  Activate with native Mac desktop
+
 URL
 ***
 
@@ -475,6 +480,11 @@ Save Width/Height:
 
 Save Tree Expanded State:
   Check box to enable saving of expanded and selected nodes in trees/lists.
+
+.. _Menu-Options-Form-Fast_Tabbing:
+
+Fast Tabbing:
+  Check box to enable fast tabbing navigation by skipping readonly entries.
 
 .. _Menu-Options-Form-Spell_Checking:
 

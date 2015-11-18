@@ -21,7 +21,11 @@ class Many2Many(Widget):
     def __init__(self, view, attrs):
         super(Many2Many, self).__init__(view, attrs)
 
-        self.widget = gtk.VBox(homogeneous=False, spacing=5)
+        self.widget = gtk.Frame()
+        self.widget.set_shadow_type(gtk.SHADOW_NONE)
+        self.widget.get_accessible().set_name(attrs.get('string', ''))
+        vbox = gtk.VBox(homogeneous=False, spacing=5)
+        self.widget.add(vbox)
         self._readonly = True
         self._position = 0
 
@@ -82,13 +86,15 @@ class Many2Many(Widget):
 
         tooltips.enable()
 
-        self.frame = gtk.Frame()
-        self.frame.add(hbox)
+        frame = gtk.Frame()
+        frame.add(hbox)
         if not attrs.get('expand_toolbar'):
-            self.widget.pack_start(self.frame, expand=False, fill=True)
-            self.frame.set_shadow_type(gtk.SHADOW_OUT)
+            self.widget.pack_start(frame, expand=False, fill=True)
+            frame.set_shadow_type(gtk.SHADOW_OUT)
         else:
-            self.frame.set_shadow_type(gtk.SHADOW_NONE)
+            frame.set_shadow_type(gtk.SHADOW_NONE)
+        frame.set_shadow_type(gtk.SHADOW_OUT)
+        vbox.pack_start(frame, expand=False, fill=True)
 
         self.screen = Screen(attrs['relation'],
             view_ids=attrs.get('view_ids', '').split(','),
@@ -96,15 +102,10 @@ class Many2Many(Widget):
             row_activate=self._on_activate)
         self.screen.signal_connect(self, 'record-message', self._sig_label)
 
-        self.widget.pack_start(self.screen.widget, expand=True, fill=True)
+        vbox.pack_start(self.screen.widget, expand=True, fill=True)
 
         self.screen.widget.connect('key_press_event', self.on_keypress)
         self.wid_text.connect('key_press_event', self.on_keypress)
-
-    def _color_widget(self):
-        if hasattr(self.screen.current_view, 'treeview'):
-            return self.screen.current_view.treeview
-        return super(Many2Many, self)._color_widget()
 
     def on_keypress(self, widget, event):
         editable = self.wid_text.get_editable()
@@ -136,15 +137,6 @@ class Many2Many(Widget):
 
     def destroy(self):
         self.screen.destroy()
-
-    def color_set(self, name):
-        super(Many2Many, self).color_set(name)
-        widget = self._color_widget()
-        # if the style to apply is different from readonly then insensitive
-        # cellrenderers should use the default insensitive color
-        if name != 'readonly':
-            widget.modify_text(gtk.STATE_INSENSITIVE,
-                    self.colors['text_color_insensitive'])
 
     def _sig_add(self, *args):
         if not self.focus_out:

@@ -173,16 +173,14 @@ class WinExport(NoModal):
         self.view2.set_headers_visible(False)
 
         cell = gtk.CellRendererText()
-        column = gtk.TreeViewColumn('Field name', cell, text=0,
-                background=2)
+        column = gtk.TreeViewColumn('Field name', cell, text=0)
         self.view1.append_column(column)
 
         cell = gtk.CellRendererText()
         column = gtk.TreeViewColumn('Field name', cell, text=0)
         self.view2.append_column(column)
 
-        self.model1 = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING,
-                gobject.TYPE_STRING)
+        self.model1 = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
         self.model2 = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
 
         self.fields = {}
@@ -250,21 +248,18 @@ class WinExport(NoModal):
 
             for name, field, string_ in items:
                 path = prefix_field + name
-                color = 'white'
-                if field.get('required'):
-                    color = common.COLORS['required']
                 long_string = string_
                 if prefix_field:
                     long_string = prefix_name + string_
                 node = self.model1.insert(parent_node, 0,
-                    [string_, path, color])
+                    [string_, path])
 
                 self.fields[path] = (string_, long_string,
                     field.get('relation'))
                 # Insert relation only to real field
                 if '.' not in name:
                     if field.get('relation'):
-                        self.model1.insert(node, 0, [None, '', 'white'])
+                        self.model1.insert(node, 0, [None, ''])
 
     def _get_fields(self, model):
         try:

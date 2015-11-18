@@ -1,0 +1,2 @@
+- check tryton.po
+- on field.py (make a diff from 3.8, there still a strange patch)

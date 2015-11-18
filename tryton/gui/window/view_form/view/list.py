@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 import gobject
 import gtk
+import pango
 import sys
 try:
     import simplejson as json
@@ -302,7 +303,7 @@ class ViewTree(View):
             self.treeview = EditableTreeView(self.attributes['editable'], self,
                 self.attributes.get('editable_open'))
         else:
-            self.treeview = TreeView()
+            self.treeview = TreeView(self)
         self.always_expand = self.attributes.get('always_expand', False)
 
         self.parse(xml)
@@ -470,11 +471,20 @@ class ViewTree(View):
     def get_widget(cls, name):
         return cls.WIDGETS[name]
 
-    @staticmethod
-    def set_column_widget(column, field, attributes, arrow=True):
+    def set_column_widget(self, column, field, attributes, arrow=True):
         tooltips = Tooltips()
         hbox = gtk.HBox(False, 2)
         label = gtk.Label(attributes['string'])
+        if field and self.editable:
+            required = field.attrs.get('required')
+            readonly = field.attrs.get('readonly')
+            if required or not readonly:
+                attrlist = pango.AttrList()
+                if required:
+                    attrlist.insert(pango.AttrWeight(pango.WEIGHT_BOLD, 0, -1))
+                if not readonly:
+                    attrlist.change(pango.AttrStyle(pango.STYLE_ITALIC, 0, -1))
+                label.set_attributes(attrlist)
         label.show()
         help = attributes['string']
         if field and field.attrs.get('help'):
@@ -483,15 +493,17 @@ class ViewTree(View):
             help += '\n' + attributes['help']
         tooltips.set_tip(label, help)
         tooltips.enable()
-        arrow = gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_IN)
-        column.arrow = arrow
-        column.arrow_show = False
+        if arrow:
+            arrow_widget = gtk.Arrow(gtk.ARROW_NONE, gtk.SHADOW_NONE)
+            arrow_widget.show()
+            column.arrow = arrow_widget
         hbox.pack_start(label, True, True, 0)
         if arrow:
-            hbox.pack_start(arrow, False, False, 0)
+            hbox.pack_start(arrow_widget, False, False, 0)
             column.set_clickable(True)
         hbox.show()
         column.set_widget(hbox)
+        column.set_alignment(0.5)
 
     def set_column_width(self, column, field, attributes):
         default_width = {
@@ -555,22 +567,18 @@ class ViewTree(View):
 
     def sort_model(self, column):
         for col in self.treeview.get_columns():
-            if col != column:
-                col.arrow_show = False
-                col.arrow.hide()
+            if col != column and getattr(col, 'arrow', None):
+                col.arrow.set(gtk.ARROW_NONE, gtk.SHADOW_NONE)
         self.screen.order = None
-        if not column.arrow_show:
-            column.arrow_show = True
+        if column.arrow.props.arrow_type == gtk.ARROW_NONE:
             column.arrow.set(gtk.ARROW_DOWN, gtk.SHADOW_IN)
-            column.arrow.show()
             self.screen.order = [(column.name, 'ASC')]
         else:
-            if column.arrow.get_property('arrow-type') == gtk.ARROW_DOWN:
+            if column.arrow.props.arrow_type == gtk.ARROW_DOWN:
                 column.arrow.set(gtk.ARROW_UP, gtk.SHADOW_IN)
                 self.screen.order = [(column.name, 'DESC')]
             else:
-                column.arrow_show = False
-                column.arrow.hide()
+                column.arrow.set(gtk.ARROW_NONE, gtk.SHADOW_NONE)
         model = self.treeview.get_model()
         unsaved_records = [x for x in model.group if x.id < 0]
         search_string = self.screen.screen_container.get_text() or u''
@@ -591,8 +599,6 @@ class ViewTree(View):
             column = gtk.TreeViewColumn()
             column._type = 'fill'
             column.name = None
-            column.arrow = gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_IN)
-            column.arrow_show = False
             column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
             self.treeview.append_column(column)
 
@@ -614,20 +620,25 @@ class ViewTree(View):
         if not dnd:
             return
 
+        self.treeview.enable_model_drag_dest(
+            [('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)],
+            gtk.gdk.ACTION_MOVE)
+        self.treeview.enable_model_drag_source(
+            gtk.gdk.BUTTON1_MASK | gtk.gdk.BUTTON3_MASK,
+            [('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)],
+            gtk.gdk.ACTION_MOVE)
+        # XXX have to set manually because enable_model_drag_source
+        # does not set the mask
+        # https://bugzilla.gnome.org/show_bug.cgi?id=756177
         self.treeview.drag_source_set(
             gtk.gdk.BUTTON1_MASK | gtk.gdk.BUTTON3_MASK,
             [('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)],
             gtk.gdk.ACTION_MOVE)
-        self.treeview.drag_dest_set(gtk.DEST_DEFAULT_ALL,
-            [('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)],
-            gtk.gdk.ACTION_MOVE)
 
-        self.treeview.connect('drag-begin', self.drag_begin)
-        self.treeview.connect('drag-motion', self.drag_motion)
-        self.treeview.connect('drag-drop', self.drag_drop)
         self.treeview.connect("drag-data-get", self.drag_data_get)
         self.treeview.connect('drag-data-received',
             self.drag_data_received)
+        self.treeview.connect('drag-drop', self.drag_drop)
         self.treeview.connect('drag-data-delete', self.drag_data_delete)
 
     @property
@@ -811,27 +822,6 @@ class ViewTree(View):
         self.screen.current_record = record
         self.screen.display(set_cursor=True)
 
-    def drag_begin(self, treeview, context):
-        return True
-
-    def drag_motion(self, treeview, context, x, y, time):
-        try:
-            treeview.set_drag_dest_row(*treeview.get_dest_row_at_pos(x, y))
-        except TypeError:
-            treeview.set_drag_dest_row(len(treeview.get_model()) - 1,
-                gtk.TREE_VIEW_DROP_AFTER)
-        if context.get_source_widget() == treeview:
-            kind = gtk.gdk.ACTION_MOVE
-        else:
-            kind = gtk.gdk.ACTION_COPY
-        context.drag_status(kind, time)
-        return True
-
-    def drag_drop(self, treeview, context, x, y, time):
-        treeview.emit_stop_by_name('drag-drop')
-        treeview.drag_get_data(context, context.targets[-1], time)
-        return True
-
     def drag_data_get(self, treeview, context, selection, target_id,
             etime):
         treeview.emit_stop_by_name('drag-data-get')
@@ -905,6 +895,11 @@ class ViewTree(View):
         context.drop_finish(False, etime)
         if self.attributes.get('sequence'):
             record.group.set_sequence(field=self.attributes['sequence'])
+        return True
+
+    def drag_drop(self, treeview, context, x, y, time):
+        treeview.emit_stop_by_name('drag-drop')
+        treeview.drag_get_data(context, context.targets[-1], time)
         return True
 
     def drag_data_delete(self, treeview, context):
@@ -1134,7 +1129,7 @@ class ViewTree(View):
                 if not isinstance(inv_domain, bool):
                     inv_domain = simplify(inv_domain)
                 unique, _, _ = unique_value(inv_domain)
-                column.set_visible(not unique)
+                column.set_visible(not unique or bool(self.children_field))
 
     def set_state(self):
         record = self.screen.current_record
@@ -1169,7 +1164,11 @@ class ViewTree(View):
                         else:
                             selected_sum += value
                     if hasattr(field, 'digits'):
-                        digit = max(field.digits(record)[1], digit)
+                        fdigits = field.digits(record)
+                        if fdigits and digit is not None:
+                            digit = max(fdigits[1], digit)
+                        else:
+                            digit = None
 
             if loaded:
                 if field.attrs['type'] == 'timedelta':
@@ -1178,10 +1177,14 @@ class ViewTree(View):
                     selected_sum = common.timedelta.format(
                         selected_sum, converter)
                     sum_ = common.timedelta.format(sum_, converter)
-                else:
+                elif digit:
                     selected_sum = locale.format(
                         '%.*f', (digit, selected_sum or 0), True)
                     sum_ = locale.format('%.*f', (digit, sum_ or 0), True)
+                else:
+                    selected_sum = locale.format(
+                        '%s', selected_sum or 0, True)
+                    sum_ = locale.format('%s', sum_ or 0, True)
 
                 text = '%s / %s' % (selected_sum, sum_)
             else:

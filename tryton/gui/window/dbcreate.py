@@ -18,16 +18,13 @@ class DBCreate(object):
         Method to set the server connection information depending on the
         connection state. If state is True, the connection string will shown.
         Otherwise the wrong connection string will be shown plus an additional
-        errormessage, colored in red. In this case, all entryboxes set
-        insensitive
+        errormessage. In this case, all entryboxes set insensitive
         """
         if state:
             self.entry_serverpasswd.set_sensitive(True)
             self.entry_dbname.set_sensitive(True)
             self.entry_adminpasswd.set_sensitive(True)
             self.entry_adminpasswd2.set_sensitive(True)
-            self.entry_server_connection.modify_text(gtk.STATE_INSENSITIVE,
-                gtk.gdk.color_parse(common.COLOR_SCHEMES["black"]))
             self.tooltips.set_tip(self.entry_server_connection,
                 _("This is the URL of the Tryton server. Use server "
                     "'localhost' and port '8000' if the server is installed "
@@ -43,8 +40,6 @@ class DBCreate(object):
             self.entry_server_connection.set_text(
                 self.entry_server_connection.get_text()
                 + "  " + _("No connection!"))
-            self.entry_server_connection.modify_text(gtk.STATE_INSENSITIVE,
-                gtk.gdk.color_parse(common.COLORS["invalid"]))
             self.tooltips.set_tip(self.entry_server_connection, _(
                     "Can not connect to the server!\n"
                     "1. Try to check if the server is running.\n"
@@ -178,6 +173,7 @@ class DBCreate(object):
         self.entry_server_connection.set_sensitive(False)
         self.entry_server_connection.unset_flags(gtk.CAN_FOCUS)
         self.entry_server_connection.set_editable(False)
+        self.label_server.set_mnemonic_widget(self.entry_server_connection)
         self.tooltips.set_tip(self.entry_server_connection,
             _("This is the URL of the server. Use server 'localhost' and port "
                 "'8000' if the server is installed on this computer. Click on "
@@ -203,6 +199,7 @@ class DBCreate(object):
         self.entry_serverpasswd = gtk.Entry()
         self.entry_serverpasswd.set_visibility(False)
         self.entry_serverpasswd.set_activates_default(True)
+        self.label_serverpasswd.set_mnemonic_widget(self.entry_serverpasswd)
         table.attach(self.entry_serverpasswd, 1, 3, 2, 3, yoptions=gtk.FILL)
         self.tooltips.set_tip(self.entry_serverpasswd, _("This is the "
                 "password of the Tryton server. It doesn't belong to a "
@@ -231,6 +228,7 @@ class DBCreate(object):
         self.entry_dbname.set_max_length(63)
         self.entry_dbname.set_width_chars(16)
         self.entry_dbname.set_activates_default(True)
+        label_dbname.set_mnemonic_widget(self.entry_dbname)
         table.attach(self.entry_dbname, 1, 3, 5, 6, yoptions=gtk.FILL)
         self.tooltips.set_tip(self.entry_dbname,
             _("Choose the name of the new database.\n"
@@ -263,6 +261,7 @@ class DBCreate(object):
         self.entry_adminpasswd = gtk.Entry()
         self.entry_adminpasswd.set_visibility(False)
         self.entry_adminpasswd.set_activates_default(True)
+        label_adminpasswd.set_mnemonic_widget(self.entry_adminpasswd)
         self.tooltips.set_tip(self.entry_adminpasswd,
             _("Choose a password for the admin user of the new database. "
                 "With these credentials you will be later able to login into "
@@ -281,6 +280,7 @@ class DBCreate(object):
         self.entry_adminpasswd2 = gtk.Entry()
         self.entry_adminpasswd2.set_visibility(False)
         self.entry_adminpasswd2.set_activates_default(True)
+        label_adminpasswd2.set_mnemonic_widget(self.entry_adminpasswd2)
         self.tooltips.set_tip(self.entry_adminpasswd2, _("Type the Admin "
                 "password again"))
         table.attach(self.entry_adminpasswd2, 1, 3, 8, 9, yoptions=gtk.FILL)

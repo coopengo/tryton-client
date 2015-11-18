@@ -25,7 +25,7 @@ from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
-    node_attributes, sur, RPCContextReload
+    node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
 import tryton.rpc as rpc
 
@@ -86,10 +86,10 @@ class Screen(SignalEvent):
         self.widget = self.screen_container.widget_get()
         self.__current_view = 0
         self.search_value = search_value
-        self.fields_view_tree = None
+        self.fields_view_tree = {}
         self.order = order
         self.view_to_load = []
-        self.domain_parser = None
+        self._domain_parser = {}
         self.pre_validate = False
         self.view_to_load = mode[:]
         if view_ids or mode:
@@ -100,56 +100,70 @@ class Screen(SignalEvent):
 
     def search_active(self, active=True):
         if active and not self.parent:
-            if not self.fields_view_tree:
-                try:
-                    self.fields_view_tree = RPCExecute('model',
-                        self.model_name, 'fields_view_get', False, 'tree',
-                        context=self.context)
-                except RPCException:
-                    return
-
-            if not self.domain_parser:
-                fields = copy.deepcopy(self.fields_view_tree['fields'])
-                for name, props in fields.iteritems():
-                    if props['type'] not in ('selection', 'reference'):
-                        continue
-                    if isinstance(props['selection'], (tuple, list)):
-                        continue
-                    props['selection'] = self.get_selection(props)
-
-                # Filter only fields in XML view
-                xml_dom = xml.dom.minidom.parseString(
-                    self.fields_view_tree['arch'])
-                root_node, = xml_dom.childNodes
-                xml_fields = [node_attributes(node).get('name')
-                    for node in root_node.childNodes
-                    if node.nodeName == 'field']
-                fields = collections.OrderedDict(
-                    (name, fields[name]) for name in xml_fields)
-                for name, string, type_ in (
-                        ('id', _('ID'), 'integer'),
-                        ('create_uid', _('Creation User'), 'many2one'),
-                        ('create_date', _('Creation Date'), 'datetime'),
-                        ('write_uid', _('Modification User'), 'many2one'),
-                        ('write_date', _('Modification Date'), 'datetime'),
-                        ):
-                    if name not in fields:
-                        fields[name] = {
-                            'string': string.decode('utf-8'),
-                            'name': name,
-                            'type': type_,
-                            }
-                        if type_ == 'datetime':
-                            fields[name]['format'] = '"%H:%M:%S"'
-
-                context = rpc.CONTEXT.copy()
-                context.update(self.context)
-                self.domain_parser = DomainParser(fields, context)
-
             self.screen_container.set_screen(self)
             self.screen_container.show_filter()
         else:
             self.screen_container.hide_filter()
+
+    @property
+    def domain_parser(self):
+        view_id = self.current_view.view_id if self.current_view else None
+
+        if view_id in self._domain_parser:
+            return self._domain_parser[view_id]
+
+        if view_id not in self.fields_view_tree:
+            try:
+                self.fields_view_tree[view_id] = view_tree = RPCExecute(
+                    'model', self.model_name, 'fields_view_get', False, 'tree',
+                    context=self.context)
+            except RPCException:
+                view_tree = {
+                    'fields': {},
+                    }
+        else:
+            view_tree = self.fields_view_tree[view_id]
+
+        fields = copy.deepcopy(view_tree['fields'])
+        for name, props in fields.iteritems():
+            if props['type'] not in ('selection', 'reference'):
+                continue
+            if isinstance(props['selection'], (tuple, list)):
+                continue
+            props['selection'] = self.get_selection(props)
+
+        if 'arch' in view_tree:
+            # Filter only fields in XML view
+            xml_dom = xml.dom.minidom.parseString(view_tree['arch'])
+            root_node, = xml_dom.childNodes
+            xml_fields = [node_attributes(node).get('name')
+                for node in root_node.childNodes
+                if node.nodeName == 'field']
+            fields = collections.OrderedDict(
+                (name, fields[name]) for name in xml_fields)
+
+        # Add common fields
+        for name, string, type_ in (
+                ('id', _('ID'), 'integer'),
+                ('create_uid', _('Creation User'), 'many2one'),
+                ('create_date', _('Creation Date'), 'datetime'),
+                ('write_uid', _('Modification User'), 'many2one'),
+                ('write_date', _('Modification Date'), 'datetime'),
+                ):
+            if name not in fields:
+                fields[name] = {
+                    'string': string.decode('utf-8'),
+                    'name': name,
+                    'type': type_,
+                    }
+                if type_ == 'datetime':
+                    fields[name]['format'] = '"%H:%M:%S"'
+
+        context = rpc.CONTEXT.copy()
+        context.update(self.context)
+        domain_parser = DomainParser(fields, context)
+        self._domain_parser[view_id] = domain_parser
+        return domain_parser
 
     def get_selection(self, props):
         try:
@@ -353,8 +367,8 @@ class Screen(SignalEvent):
                 self.current_view.attributes.get('keyword_open')):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
-                'id': self.id_get(),
-                'ids': [self.id_get()],
+                'id': self.current_record.id if self.current_record else None,
+                'ids': [r.id for r in self.selected_records],
                 }, context=self.context.copy(), warning=False)
         else:
             self.switch_view(view_type='form')
@@ -426,7 +440,7 @@ class Screen(SignalEvent):
         xml_dom = xml.dom.minidom.parseString(arch)
         root, = xml_dom.childNodes
         if root.tagName == 'tree':
-            self.fields_view_tree = view
+            self.fields_view_tree[view_id] = view
 
         # Ensure that loading is always lazy for fields on form view
         # and always eager for fields on tree or graph view
@@ -500,24 +514,26 @@ class Screen(SignalEvent):
             else:
                 return True
         self.current_view.set_value()
-        obj_id = False
+        saved = False
+        record_id = None
         fields = self.current_view.get_fields()
         path = self.current_record.get_path(self.group)
         if self.current_view.view_type == 'tree':
-            self.group.save()
-            obj_id = self.current_record.id
+            saved = all(self.group.save())
+            record_id = self.current_record.id
         elif self.current_record.validate(fields):
-            obj_id = self.current_record.save(force_reload=True)
+            record_id = self.current_record.save(force_reload=True)
+            saved = bool(record_id)
         else:
             self.set_cursor()
             self.current_view.display()
             return False
-        if path and obj_id:
-            path = path[:-1] + ((path[-1][0], obj_id),)
+        if path and record_id:
+            path = path[:-1] + ((path[-1][0], record_id),)
         self.current_record = self.group.get_by_path(path)
         self.display()
         self.signal('record-saved')
-        return obj_id
+        return saved
 
     def __get_current_view(self):
         if not len(self.views):
@@ -625,8 +641,9 @@ class Screen(SignalEvent):
             new_ids = RPCExecute('model', self.model_name, 'copy', ids, {},
                 context=self.context)
         except RPCException:
-            return
+            return False
         self.load(new_ids)
+        return True
 
     def set_tree_state(self):
         view = self.current_view
@@ -889,17 +906,33 @@ class Screen(SignalEvent):
         self.set_cursor(reset_view=False)
         view.display()
 
+    def invalid_message(self, record=None):
+        if record is None:
+            record = self.current_record
+        domain_string = _('"%s" is not valid according to its domain')
+        domain_parser = DomainParser(
+            {n: f.attrs for n, f in record.group.fields.iteritems()})
+        fields = []
+        for field, invalid in sorted(record.invalid_fields.items()):
+            string = record.group.fields[field].attrs['string']
+            if invalid == 'required' or invalid == [[field, '!=', None]]:
+                fields.append(_('"%s" is required') % string)
+            elif invalid == 'domain':
+                fields.append(domain_string % string)
+            elif invalid == 'children':
+                fields.append(_('The values of "%s" are not valid') % string)
+            else:
+                if domain_parser.stringable(invalid):
+                    fields.append(domain_parser.string(invalid))
+                else:
+                    fields.append(domain_string % string)
+        if len(fields) > 5:
+            fields = fields[:5] + ['...']
+        return '\n'.join(fields)
+
     @property
     def selected_records(self):
         return self.current_view.selected_records
-
-    def id_get(self):
-        if not self.current_record:
-            return False
-        return self.current_record.id
-
-    def ids_get(self):
-        return [x.id for x in self.group if x.id]
 
     def clear(self):
         self.current_record = None
@@ -938,6 +971,7 @@ class Screen(SignalEvent):
             domain = record.expr_eval(
                 button.get('states', {})).get('pre_validate', [])
             if not record.validate(fields, pre_validate=domain):
+                warning(self.invalid_message(record), _('Pre-validation'))
                 self.display(set_cursor=True)
                 if domain:
                     # Reset valid state with normal domain

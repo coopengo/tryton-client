@@ -128,6 +128,7 @@ class ViewForm(View):
         if not container:
             node_attrs = node_attributes(node)
             container = Container(int(node_attrs.get('col', 4)))
+        mnemonics = {}
         for node in node.childNodes:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
@@ -141,7 +142,16 @@ class ViewForm(View):
                     node_attrs[i_field] = int(node_attrs[i_field])
 
             parser = getattr(self, '_parse_%s' % node.tagName)
-            parser(node, container, node_attrs)
+            widget = parser(node, container, node_attrs)
+            if not widget:
+                continue
+            name = node_attrs.get('name')
+            if node.tagName == 'label' and name:
+                mnemonics[name] = widget
+            if node.tagName == 'field':
+                if name in mnemonics and widget.mnemonic_widget:
+                    mnemonics.pop(name).set_mnemonic_widget(
+                        widget.mnemonic_widget)
         return container
 
     def _parse_image(self, node, container, attributes):
@@ -191,6 +201,7 @@ class ViewForm(View):
         attributes.setdefault('xexpand', 0)
         self.state_widgets.append(label)
         container.add(label, attributes)
+        return label
 
     def _parse_newline(self, node, container, attributes):
         container.add_row()
@@ -234,9 +245,7 @@ class ViewForm(View):
             for attr in ('states', 'string'):
                 if attr not in attributes and attr in field.attrs:
                     attributes[attr] = field.attrs[attr]
-        if '_' not in attributes['string']:
-            attributes['string'] = '_' + attributes['string']
-        label = gtk.Label(attributes['string'])
+        label = gtk.Label('_' + attributes['string'].replace('_', '__'))
         label.set_use_underline(True)
         tab_box.pack_start(label)
 
@@ -298,6 +307,7 @@ class ViewForm(View):
                 int(attributes.get('width', -1)),
                 int(attributes.get('height', -1)))
         container.add(Alignment(widget.widget, attributes), attributes)
+        return widget
 
     def _parse_group(self, node, container, attributes):
         group = self.parse(node)
@@ -428,9 +438,9 @@ class ViewForm(View):
         if record:
             for name, widgets in self.widgets.iteritems():
                 field = record.group.fields.get(name)
-                if field and 'valid' in field.get_state_attrs(record):
+                if field and 'invalid' in field.get_state_attrs(record):
                     for widget in widgets:
-                        field.get_state_attrs(record)['valid'] = True
+                        field.get_state_attrs(record)['invalid'] = False
                         widget.display(record, field)
 
     def display(self):
@@ -478,15 +488,12 @@ class ViewForm(View):
         record = self.screen.current_record
         if record:
             invalid_widgets = []
-            for name, widgets in self.widgets.iteritems():
+            for name in record.invalid_fields:
+                widgets = self.widgets.get(name, [])
                 for widget in widgets:
-                    field = record.group.fields.get(name)
-                    if not field:
-                        continue
-                    if not field.get_state_attrs(record).get('valid', True):
-                        invalid_widget = find_focusable_child(widget.widget)
-                        if invalid_widget:
-                            invalid_widgets.append(invalid_widget)
+                    invalid_widget = find_focusable_child(widget.widget)
+                    if invalid_widget:
+                        invalid_widgets.append(invalid_widget)
             if invalid_widgets:
                 focus_widget = find_first_focus_widget(
                     self._viewport, invalid_widgets)

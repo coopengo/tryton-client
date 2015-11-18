@@ -194,12 +194,6 @@ class Form(SignalEvent, TabContent):
     def destroy(self):
         self.screen.destroy()
 
-    def ids_get(self):
-        return self.screen.ids_get()
-
-    def id_get(self):
-        return self.screen.id_get()
-
     def sig_attach(self, widget=None):
         record = self.screen.current_record
         if not record or record.id < 0:
@@ -222,9 +216,9 @@ class Form(SignalEvent, TabContent):
             self.buttons['attach'].set_stock_id('tryton-attachment-hi')
         else:
             self.buttons['attach'].set_stock_id('tryton-attachment')
-        record_id = self.id_get()
+        record = self.screen.current_record
         self.buttons['attach'].props.sensitive = bool(
-            record_id >= 0 and record_id is not False)
+            record.id >= 0 if record else False)
 
     def sig_note(self, widget=None):
         record = self.screen.current_record
@@ -258,8 +252,8 @@ class Form(SignalEvent, TabContent):
         self.screen.switch_view()
 
     def sig_logs(self, widget=None):
-        obj_id = self.id_get()
-        if obj_id < 0 or obj_id is False:
+        current_record = self.screen.current_record
+        if not current_record or current_record.id < 0:
             self.message_info(
                 _('You have to select one record.'), gtk.MESSAGE_INFO)
             return False
@@ -273,7 +267,7 @@ class Form(SignalEvent, TabContent):
         ]
 
         try:
-            res = RPCExecute('model', self.model, 'read', [obj_id],
+            res = RPCExecute('model', self.model, 'read', [current_record.id],
                 [x[0] for x in fields], context=self.screen.context)
         except RPCException:
             return
@@ -353,7 +347,8 @@ class Form(SignalEvent, TabContent):
         WinImport(self.model, self.screen.context)
 
     def sig_save_as(self, widget=None):
-        export = WinExport(self.model, self.ids_get(),
+        export = WinExport(self.model,
+            [r.id for r in self.screen.selected_records],
             context=self.screen.context)
         for name in self.screen.current_view.get_fields():
             export.sel_field(name)
@@ -373,9 +368,9 @@ class Form(SignalEvent, TabContent):
             return
         if not self.modified_save():
             return
-        self.screen.copy()
-        self.message_info(_('Working now on the duplicated record(s).'),
-            gtk.MESSAGE_INFO)
+        if self.screen.copy():
+            self.message_info(_('Working now on the duplicated record(s).'),
+                gtk.MESSAGE_INFO)
 
     def sig_save(self, widget=None):
         if widget:
@@ -387,7 +382,7 @@ class Form(SignalEvent, TabContent):
             self.message_info(_('Record saved.'), gtk.MESSAGE_INFO)
             return True
         else:
-            self.message_info(_('Invalid form.'), gtk.MESSAGE_ERROR)
+            self.message_info(self.screen.invalid_message(), gtk.MESSAGE_ERROR)
             return False
 
     def sig_previous(self, widget=None):
@@ -647,7 +642,8 @@ class Form(SignalEvent, TabContent):
                             'model': self.model,
                             'ids': [r.id
                                 for r in self.screen.selected_records],
-                            'id': self.id_get(),
+                            'id': (self.screen.current_record.id
+                                if self.screen.current_record else None),
                             }), func)
                 menuitem._update_action = True
                 menu.add(menuitem)

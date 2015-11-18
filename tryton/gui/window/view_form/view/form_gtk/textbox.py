@@ -23,7 +23,7 @@ class TextBox(Widget, TranslateMixin):
         self.scrolledwindow.set_shadow_type(gtk.SHADOW_ETCHED_IN)
         self.scrolledwindow.set_size_request(-1, 80)
 
-        self.textview = self._get_textview()
+        self.textview = self.mnemonic_widget = self._get_textview()
         self.textview.connect('focus-out-event',
             lambda x, y: self._focus_out())
         self.textview.connect('key-press-event', self.send_modified)
@@ -87,10 +87,10 @@ class TextBox(Widget, TranslateMixin):
         self.textview.set_editable(not value)
         if self.button:
             self.button.set_sensitive(not value)
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.textview])
+            self.widget.unset_focus_chain()
         if gtkspell:
             spell = None
             try:
@@ -117,9 +117,6 @@ class TextBox(Widget, TranslateMixin):
             elif spell:
                 spell.detach()
                 del spell
-
-    def _color_widget(self):
-        return self.textview
 
     @property
     def modified(self):

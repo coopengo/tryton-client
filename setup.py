@@ -33,43 +33,14 @@ try:
 except ImportError:
         pass
 
-languages = (
-    'bg_BG',
-    'ca_ES',
-    'cs_CZ',
-    'de_DE',
-    'es_AR',
-    'es_CO',
-    'es_EC',
-    'es_ES',
-    'es_MX',
-    'fr_FR',
-    'it_IT',
-    'ja_JP',
-    'lt_LT',
-    'nl_NL',
-    'pt_BR',
-    'ru_RU',
-    'sl_SI',
-    )
-
-
-def all_languages():
-    for lang in languages:
-        yield lang
-        yield lang.split('_')[0]
-
-data_files = [
-    ('share/pixmaps/tryton', glob.glob('share/pixmaps/tryton/*.png') +
-        glob.glob('share/pixmaps/tryton/*.svg')),
-    ('share/locale', ['share/locale/tryton.pot']),
-    ]
-for lang in languages:
-    data_files += [
-        ('share/locale/%s/LC_MESSAGES' % lang,
-            glob.glob('share/locale/%s/LC_MESSAGES/*.mo' % lang) +
-            glob.glob('share/locale/%s/LC_MESSAGES/*.po' % lang)),
+package_data = {
+    'tryton': ['data/pixmaps/tryton/*.png',
+        'data/pixmaps/tryton/*.svg',
+        'data/locale/*/LC_MESSAGES/*.mo',
+        'data/locale/*/LC_MESSAGES/*.po',
         ]
+    }
+data_files = []
 
 if os.name == 'nt':
     import py2exe
@@ -77,7 +48,8 @@ if os.name == 'nt':
     args['windows'] = [{
         'script': os.path.join('bin', 'tryton'),
         'icon_resources': [
-                (1, os.path.join('share', 'pixmaps', 'tryton', 'tryton.ico'))],
+                (1, os.path.join('tryton', 'data', 'pixmaps',
+                        'tryton', 'tryton.ico'))],
     }]
     args['options'] = {
         'py2exe': {
@@ -113,17 +85,18 @@ elif sys.platform == 'darwin':
             'argv_emulation': True,
             'includes': ('pygtk, gtk, glib, cairo, pango, pangocairo, atk, '
                 'gobject, gio, gtk.keysyms'),
-            'resources': 'tryton/plugins',
+            'resources': 'tryton/plugins, tryton/data',
             'frameworks':
             'librsvg-2.2.dylib, libjpeg.9.dylib, libtiff.5.dylib',
             'plist': {
                 'CFBundleIdentifier': 'org.tryton',
                 'CFBundleName': 'Tryton',
             },
-            'iconfile': os.path.join('share', 'pixmaps', 'tryton',
-                'tryton.icns'),
+            'iconfile': os.path.join('tryton', 'data', 'pixmaps',
+                'tryton', 'tryton.icns'),
         },
     }
+    del package_data['tryton']
 
 
 def get_version():
@@ -150,6 +123,7 @@ dist = setup(name=name,
         version.rsplit('.', 1)[0] + '/'),
     keywords='Insurance ERP',
     packages=find_packages(),
+    package_data=package_data,
     data_files=data_files,
     scripts=['bin/tryton'],
     classifiers=[
@@ -165,6 +139,7 @@ dist = setup(name=name,
         'Natural Language :: English',
         'Natural Language :: French',
         'Natural Language :: German',
+        'Natural Language :: Hungarian',
         'Natural Language :: Italian',
         'Natural Language :: Portuguese (Brazilian)',
         'Natural Language :: Russian',
@@ -181,6 +156,7 @@ dist = setup(name=name,
         # "pygtk >= 2.6",
         "python-dateutil",
         "pyflakes",
+        "chardet",
         ],
     extras_require={
         'simplejson': ['simplejson'],
@@ -218,10 +194,11 @@ if os.name == 'nt':
 
         dist_dir = dist.command_obj['py2exe'].dist_dir
 
-        if os.path.isdir(os.path.join(dist_dir, 'plugins')):
-            shutil.rmtree(os.path.join(dist_dir, 'plugins'))
-        shutil.copytree(os.path.join(os.path.dirname(__file__), 'tryton',
-                'plugins'), os.path.join(dist_dir, 'plugins'))
+        for dirname in ['plugins', 'data']:
+            if os.path.isdir(os.path.join(dist_dir, dirname)):
+                shutil.rmtree(os.path.join(dist_dir, dirname))
+            shutil.copytree(os.path.join(os.path.dirname(__file__), 'tryton',
+                    dirname), os.path.join(dist_dir, dirname))
 
         if os.path.isdir(os.path.join(dist_dir, 'etc')):
             shutil.rmtree(os.path.join(dist_dir, 'etc'))
@@ -249,17 +226,10 @@ if os.name == 'nt':
             if os.path.isfile(file):
                 shutil.copy(file, dist_dir)
 
-        for lang in all_languages():
-            if os.path.isdir(os.path.join(dist_dir, 'share', 'locale', lang)):
-                shutil.rmtree(os.path.join(dist_dir, 'share', 'locale', lang))
-            if os.path.isdir(os.path.join(gtk_dir, 'share', 'locale', lang)):
-                shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
-                    os.path.join(dist_dir, 'share', 'locale', lang))
-            if os.path.isdir(os.path.join(os.path.dirname(__file__),
-                        'share', 'locale', lang)):
-                shutil.copytree(os.path.join(os.path.dirname(__file__),
-                        'share', 'locale', lang),
-                    os.path.join(dist_dir, 'share', 'locale', lang))
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'locale')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'locale'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
+            os.path.join(dist_dir, 'share', 'locale'))
 
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'MS-Windows')):
@@ -395,19 +365,10 @@ elif sys.platform == 'darwin':
                     dirname, 'gtkrc')
                 gtkrc.write(open(rcfile).read())
 
-        for lang in all_languages():
-            if os.path.isdir(os.path.join(resources_dir, 'share', 'locale',
-                        lang)):
-                shutil.rmtree(os.path.join(resources_dir, 'share', 'locale',
-                        lang))
-            if os.path.isdir(os.path.join(gtk_dir, 'share', 'locale', lang)):
-                shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
-                    os.path.join(resources_dir, 'share', 'locale', lang))
-            if os.path.isdir(os.path.join(os.path.dirname(__file__),
-                        'share', 'locale', lang)):
-                shutil.copytree(os.path.join(os.path.dirname(__file__),
-                        'share', 'locale', lang),
-                    os.path.join(resources_dir, 'share', 'locale', lang))
+        if os.path.isdir(os.path.join(resources_dir, 'share', 'locale')):
+            shutil.rmtree(os.path.join(resources_dir, 'share', 'locale'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
+            os.path.join(resources_dir, 'share', 'locale'))
 
         # fix pathes within shared libraries
         for library in chain(

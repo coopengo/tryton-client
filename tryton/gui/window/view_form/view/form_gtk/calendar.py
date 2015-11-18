@@ -6,6 +6,7 @@ import gettext
 from .widget import Widget
 from tryton.common.datetime_ import (Date as DateEntry, Time as TimeEntry,
     DateTime as DateTimeEntry, add_operators)
+from tryton.config import CONFIG
 
 _ = gettext.gettext
 
@@ -16,7 +17,7 @@ class Date(Widget):
         super(Date, self).__init__(view, attrs)
 
         self.widget = gtk.HBox()
-        self.entry = add_operators(_entry())
+        self.entry = self.mnemonic_widget = add_operators(_entry())
         self.real_entry.set_property('activates_default', True)
         self.real_entry.connect('key_press_event', self.sig_key_press)
         self.real_entry.connect('activate', self.sig_activate)
@@ -29,19 +30,16 @@ class Date(Widget):
     def real_entry(self):
         return self.entry
 
-    def _color_widget(self):
-        return self.entry
-
     def _set_editable(self, value):
         self.entry.set_editable(value)
         self.entry.set_icon_sensitive(gtk.ENTRY_ICON_SECONDARY, value)
 
     def _readonly_set(self, value):
         self._set_editable(not value)
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.entry])
+            self.widget.unset_focus_chain()
 
     @property
     def modified(self):
@@ -62,7 +60,7 @@ class Date(Widget):
         if field and record:
             format_ = field.date_format(record)
         else:
-            format_ = '%x'
+            format_ = self.view.screen.context.get('date_format', '%x')
         self.entry.props.format = format_
 
     def display(self, record, field):
@@ -79,9 +77,6 @@ class Time(Date):
     def __init__(self, view, attrs):
         super(Time, self).__init__(view, attrs, _entry=TimeEntry)
         self.entry.set_focus_chain([self.entry.get_child()])
-
-    def _color_widget(self):
-        return self.entry.child
 
     def _set_editable(self, value):
         self.entry.set_sensitive(value)
@@ -106,7 +101,7 @@ class DateTime(Date):
         Widget.__init__(self, view, attrs)
 
         self.widget = gtk.HBox()
-        self.entry = DateTimeEntry()
+        self.entry = self.mnemonic_widget = DateTimeEntry()
         for child in self.entry.get_children():
             add_operators(child)
             if isinstance(child, gtk.ComboBoxEntry):
@@ -132,7 +127,7 @@ class DateTime(Date):
             date_format = field.date_format(record)
             time_format = field.time_format(record)
         else:
-            date_format = '%x'
+            date_format = self.view.screen.context.get('date_format', '%x')
             time_format = '%X'
         self.entry.props.date_format = date_format
         self.entry.props.time_format = time_format

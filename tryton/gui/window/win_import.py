@@ -5,7 +5,7 @@ import gobject
 import gettext
 import tryton.common as common
 import csv
-from tryton.config import TRYTON_ICON, CONFIG
+from tryton.config import TRYTON_ICON
 from tryton.common import RPCExecute, RPCException
 from tryton.gui.window.nomodal import NoModal
 
@@ -109,6 +109,7 @@ class WinImport(NoModal):
         label_csv_import = gtk.Label(_("File to Import:"))
         hbox_csv_import.pack_start(label_csv_import, False, False, 0)
         self.import_csv_file = gtk.FileChooserButton(_("Open..."))
+        label_csv_import.set_mnemonic_widget(self.import_csv_file)
         hbox_csv_import.pack_start(self.import_csv_file, True, True, 0)
 
         expander_csv_import = gtk.Expander(None)
@@ -128,6 +129,7 @@ class WinImport(NoModal):
         self.import_csv_sep.set_max_length(1)
         self.import_csv_sep.set_text(",")
         self.import_csv_sep.set_width_chars(1)
+        label_import_csv_sep.set_mnemonic_widget(self.import_csv_sep)
         table.attach(self.import_csv_sep, 1, 2, 0, 1)
 
         label_import_csv_del = gtk.Label(_("Text Delimiter:"))
@@ -136,6 +138,7 @@ class WinImport(NoModal):
         self.import_csv_del = gtk.Entry()
         self.import_csv_del.set_text("\"")
         self.import_csv_del.set_width_chars(1)
+        label_import_csv_del.set_mnemonic_widget(self.import_csv_del)
         table.attach(self.import_csv_del, 3, 4, 0, 1)
 
         label_import_csv_enc = gtk.Label(_("Encoding:"))
@@ -145,6 +148,7 @@ class WinImport(NoModal):
         self.import_csv_enc.append_text("UTF-8")
         self.import_csv_enc.append_text("Latin1")
         self.import_csv_enc.set_active(0)
+        label_import_csv_enc.set_mnemonic_widget(self.import_csv_enc)
         table.attach(self.import_csv_enc, 1, 2, 1, 2)
 
         label_import_csv_skip = gtk.Label(_("Lines to Skip:"))
@@ -153,6 +157,7 @@ class WinImport(NoModal):
 
         self.import_csv_skip_adj = gtk.Adjustment(0, 0, 100, 1, 10)
         self.import_csv_skip = gtk.SpinButton(self.import_csv_skip_adj, 1, 0)
+        label_import_csv_skip.set_mnemonic_widget(self.import_csv_skip)
         table.attach(self.import_csv_skip, 3, 4, 1, 2)
 
         button_cancel = gtk.Button("gtk-cancel", stock="gtk-cancel")
@@ -169,8 +174,6 @@ class WinImport(NoModal):
         self.context = context
         self.fields_data = {}
 
-        self.import_csv_file.set_current_folder(CONFIG['client.default_path'])
-
         self.view1 = gtk.TreeView()
         self.view1.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.view1.connect('row-expanded', self.on_row_expanded)
@@ -182,16 +185,14 @@ class WinImport(NoModal):
         self.view2.set_headers_visible(False)
 
         cell = gtk.CellRendererText()
-        column = gtk.TreeViewColumn(_('Field name'), cell, text=0,
-                background=2)
+        column = gtk.TreeViewColumn(_('Field name'), cell, text=0)
         self.view1.append_column(column)
 
         cell = gtk.CellRendererText()
         column = gtk.TreeViewColumn(_('Field name'), cell, text=0)
         self.view2.append_column(column)
 
-        self.model1 = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING,
-                gobject.TYPE_STRING)
+        self.model1 = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
         self.model2 = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
 
         self.fields = {}
@@ -219,15 +220,14 @@ class WinImport(NoModal):
             if not fields[field].get('readonly', False):
                 self.fields_data[prefix_field + field] = fields[field]
                 name = fields[field]['string'] or field
-                node = self.model1.insert(parent_node, 0, [name, prefix_field +
-                    field, (fields[field].get('required', False) and
-                        common.COLORS['required']) or 'white'])
+                node = self.model1.insert(
+                    parent_node, 0, [name, prefix_field + field])
                 name = prefix_name + name
                 self.fields[prefix_field + field] = (name,
                         fields[field].get('relation'))
                 self.fields_invert[name] = prefix_field + field
                 if fields[field].get('relation'):
-                    self.model1.insert(node, 0, [None, '', 'white'])
+                    self.model1.insert(node, 0, [None, ''])
 
     def _get_fields(self, model):
         try:

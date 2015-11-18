@@ -13,6 +13,7 @@ from tryton.common.popup_menu import populate
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.entry_position import manage_entry_position
 from tryton.common.domain_parser import quote
+from tryton.config import CONFIG
 
 _ = gettext.gettext
 
@@ -25,7 +26,7 @@ class Many2One(Widget):
         self.widget = gtk.HBox(spacing=0)
         self.widget.set_property('sensitive', True)
 
-        self.wid_text = gtk.Entry()
+        self.wid_text = self.mnemonic_widget = gtk.Entry()
         self.wid_text.set_property('width-chars', 13)
         self.wid_text.set_property('activates_default', True)
         self.wid_text.connect('key-press-event', self.send_modified)
@@ -47,7 +48,6 @@ class Many2One(Widget):
         self.wid_text.connect('icon-press', self.sig_edit)
 
         self.widget.pack_end(self.wid_text, expand=True, fill=True)
-        self.widget.set_focus_chain([self.wid_text])
 
         self._readonly = False
 
@@ -57,10 +57,10 @@ class Many2One(Widget):
     def _readonly_set(self, value):
         self._readonly = value
         self._set_button_sensitive()
-        if value:
+        if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:
-            self.widget.set_focus_chain([self.wid_text])
+            self.widget.unset_focus_chain()
 
     def _set_button_sensitive(self):
         self.wid_text.set_editable(not self._readonly)
@@ -88,9 +88,6 @@ class Many2One(Widget):
             value = self.wid_text.get_text()
             return self.field.get_client(self.record) != value
         return False
-
-    def _color_widget(self):
-        return self.wid_text
 
     @staticmethod
     def has_target(value):

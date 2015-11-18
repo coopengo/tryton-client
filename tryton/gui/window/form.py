@@ -242,7 +242,8 @@ class Form(SignalEvent, TabContent):
             self.buttons['note'].set_stock_id('tryton-note-hi')
         else:
             self.buttons['note'].set_stock_id('tryton-note')
-        record_id = self.id_get()
+        record = self.screen.current_record
+        record_id = record.id if record else None
         self.buttons['note'].props.sensitive = bool(
             record_id >= 0 and record_id is not False)
 

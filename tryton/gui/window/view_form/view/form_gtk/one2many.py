@@ -180,10 +180,7 @@ class One2Many(Widget):
         frame = gtk.Frame()
         frame.add(hbox)
 
-        if not attrs.get('expand_toolbar'):
-            self.widget.pack_start(frame, expand=False, fill=True)
-            frame.set_shadow_type(gtk.SHADOW_OUT)
-        else:
+        if attrs.get('expand_toolbar'):
             frame.set_shadow_type(gtk.SHADOW_NONE)
 
         frame.set_shadow_type(gtk.SHADOW_OUT)

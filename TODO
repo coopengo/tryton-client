@@ -1,9 +1,12 @@
 ## notes pendant le merge
 
-- check tryton.po
 - on field.py (make a diff from 3.8, there still a strange patch)
 
 ## notes pendant le test
 
 - sur les écrans split (garantie - détail), la largeur par défaut de la première partie est pas suffisante (boutons ne scalent pas)
 - les synthèses sans couleur
+
+## notes pour le futur
+
+- po generation in build process? start process for dev?

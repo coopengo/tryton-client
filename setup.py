@@ -231,6 +231,7 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
             os.path.join(dist_dir, 'share', 'locale'))
 
+        # refresh MS-Windows theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'MS-Windows')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -238,6 +239,7 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'MS-Windows'),
             os.path.join(dist_dir, 'share', 'themes', 'MS-Windows'))
 
+        # refresh Numix theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'Numix')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -245,6 +247,7 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Numix'),
             os.path.join(dist_dir, 'share', 'themes', 'Numix'))
 
+        # refresh Rezlooks-Snow theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'Rezlooks-Snow')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -252,6 +255,7 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Rezlooks-Snow'),
             os.path.join(dist_dir, 'share', 'themes', 'Rezlooks-Snow'))
 
+        # refresh gtksourceview-2.0 from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'gtksourceview-2.0')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
         shutil.copytree(os.path.join(gtk_dir, 'share', 'gtksourceview-2.0'),

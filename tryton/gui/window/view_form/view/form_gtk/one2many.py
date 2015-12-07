@@ -182,9 +182,9 @@ class One2Many(Widget):
 
         if attrs.get('expand_toolbar'):
             frame.set_shadow_type(gtk.SHADOW_NONE)
-
-        frame.set_shadow_type(gtk.SHADOW_OUT)
-        vbox.pack_start(frame, expand=False, fill=True)
+        else:
+            frame.set_shadow_type(gtk.SHADOW_OUT)
+            vbox.pack_start(frame, expand=False, fill=True)
 
         self.screen = Screen(attrs['relation'],
             mode=attrs.get('mode', 'tree,form').split(','),

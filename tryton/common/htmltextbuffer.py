@@ -7,7 +7,6 @@ from HTMLParser import HTMLParser
 
 import pango
 import gtk
-import chardet
 
 MIME = 'text/html'
 
@@ -260,8 +259,7 @@ def serialize(register, content, start, end, data):
 
 def deserialize(register, content, iter_, text, create_tags, data):
     if not isinstance(text, unicode):
-        encoding = chardet.detect(text)['encoding']
-        text = text.decode(encoding)
+        text = text.decode('utf-8')
     text = text.encode('utf-8')
     text, tags = parse_markup(normalize_markup(text, method='xml'))
     offset = iter_.get_offset()

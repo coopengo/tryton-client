@@ -309,6 +309,21 @@ class GenericText(Cell):
             if invisible:
                 readonly = True
 
+            if not isinstance(cell, CellRendererToggle):
+                bg_color = 'white'
+                if field.get_state_attrs(record).get('invalid', False):
+                    bg_color = COLORS.get('invalid', 'white')
+                elif bool(int(
+                            field.get_state_attrs(record).get('required', 0))):
+                    bg_color = COLORS.get('required', 'white')
+                cell.set_property('background', bg_color)
+                if bg_color == 'white':
+                    cell.set_property('background-set', False)
+                else:
+                    cell.set_property('background-set', True)
+                    cell.set_property('foreground-set',
+                        not (record.deleted or record.removed))
+
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', not readonly)
             elif isinstance(cell,

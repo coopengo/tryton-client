@@ -1268,6 +1268,11 @@ COLOR_SCHEMES = {
     'darkcyan': '#305755',
 }
 
+COLORS = {
+    'invalid': '#ff6969',
+    'required': '#d2d2ff',
+}
+
 
 def filter_domain(domain):
     '''

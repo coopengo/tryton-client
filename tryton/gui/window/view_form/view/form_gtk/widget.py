@@ -4,6 +4,7 @@ import gettext
 
 from gi.repository import Gdk, GLib, Gtk, Pango
 
+from tryton.common import COLORS
 import tryton.common as common
 from tryton.common import FORMAT_ERROR, TRYTON_ICON, RPCException, RPCExecute
 from tryton.common.underline import set_underline
@@ -57,6 +58,9 @@ class Widget(object):
 
     def _required_set(self, required):
         pass
+
+    def _color_widget(self):
+        return self.widget
 
     def _invisible_widget(self):
         return self.widget
@@ -147,7 +151,7 @@ class Widget(object):
                     raise ValueError(FORMAT_ERROR + attr)
                 functions[key[0]](key[1])
 
-    def display(self, record, field):
+    def display(self):
         if not self.field:
             self._readonly_set(self.attrs.get('readonly', True))
             self.invisible_set(self.attrs.get('invisible', False))
@@ -157,11 +161,11 @@ class Widget(object):
         readonly = self.attrs.get('readonly', states.get('readonly', False))
         if self.view.screen.readonly:
             readonly = True
-
-        # ABD: See #3428
         self._readonly_set(readonly)
 
-        self._format_set(record, field)
+        # ABD: See #3428
+        self._format_set()
+
         widget_class(self.widget, 'readonly', readonly)
         self._required_set(not readonly and states.get('required', False))
         widget_class(

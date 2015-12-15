@@ -275,6 +275,7 @@ class One2Many(Widget):
 
     def switch_view(self, widget):
         self.screen.switch_view()
+
         mnemonic_widget = self.screen.current_view.mnemonic_widget
         string = self.attrs.get('string', '')
         if mnemonic_widget:

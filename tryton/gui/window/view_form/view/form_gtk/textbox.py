@@ -97,6 +97,9 @@ class TextBox(Widget, TranslateMixin):
         if self.button:
             self.button.set_sensitive(not value)
 
+    def _color_widget(self):
+        return self.textview
+
     @property
     def modified(self):
         if self.record and self.field:

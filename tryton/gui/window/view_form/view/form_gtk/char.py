@@ -81,6 +81,11 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             # Must be deferred because it triggers a display of the form
             GLib.idle_add(focus_out)
 
+    def _color_widget(self):
+        if self.autocomplete:
+            return self.entry.get_child()
+        return self.entry
+
     @property
     def modified(self):
         if self.record and self.field:

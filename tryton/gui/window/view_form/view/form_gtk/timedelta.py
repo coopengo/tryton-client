@@ -22,6 +22,9 @@ class TimeDelta(Widget):
         self.entry.connect('key-press-event', self.send_modified)
         self.widget.pack_start(self.entry, expand=True, fill=True, padding=0)
 
+    def _color_widget(self):
+        return self.entry
+
     @property
     def modified(self):
         if self.record and self.field:

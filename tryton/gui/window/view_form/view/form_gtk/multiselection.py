@@ -48,6 +48,9 @@ class MultiSelection(Widget, SelectionMixin):
         selection = self.tree.get_selection()
         selection.set_select_function(lambda *a: not readonly)
 
+    def _color_widget(self):
+        return self.tree
+
     @property
     def modified(self):
         if self.record and self.field:

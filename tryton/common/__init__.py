@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 from . import timedelta
 from .common import (
+    COLORS,
     COLOR_RGB, COLOR_SCHEMES, FORMAT_ERROR, MODELACCESS, MODELHISTORY,
     MODELNAME, MODELNOTIFICATION, TRYTON_ICON, VIEW_SEARCH, IconFactory, Login,
     Logout, RPCContextReload, RPCException, RPCExecute, RPCProgress, Tooltips,
@@ -19,6 +20,7 @@ from .domain_inversion import (
 from .environment import EvalEnvironment
 
 __all__ = [
+    COLORS,
     COLOR_RGB,
     COLOR_SCHEMES,
     FORMAT_ERROR,

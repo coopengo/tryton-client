@@ -50,6 +50,9 @@ class Selection(Widget, SelectionMixin, PopdownMixin):
         else:
             self.widget.unset_focus_chain()
 
+    def _color_widget(self):
+        return self.entry.child
+
     def get_value(self):
         if not self.entry.child:  # entry is destroyed
             return

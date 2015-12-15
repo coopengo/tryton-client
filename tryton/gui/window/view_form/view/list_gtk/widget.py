@@ -12,7 +12,7 @@ from functools import wraps, partial
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-from tryton.common import file_selection, file_open, slugify
+from tryton.common import COLORS, file_selection, file_open, slugify
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
@@ -110,7 +110,9 @@ class CellCache(list):
 
 
 class Cell(object):
-    pass
+
+    def get_color(self, record):
+        return record.expr_eval(self.view.attributes.get('colors', '"black"'))
 
 
 class Affix(Cell):
@@ -153,6 +155,12 @@ class Affix(Cell):
             if not text:
                 text = field.get_client(record) or ''
             cell.set_property('text', text)
+            fg_color = self.get_color(record)
+            cell.set_property('foreground', fg_color)
+            if fg_color == 'black':
+                cell.set_property('foreground-set', False)
+            else:
+                cell.set_property('foreground-set', True)
 
     def clicked(self, renderer, path):
         store = self.view.treeview.get_model()
@@ -204,6 +212,12 @@ class GenericText(Cell):
                     (CellRendererText, CellRendererDate, CellRendererCombo)):
                 cell.set_property('strikethrough', record.deleted)
             cell.set_property('text', text)
+            fg_color = self.get_color(record)
+            cell.set_property('foreground', fg_color)
+            if fg_color == 'black':
+                cell.set_property('foreground-set', False)
+            else:
+                cell.set_property('foreground-set', True)
 
         field = record[self.attrs['name']]
 
@@ -228,6 +242,21 @@ class GenericText(Cell):
                 field.get_state_attrs(record).get('readonly', False))
             if invisible:
                 readonly = True
+
+            if not isinstance(cell, CellRendererToggle):
+                bg_color = 'white'
+                if field.get_state_attrs(record).get('invalid', False):
+                    bg_color = COLORS.get('invalid', 'white')
+                elif bool(int(
+                            field.get_state_attrs(record).get('required', 0))):
+                    bg_color = COLORS.get('required', 'white')
+                cell.set_property('background', bg_color)
+                if bg_color == 'white':
+                    cell.set_property('background-set', False)
+                else:
+                    cell.set_property('background-set', True)
+                    cell.set_property('foreground-set',
+                        not (record.deleted or record.removed))
 
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', not readonly)

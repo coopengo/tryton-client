@@ -118,6 +118,9 @@ class TextBox(Widget, TranslateMixin):
                 spell.detach()
                 del spell
 
+    def _color_widget(self):
+        return self.textview
+
     @property
     def modified(self):
         if self.record and self.field:

@@ -1,6 +1,8 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import xmlrpclib
+import urllib
+from urlparse import urlparse
 try:
     import simplejson as json
 except ImportError:
@@ -144,6 +146,43 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
         self._connection = (None, None)
         self.__fingerprints = fingerprints
         self.__ca_certs = ca_certs
+        self.set_proxies()
+
+    def set_proxies(self):
+        self.http_proxy = None
+        self.https_proxy = None
+        try:
+            self.__proxies = urllib.getproxies()
+        except Exception:
+            self.__proxies = None
+            return
+        try:
+            self.http_proxy = self.__proxies['http']
+        except KeyError:
+            pass
+        try:
+            # https proxy is not used for now
+            self.https_proxy = self.__proxies['https']
+        except KeyError:
+            pass
+
+    def get_proxy_headers(self):
+        from tryton.config import CONFIG
+        username = CONFIG['proxy.username']
+        password = CONFIG['proxy.password']
+
+        if username is not None and password is not None:
+            puser_pass = base64.encodestring('%s:%s' % (username,
+                    password)).strip()
+            headers = {
+                'User-agent': self.user_agent,
+                'Proxy-authorization': 'Basic ' + puser_pass
+            }
+        else:
+            headers = {
+                'User-agent': self.user_agent,
+            }
+        return headers
 
     def getparser(self):
         target = JSONUnmarshaller()
@@ -155,6 +194,9 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
             self, host)
         if extra_headers is None:
             extra_headers = []
+            proxy_headers = self.get_proxy_headers()
+            for key, value in proxy_headers.iteritems():
+                extra_headers.append((key, value))
         extra_headers.append(('Connection', 'keep-alive'))
         return host, extra_headers, x509
 
@@ -195,16 +237,39 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
                     self.cert_file, ca_certs=ca_certs, cert_reqs=cert_reqs)
 
         def http_connection():
-            self._connection = host, httplib.HTTPConnection(host,
-                timeout=CONNECT_TIMEOUT)
+            if self.http_proxy:
+                netloc = urlparse(self.http_proxy).netloc
+                proxy_host, proxy_port = netloc.split(':')
+                real_host, real_port = host.split(':')
+                proxy_port = int(proxy_port)
+                real_port = int(real_port)
+
+                self._connection = host, httplib.HTTPConnection(proxy_host,
+                                                                proxy_port)
+                self._connection[1].set_tunnel(real_host, real_port,
+                    self.get_proxy_headers())
+            else:
+                self._connection = host, httplib.HTTPConnection(host,
+                    timeout=CONNECT_TIMEOUT)
             self._connection[1].connect()
             sock = self._connection[1].sock
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         def https_connection():
-            self._connection = host, HTTPSConnection(host,
-                timeout=CONNECT_TIMEOUT)
+            if self.http_proxy:
+                netloc = urlparse(self.http_proxy).netloc
+                proxy_host, proxy_port = netloc.split(':')
+                real_host, real_port = host.split(':')
+                proxy_port = int(proxy_port)
+                real_port = int(real_port)
+                self._connection = host, HTTPSConnection(proxy_host,
+                    proxy_port, timeout=CONNECT_TIMEOUT)
+                self._connection[1].set_tunnel(real_host, real_port,
+                    self.get_proxy_headers())
+            else:
+                self._connection = host, HTTPSConnection(host,
+                    timeout=CONNECT_TIMEOUT)
             try:
                 self._connection[1].connect()
                 sock = self._connection[1].sock

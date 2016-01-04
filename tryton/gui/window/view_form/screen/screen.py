@@ -271,9 +271,9 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
         self.__group.add_fields(fields, signal=False)
         self.__group.exclude_field = self.exclude_field
-        self._group_list_changed(self.__group, 'record-changed')
         if len(group):
             self.current_record = group[0]
+            self._group_list_changed(self.__group, 'record-changed')
         else:
             self.current_record = None
 

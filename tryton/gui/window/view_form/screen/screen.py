@@ -435,6 +435,7 @@ class Screen:
         self.__group.exclude_field = self.exclude_field
         if len(group):
             self.current_record = group[0]
+            self._group_list_changed(self.__group, 'record-changed')
         else:
             self.current_record = None
 

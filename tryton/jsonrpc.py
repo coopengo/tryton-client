@@ -236,40 +236,30 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
                 self.sock = ssl.wrap_socket(sock, self.key_file,
                     self.cert_file, ca_certs=ca_certs, cert_reqs=cert_reqs)
 
-        def http_connection():
+        def set_connection(ConnectionClass):
             if self.http_proxy:
                 netloc = urlparse(self.http_proxy).netloc
                 proxy_host, proxy_port = netloc.split(':')
                 real_host, real_port = host.split(':')
                 proxy_port = int(proxy_port)
                 real_port = int(real_port)
-
-                self._connection = host, httplib.HTTPConnection(proxy_host,
-                                                                proxy_port)
+                self._connection = host, ConnectionClass(proxy_host,
+                    proxy_port, timeout=CONNECT_TIMEOUT)
                 self._connection[1].set_tunnel(real_host, real_port,
                     self.get_proxy_headers())
             else:
-                self._connection = host, httplib.HTTPConnection(host,
+                self._connection = host, ConnectionClass(host,
                     timeout=CONNECT_TIMEOUT)
+
+        def http_connection():
+            set_connection(httplib.HTTPConnection)
             self._connection[1].connect()
             sock = self._connection[1].sock
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         def https_connection():
-            if self.http_proxy:
-                netloc = urlparse(self.http_proxy).netloc
-                proxy_host, proxy_port = netloc.split(':')
-                real_host, real_port = host.split(':')
-                proxy_port = int(proxy_port)
-                real_port = int(real_port)
-                self._connection = host, HTTPSConnection(proxy_host,
-                    proxy_port, timeout=CONNECT_TIMEOUT)
-                self._connection[1].set_tunnel(real_host, real_port,
-                    self.get_proxy_headers())
-            else:
-                self._connection = host, HTTPSConnection(host,
-                    timeout=CONNECT_TIMEOUT)
+            set_connection(HTTPSConnection)
             try:
                 self._connection[1].connect()
                 sock = self._connection[1].sock

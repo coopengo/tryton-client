@@ -21,7 +21,6 @@ gobject.threads_init()
 from urlparse import urlparse
 import threading
 import logging
-from raven import Client
 
 import tryton.common as common
 from tryton.config import CONFIG, get_config_dir
@@ -96,6 +95,7 @@ class TrytonClient(object):
             from tryton.exceptions import TrytonServerError
             if (CONFIG['sentry.dsn']
                     and not isinstance(exception, TrytonServerError)):
+                from raven import Client
                 log = logging.getLogger(__name__)
                 log.error(''.join(traceback.format_exception(
                             exctyp, exception, tb)) + '\n' + str(exception))

@@ -65,7 +65,7 @@ if os.name == 'nt':
             ],
             'dll_excludes': ['dnsapi.dll', 'usp10.dll', 'iphlpapi.dll'],
             'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
-            'includes':  ["raven.events", "raven.processors"],
+            'includes': ['raven.events', 'raven.processors'],
         }
     }
     args['zipfile'] = 'library.zip'
@@ -110,7 +110,10 @@ version = '1.6.0'
 major_version, minor_version, _ = version.split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
-name = 'tryton'
+name = 'Coog'
+
+if minor_version % 2:
+    version = '%s.%s.dev0' % (major_version, minor_version)
 
 dist = setup(name=name,
     version=version,
@@ -119,11 +122,8 @@ dist = setup(name=name,
     author='Coopengo',
     author_email='info@coopengo.com',
     url=WEBSITE,
-    download_url=("http://downloads.tryton.org/" +
-        version.rsplit('.', 1)[0] + '/'),
     keywords='Insurance ERP',
     packages=find_packages(),
-    package_data=package_data,
     data_files=data_files,
     scripts=['bin/tryton'],
     classifiers=[
@@ -151,11 +151,10 @@ dist = setup(name=name,
         'Topic :: Office/Business',
         ],
     platforms='any',
-    license=LICENSE,
+    license='GPL-3',
     install_requires=[
         # "pygtk >= 2.6",
         "python-dateutil",
-        "pyflakes",
         "chardet",
         ],
     extras_require={
@@ -189,16 +188,18 @@ if os.name == 'nt':
 
     if 'py2exe' in dist.commands:
         import shutil
-
-        gtk_dir = find_gtk_dir()
-
         dist_dir = dist.command_obj['py2exe'].dist_dir
+        gtk_dir = find_gtk_dir()
 
         for dirname in ['plugins', 'data']:
             if os.path.isdir(os.path.join(dist_dir, dirname)):
                 shutil.rmtree(os.path.join(dist_dir, dirname))
             shutil.copytree(os.path.join(os.path.dirname(__file__), 'tryton',
                     dirname), os.path.join(dist_dir, dirname))
+        if os.path.isdir(os.path.join(dist_dir, 'share')):
+            shutil.rmtree(os.path.join(dist_dir, 'share'))
+        shutil.copytree(os.path.join(os.path.dirname(__file__), 'share'),
+            os.path.join(dist_dir, 'share'))
 
         if os.path.isdir(os.path.join(dist_dir, 'etc')):
             shutil.rmtree(os.path.join(dist_dir, 'etc'))
@@ -226,12 +227,6 @@ if os.name == 'nt':
             if os.path.isfile(file):
                 shutil.copy(file, dist_dir)
 
-        if os.path.isdir(os.path.join(dist_dir, 'share', 'locale')):
-            shutil.rmtree(os.path.join(dist_dir, 'share', 'locale'))
-        shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
-            os.path.join(dist_dir, 'share', 'locale'))
-
-        # refresh MS-Windows theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'MS-Windows')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -239,7 +234,6 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'MS-Windows'),
             os.path.join(dist_dir, 'share', 'themes', 'MS-Windows'))
 
-        # refresh Numix theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'Numix')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -247,7 +241,6 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Numix'),
             os.path.join(dist_dir, 'share', 'themes', 'Numix'))
 
-        # refresh Rezlooks-Snow theme from gtk
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'Rezlooks-Snow')):
             shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
@@ -255,11 +248,12 @@ if os.name == 'nt':
         shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'Rezlooks-Snow'),
             os.path.join(dist_dir, 'share', 'themes', 'Rezlooks-Snow'))
 
-        # refresh gtksourceview-2.0 from gtk
-        if os.path.isdir(os.path.join(dist_dir, 'share', 'gtksourceview-2.0')):
-            shutil.rmtree(os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
-        shutil.copytree(os.path.join(gtk_dir, 'share', 'gtksourceview-2.0'),
-            os.path.join(dist_dir, 'share', 'gtksourceview-2.0'))
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
+                    'CoogTheme')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'themes',
+                    'CoogTheme'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'themes', 'CoogTheme'),
+            os.path.join(dist_dir, 'share', 'themes', 'CoogTheme'))
 
         makensis = find_makensis()
         if makensis:

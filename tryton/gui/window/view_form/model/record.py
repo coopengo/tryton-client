@@ -13,7 +13,7 @@ from tryton.config import CONFIG
 
 class Record(SignalEvent):
 
-    id = -1
+    id = -100000000
 
     def __init__(self, model_name, obj_id, group=None):
         super(Record, self).__init__()

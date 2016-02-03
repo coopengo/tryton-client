@@ -68,6 +68,7 @@ class TrytonClient(object):
                 CONFIG['login.port'] = port
                 CONFIG['login.db'] = database
                 CONFIG['login.expanded'] = True
+                CONFIG['proxy.active'] = False
         translate.set_language_direction(CONFIG['client.language_direction'])
         translate.setlang(CONFIG['client.lang'])
         self.quit_client = (threading.Event()

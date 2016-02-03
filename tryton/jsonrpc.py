@@ -153,6 +153,10 @@ class Transport(xmlrpc.client.SafeTransport):
     def set_proxies(self):
         self.http_proxy = None
         self.https_proxy = None
+        from tryton.config import CONFIG
+        self.use_proxy = CONFIG['proxy.active']
+        if not self.use_proxy:
+            return
         try:
             self.__proxies = urllib.getproxies()
         except Exception:

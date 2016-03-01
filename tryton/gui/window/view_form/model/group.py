@@ -208,7 +208,7 @@ class Group(SignalEvent, list):
         if not ids:
             return True
 
-        if len(ids) > 1:
+        if len(ids) >= 1:
             self.lock_signal = True
 
         new_records = []

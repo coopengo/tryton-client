@@ -265,6 +265,9 @@ class GenericText(Cell):
                 pass
             else:
                 cell.set_property('editable', not readonly)
+        else:
+            if isinstance(cell, CellRendererToggle):
+                cell.set_property('activatable', False)
 
         cell.set_property('xalign', align)
 
@@ -408,7 +411,7 @@ class Time(Date):
         if not record:
             return ''
         value = record[self.attrs['name']].get_client(record)
-        if value:
+        if value is not None:
             return value.strftime(self.renderer.props.format)
         else:
             return ''

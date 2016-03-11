@@ -364,8 +364,9 @@ class Screen(SignalEvent):
         super(Screen, self).destroy()
 
     def default_row_activate(self):
-        if (self.current_view.view_type == 'tree' and
-                self.current_view.attributes.get('keyword_open')):
+        keyword_open = self.current_view.attributes.get('keyword_open')
+        if (keyword_open and self.current_view.view_type == 'tree' and
+                keyword_open == '1'):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
                 'id': self.current_record.id if self.current_record else None,

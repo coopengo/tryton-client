@@ -33,14 +33,38 @@ try:
 except ImportError:
         pass
 
-package_data = {
-    'tryton': ['data/pixmaps/tryton/*.png',
-        'data/pixmaps/tryton/*.svg',
-        'data/locale/*/LC_MESSAGES/*.mo',
-        'data/locale/*/LC_MESSAGES/*.po',
+languages = (
+    'bg_BG',
+    'ca_ES',
+    'cs_CZ',
+    'de_DE',
+    'es_AR',
+    'es_CO',
+    'es_ES',
+    'fr_FR',
+    'ja_JP',
+    'lt_LT',
+    'nl_NL',
+    'ru_RU',
+    'sl_SI',
+    )
+
+
+def all_languages():
+    for lang in languages:
+        yield lang
+        yield lang.split('_')[0]
+
+data_files = [
+    ('share/pixmaps/tryton', glob.glob('share/pixmaps/tryton/*.png') +
+        glob.glob('share/pixmaps/tryton/*.svg'))]
+
+for lang in languages:
+    data_files += [
+        ('share/locale/%s/LC_MESSAGES' % lang,
+            glob.glob('share/locale/%s/LC_MESSAGES/*.mo' % lang) +
+            glob.glob('share/locale/%s/LC_MESSAGES/*.po' % lang)),
         ]
-    }
-data_files = []
 
 if os.name == 'nt':
     import py2exe
@@ -96,7 +120,6 @@ elif sys.platform == 'darwin':
                 'tryton', 'tryton.icns'),
         },
     }
-    del package_data['tryton']
 
 
 def get_version():
@@ -106,7 +129,7 @@ def get_version():
 PACKAGE=None
 WEBSITE='http://www.coopengo.com/'
 LICENSE=None
-version = '1.6.0'
+version = '1.6.4'
 major_version, minor_version, _ = version.split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
@@ -222,6 +245,18 @@ if os.name == 'nt':
             shutil.rmtree(os.path.join(dist_dir, 'lib'))
         shutil.copytree(os.path.join(gtk_dir, 'lib'),
             os.path.join(dist_dir, 'lib'))
+
+        for lang in all_languages():
+            if os.path.isdir(os.path.join(dist_dir, 'share', 'locale', lang)):
+                shutil.rmtree(os.path.join(dist_dir, 'share', 'locale', lang))
+            if os.path.isdir(os.path.join(gtk_dir, 'share', 'locale', lang)):
+                shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
+                    os.path.join(dist_dir, 'share', 'locale', lang))
+            if os.path.isdir(os.path.join(os.path.dirname(__file__),
+                        'share', 'locale', lang)):
+                shutil.copytree(os.path.join(os.path.dirname(__file__),
+                        'share', 'locale', lang),
+                    os.path.join(dist_dir, 'share', 'locale', lang))
 
         for file in glob.iglob(os.path.join(gtk_dir, 'bin', '*.dll')):
             if os.path.isfile(file):

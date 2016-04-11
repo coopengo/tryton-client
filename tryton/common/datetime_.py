@@ -22,8 +22,10 @@ _ = gettext.gettext
 
 
 def date_parse(text, format_='%x'):
-    dayfirst = datetime.date(1988, 8, 16).strftime(format_).index('16') == 0
-    yearfirst = datetime.date(1988, 8, 16).strftime(format_).index('88') <= 2
+    formatted_date = datetime.date(1988, 7, 16).strftime(format_)
+    dayfirst = formatted_date.index('16') == 0
+    monthfirst = formatted_date.index('7') <= 1
+    yearfirst = not dayfirst and not monthfirst
     if len(text) == 6 and re.search('[0-9]{6}', text):
         text = '%s/%s/%s' % (text[:2], text[2:4], text[4:6])
     elif len(text) == 8 and re.search('[0-9]{8}', text):
@@ -31,8 +33,7 @@ def date_parse(text, format_='%x'):
             text = '%s/%s/%s' % (text[:4], text[4:6], text[6:8])
         else:
             text = '%s/%s/%s' % (text[:2], text[2:4], text[4:8])
-    return parse(text, dayfirst=dayfirst, yearfirst=yearfirst,
-        ignoretz=True)
+    return parse(text, dayfirst=dayfirst, yearfirst=yearfirst, ignoretz=True)
 
 
 class Date(gtk.Entry):

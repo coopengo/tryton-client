@@ -583,9 +583,7 @@ class Form(SignalEvent, TabContent):
     def _create_popup_menu(self, widget, keyword, actions, special_action):
         menu = gtk.Menu()
         menu.connect('deactivate', self._popup_menu_hide, widget)
-
-        if keyword == 'action':
-            widget.connect('toggled', self._update_action_popup, menu)
+        widget.connect('toggled', self._update_popup, menu, special_action)
 
         for action in actions:
             new_action = action.copy()
@@ -616,13 +614,15 @@ class Form(SignalEvent, TabContent):
     def _popup_menu_hide(self, menuitem, togglebutton):
         togglebutton.props.active = False
 
-    def _update_action_popup(self, tbutton, menu):
+    def _update_popup(self, tbutton, menu, keyword):
+        assert keyword in ['print','action','relate','email','open']
         for item in menu.get_children():
             if (getattr(item, '_update_action', False)
                     or isinstance(item, gtk.SeparatorMenuItem)):
                 menu.remove(item)
 
-        buttons = self.screen.get_buttons()
+        buttons = [button for button in self.screen.get_buttons()
+            if keyword in button.attrs.get('keywords', 'action').split(',')]
         if buttons:
             menu.add(gtk.SeparatorMenuItem())
         for button in buttons:
@@ -634,20 +634,21 @@ class Form(SignalEvent, TabContent):
             menuitem._update_action = True
             menu.add(menuitem)
 
-        menu.add(gtk.SeparatorMenuItem())
-        for plugin in plugins.MODULES:
-            for name, func in plugin.get_plugins(self.model):
-                menuitem = gtk.MenuItem('_' + name)
-                menuitem.set_use_underline(True)
-                menuitem.connect('activate', lambda m, func: func({
-                            'model': self.model,
-                            'ids': [r.id
-                                for r in self.screen.selected_records],
-                            'id': (self.screen.current_record.id
-                                if self.screen.current_record else None),
-                            }), func)
-                menuitem._update_action = True
-                menu.add(menuitem)
+        if keyword == 'action':
+            menu.add(gtk.SeparatorMenuItem())
+            for plugin in plugins.MODULES:
+                for name, func in plugin.get_plugins(self.model):
+                    menuitem = gtk.MenuItem('_' + name)
+                    menuitem.set_use_underline(True)
+                    menuitem.connect('activate', lambda m, func: func({
+                                'model': self.model,
+                                'ids': [r.id
+                                    for r in self.screen.selected_records],
+                                'id': (self.screen.current_record.id
+                                    if self.screen.current_record else None),
+                                }), func)
+                    menuitem._update_action = True
+                    menu.add(menuitem)
 
     def set_cursor(self):
         if self.screen:

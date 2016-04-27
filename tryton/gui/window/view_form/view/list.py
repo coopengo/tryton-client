@@ -528,8 +528,7 @@ class ViewTree(View):
             if required or not readonly:
                 if required:
                     attrlist.insert(pango.AttrWeight(pango.WEIGHT_BOLD, 0, -1))
-                if not readonly:
-                    attrlist.change(pango.AttrStyle(pango.STYLE_ITALIC, 0, -1))
+                # We removed the check if not readonly (cf: issue #3751)
         if field:
             self._format_set(attributes, attrlist)
         label.set_attributes(attrlist)

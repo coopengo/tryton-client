@@ -318,7 +318,48 @@ class GenericText(Cell):
         else:
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', False)
+        self._format_set(record, field, cell)
         self._set_visual(cell, record)
+
+    def _set_foreground(self, value, cell):
+        cell.set_property('foreground', value)
+
+    def _set_background(self, value, cell):
+        cell.set_property('background', value)
+
+    def _set_font(self, value, cell):
+        cell.set_property('font', value)
+
+    def _format_set(self, record, field, cell):
+        functions = {
+            'color': self._set_foreground,
+            'fg': self._set_foreground,
+            'bg': self._set_background,
+            'font': self._set_font
+            }
+        attrs = record.expr_eval(field.get_state_attrs(record).
+            get('states', {}))
+        states = record.expr_eval(self.attrs.get('states', {})).copy()
+        states.update(attrs)
+        if isinstance(cell, CellRendererText) and \
+                cell.get_property('font') != 'Normal':
+            cell.set_property('font', 'Normal')
+        for attr in list(states.keys()):
+            if not states[attr]:
+                continue
+            key = attr.split('_')
+            if key[0] == 'field':
+                key = key[1:]
+            if key[0] == 'label':
+                continue
+            if isinstance(states[attr], str):
+                key.append(states[attr])
+            if key[0] in functions:
+                if len(key) != 2:
+                    err = 'Wrong key format [type]_[style]_[value]: '
+                    err += attr
+                    raise ValueError(err)
+                functions[key[0]](key[1], cell)
 
     def open_remote(self, record, create, changed=False, text=None,
             callback=None):

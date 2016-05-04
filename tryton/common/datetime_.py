@@ -38,7 +38,7 @@ def date_parse(text, format_='%x'):
     except ValueError:
         monthfirst = False
     yearfirst = not dayfirst and not monthfirst
-
+    text = re.sub('/+', '/', text)
     if len(text) == 6 and re.search('[0-9]{6}', text):
         text = '%s/%s/%s' % (text[:2], text[2:4], text[4:6])
     elif len(text) == 8 and re.search('[0-9]{8}', text):
@@ -46,8 +46,14 @@ def date_parse(text, format_='%x'):
             text = '%s/%s/%s' % (text[:4], text[4:6], text[6:8])
         else:
             text = '%s/%s/%s' % (text[:2], text[2:4], text[4:8])
-
-    return parse(text, dayfirst=dayfirst, yearfirst=yearfirst, ignoretz=True)
+    elif text.endswith('/'):
+        text = text.strip('/')
+    # Try catch below avoid client crash when the parse method fails
+    try:
+        return parse(text, dayfirst=dayfirst, yearfirst=yearfirst,
+            ignoretz=True)
+    except Exception:
+        return datetime.datetime.now()
 
 
 class Date(Gtk.Entry):

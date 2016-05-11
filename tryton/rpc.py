@@ -15,7 +15,6 @@ from tryton.config import CONFIG
 CONNECTION = None
 _USER = None
 _USERNAME = ''
-_SESSION = ''
 _HOST = ''
 _PORT = None
 _CLIENT_DATE = None
@@ -38,8 +37,8 @@ ServerPool = partial(ServerPool, fingerprints=_FINGERPRINTS,
 def db_list(host, port):
     try:
         connection = ServerProxy(host, port)
-        logging.getLogger(__name__).info('common.db.list(None, None)')
-        result = connection.common.db.list(None, None)
+        logging.getLogger(__name__).info('common.db.list()')
+        result = connection.common.db.list()
         logging.getLogger(__name__).debug(repr(result))
         return result
     except Fault, exception:
@@ -51,11 +50,10 @@ def db_list(host, port):
             return None
 
 
-def db_exec(host, port, method, *args):
-    connection = ServerProxy(host, port)
-    logging.getLogger(__name__).info('common.db.%s(None, None, %s)' %
-        (method, args))
-    result = getattr(connection.common.db, method)(None, None, *args)
+def db_exec(host, port, method, database='', *args):
+    connection = ServerProxy(host, port, database=database)
+    logging.getLogger(__name__).info('common.db.%s(%s)' % (method, args))
+    result = getattr(connection.common.db, method)(*args)
     logging.getLogger(__name__).debug(repr(result))
     return result
 
@@ -65,7 +63,7 @@ def server_version(host, port):
         connection = ServerProxy(host, port)
         logging.getLogger(__name__).info(
             'common.server.version(None, None)')
-        result = connection.common.server.version(None, None)
+        result = connection.common.server.version()
         logging.getLogger(__name__).debug(repr(result))
         return result
     except (Fault, socket.error):
@@ -73,7 +71,7 @@ def server_version(host, port):
 
 
 def login(username, password, host, port, database, date=None, set_date=False):
-    global CONNECTION, _USER, _USERNAME, _SESSION, _HOST, _PORT, _DATABASE
+    global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
     _VIEW_CACHE = {}
@@ -90,17 +88,16 @@ def login(username, password, host, port, database, date=None, set_date=False):
         logging.getLogger(__name__).debug(repr(result))
     except socket.error:
         _USER = None
-        _SESSION = ''
         _CLIENT_DATE = None
         return -1
     if not result:
         _USER = None
         _CLIENT_DATE = None
-        _SESSION = ''
         return -2
     _USER = result[0]
     _USERNAME = username
-    _SESSION = result[1]
+    session = ':'.join(map(str, [username] + result))
+    CONNECTION = ServerPool(host, port, database, session=session)
     if set_date:
         _CLIENT_DATE = date
     _HOST = host
@@ -111,17 +108,16 @@ def login(username, password, host, port, database, date=None, set_date=False):
 
 
 def logout():
-    global CONNECTION, _USER, _USERNAME, _SESSION, _HOST, _PORT, _DATABASE
+    global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
     if IPCServer.instance:
         IPCServer.instance.stop()
     if CONNECTION is not None:
         try:
-            logging.getLogger(__name__).info('common.db.logout(%s, %s)' %
-                (_USER, _SESSION))
+            logging.getLogger(__name__).info('common.db.logout()')
             with CONNECTION() as conn:
-                conn.common.db.logout(_USER, _SESSION)
+                conn.common.db.logout()
         except (Fault, socket.error, httplib.CannotSendRequest):
             pass
         CONNECTION.close()
@@ -129,7 +125,6 @@ def logout():
     _USER = None
     _CLIENT_DATE = None
     _USERNAME = ''
-    _SESSION = ''
     _HOST = ''
     _PORT = None
     _DATABASE = ''
@@ -139,9 +134,9 @@ def logout():
 
 
 def _execute(blocking, *args):
-    global CONNECTION, _USER, _SESSION
+    global CONNECTION, _USER
     if CONNECTION is None:
-        raise TrytonServerError('NotLogged')
+        raise TrytonServerError('403')
     key = False
     model = args[1]
     method = args[2]
@@ -160,7 +155,7 @@ def _execute(blocking, *args):
                 return _KEYWORD_CACHE[key]
     try:
         name = '.'.join(args[:3])
-        args = (_USER, _SESSION) + args[3:]
+        args = args[3:]
         logging.getLogger(__name__).info('%s%s' % (name, args))
         with CONNECTION() as conn:
             result = getattr(conn, name)(*args)

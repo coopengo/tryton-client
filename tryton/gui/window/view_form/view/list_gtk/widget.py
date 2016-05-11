@@ -190,6 +190,7 @@ class GenericText(Cell):
         if not isinstance(self.renderer, CellRendererBinary):
             self.renderer.connect_after('editing-started', send_keys,
                 view.treeview)
+        self.renderer.set_property('yalign', 0)
         self.view = view
 
     @property
@@ -486,11 +487,10 @@ class Binary(GenericText):
         if renderer is None:
             renderer = partial(CellRendererBinary, bool(self.filename))
         super(Binary, self).__init__(view, attrs, renderer=renderer)
-        self.renderer.connect('new', self.new_binary)
+        self.renderer.connect('select', self.select_binary)
         self.renderer.connect('open', self.open_binary)
         self.renderer.connect('save', self.save_binary)
         self.renderer.connect('clear', self.clear_binary)
-        self.last_open_file = None
 
     def get_textual_value(self, record):
         pass
@@ -525,14 +525,10 @@ class Binary(GenericText):
                 readonly = True
             cell.set_property('editable', not readonly)
 
-    def new_binary(self, renderer, path):
+    def select_binary(self, renderer, path):
         record, field = self._get_record_field(path)
         filename = ''
-        if self.last_open_file:
-            last_id, last_filename = self.last_open_file
-            if last_id == record.id:
-                filename = last_filename
-        filename = file_selection(_('Open...'), filename=filename)
+        filename = file_selection(_('Open...'))
         if filename:
             field.set_client(record, open(filename, 'rb').read())
             if self.filename:
@@ -560,7 +556,6 @@ class Binary(GenericText):
         if type_:
             type_ = type_[1:]
         file_open(file_path, type_)
-        self.last_open_file = (record.id, file_path)
 
     def save_binary(self, renderer, path):
         filename = ''
@@ -663,7 +658,8 @@ class M2O(GenericText):
                 context=context, callback=callback).show()
             return
         screen = Screen(relation, domain=domain, context=context,
-            mode=['form'])
+            mode=['form'], view_ids=self.attrs.get('view_ids', '').split(','),
+            exclude_field=field.attrs.get('relation_field'))
 
         def open_callback(result):
             if result:
@@ -693,7 +689,9 @@ class M2O(GenericText):
             if callback:
                 callback()
         win = WinSearch(relation, search_callback, sel_multi=False,
-            context=context, domain=domain, new=create_access)
+            context=context, domain=domain,
+            view_ids=self.attrs.get('view_ids', '').split(','),
+            new=create_access)
         win.screen.search_filter(quote(text.decode('utf-8')))
         return win
 
@@ -787,6 +785,7 @@ class O2M(GenericText):
             return
 
         screen = Screen(relation, mode=['tree', 'form'],
+            view_ids=self.attrs.get('view_ids', '').split(','),
             exclude_field=field.attrs.get('relation_field'))
         screen.pre_validate = bool(int(self.attrs.get('pre_validate', 0)))
         screen.group = group
@@ -808,6 +807,7 @@ class M2M(O2M):
         domain = field.domain_get(record)
 
         screen = Screen(relation, mode=['tree', 'form'],
+            view_ids=self.attrs.get('view_ids', '').split(','),
             exclude_field=field.attrs.get('relation_field'))
         screen.group = group
 
@@ -910,6 +910,7 @@ class ProgressBar(object):
         orientation = self.orientations.get(self.attrs.get('orientation',
             'left_to_right'), gtk.PROGRESS_LEFT_TO_RIGHT)
         self.renderer.set_property('orientation', orientation)
+        self.renderer.set_property('yalign', 0)
 
     @realized
     @CellCache.cache
@@ -949,6 +950,7 @@ class Button(object):
         self.view = view
 
         self.renderer.connect('clicked', self.button_clicked)
+        self.renderer.set_property('yalign', 0)
 
     @realized
     @CellCache.cache
@@ -980,4 +982,8 @@ class Button(object):
         if state_changes.get('invisible') \
                 or state_changes.get('readonly'):
             return True
-        self.view.screen.button(self.attrs)
+        widget.handler_block_by_func(self.button_clicked)
+        try:
+            self.view.screen.button(self.attrs)
+        finally:
+            widget.handler_unblock_by_func(self.button_clicked)

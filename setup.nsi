@@ -21,7 +21,7 @@ InstallDir "$PROGRAMFILES\coog-${VERSION}"
 ;Get installation folder from registry if available
 InstallDirRegKey HKCU "Software\coog-${VERSION}" ""
 
-BrandingText "coog ${VERSION}"
+BrandingText "Coog ${VERSION}"
 
 ;Vista redirects $SMPROGRAMS to all users without this
 RequestExecutionLevel admin
@@ -108,7 +108,7 @@ SectionIn 1 2 RO
     WriteRegStr HKLM "Software\coog-${VERSION}" "" $INSTDIR
 
     ;Write the uninstall keys for Windows
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "DisplayName" "coog ${VERSION} (remove only)"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "DisplayName" "Coog ${VERSION} (remove only)"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
 
     ;Create the uninstaller

@@ -622,11 +622,14 @@ class O2MField(Field):
             for vals in value:
                 new_record = record.value[self.name].new(default=False)
                 if default:
-                    new_record.set_default(vals)
-                    group.add(new_record)
+                    # Don't validate as parent will validate
+                    new_record.set_default(vals, signal=False, validate=False)
+                    group.add(new_record, signal=False)
                 else:
-                    new_record.set(vals)
+                    new_record.set(vals, signal=False)
                     group.append(new_record)
+            # Trigger signal only once with the last record
+            new_record.signal('record-changed')
 
     def set(self, record, value, _default=False):
         group = record.value.get(self.name)

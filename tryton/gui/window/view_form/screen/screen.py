@@ -16,6 +16,8 @@ import xml.dom.minidom
 import gettext
 import logging
 
+import gtk
+
 from tryton.gui.window.view_form.model.group import Group
 from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
@@ -42,7 +44,7 @@ class Screen(SignalEvent):
     def __init__(self, model_name, view_ids=None, mode=None, context=None,
             views_preload=None, domain=None, row_activate=None, limit=None,
             readonly=False, exclude_field=None, order=None, search_value=None,
-            tab_domain=None, alternate_view=False):
+            tab_domain=None, context_model=None, alternate_view=False):
         if view_ids is None:
             view_ids = []
         if mode is None:
@@ -85,6 +87,54 @@ class Screen(SignalEvent):
         self.screen_container = ScreenContainer(tab_domain)
         self.screen_container.alternate_view = alternate_view
         self.widget = self.screen_container.widget_get()
+
+        self.context_screen = None
+        if context_model:
+            self.context_screen = Screen(
+                context_model, mode=['form'], context=context)
+            self.context_screen.new()
+            context_widget = self.context_screen.widget
+
+            def walk_descendants(widget):
+                yield widget
+                if not hasattr(widget, 'get_children'):
+                    return
+                for child in widget.get_children():
+                    for widget in walk_descendants(child):
+                        yield widget
+
+            for widget in reversed(list(walk_descendants(context_widget))):
+                if isinstance(widget, gtk.Entry):
+                    widget.connect_after(
+                        'activate', self.screen_container.activate)
+                elif isinstance(widget, gtk.CheckButton):
+                    widget.connect_after(
+                        'toggled', self.screen_container.activate)
+
+            def remove_bin(widget):
+                assert isinstance(widget, (gtk.ScrolledWindow, gtk.Viewport))
+                parent = widget.parent
+                parent.remove(widget)
+                child = widget.get_child()
+                while isinstance(child, (gtk.ScrolledWindow, gtk.Viewport)):
+                    child = child.get_child()
+                child.parent.remove(child)
+                parent.add(child)
+                return child
+
+            # Remove first level Viewport and ScrolledWindow to fill the Vbox
+            for widget in [
+                    self.context_screen.screen_container.viewport,
+                    self.context_screen.current_view.widget.get_children()[0],
+                    ]:
+                remove_bin(widget)
+
+            self.screen_container.filter_vbox.pack_start(
+                context_widget, expand=False, fill=True)
+            self.screen_container.filter_vbox.reorder_child(
+                context_widget, 0)
+            self.context_screen.widget.show()
+
         self.__current_view = 0
         self.search_value = search_value
         self.fields_view_tree = {}
@@ -192,6 +242,16 @@ class Screen(SignalEvent):
         return list(self.domain_parser.completion(search_string))
 
     def search_filter(self, search_string=None, only_ids=False):
+        if self.context_screen:
+            context_record = self.context_screen.current_record
+            if not context_record.validate():
+                self.clear()
+                self.context_screen.display(set_cursor=True)
+                return False
+            context = self.context
+            context.update(self.context_screen.get_on_change_value())
+            self.new_group(context)
+
         domain = []
 
         if self.domain_parser and not self.parent:
@@ -365,9 +425,8 @@ class Screen(SignalEvent):
         super(Screen, self).destroy()
 
     def default_row_activate(self):
-        keyword_open = self.current_view.attributes.get('keyword_open')
-        if (keyword_open and self.current_view.view_type == 'tree' and
-                keyword_open == '1'):
+        if (self.current_view.view_type == 'tree' and
+                int(self.current_view.attributes.get('keyword_open', 0))):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
                 'id': self.current_record.id if self.current_record else None,
@@ -766,6 +825,8 @@ class Screen(SignalEvent):
             if (self.current_record
                     and self.current_record in self.current_record.group):
                 pass
+            elif self.group and self.current_view.view_type != 'calendar':
+                self.current_record = self.group[0]
             else:
                 self.current_record = None
         if self.views:

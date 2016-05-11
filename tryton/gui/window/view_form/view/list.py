@@ -70,7 +70,7 @@ class AdaptModelGroup(gtk.GenericTreeModel):
         self.group = group
         self.set_property('leak_references', False)
         self.children_field = children_field
-        self.children_definitions = children_definitions
+        self.children_definitions = children_definitions or []
         self.__removed = None  # XXX dirty hack to allow update of has_child
 
     def added(self, group, record):
@@ -297,7 +297,7 @@ class ViewTree(View):
         self.widgets = defaultdict(list)
         self.state_widgets = []
         self.children_field = children_field
-        self.children_definitions = children_definitions
+        self.children_definitions = children_definitions or []
         self.sum_widgets = []
         self.sum_box = gtk.HBox()
         self.reload = False
@@ -312,7 +312,9 @@ class ViewTree(View):
         self.parse(xml)
 
         self.treeview.set_property('rules-hint', True)
-        self.treeview.set_fixed_height_mode(True)
+        self.treeview.set_fixed_height_mode(
+            all(c.get_sizing() == gtk.TREE_VIEW_COLUMN_FIXED
+                for c in self.treeview.get_columns()))
         self.treeview.connect('button-press-event', self.__button_press)
         self.treeview.connect('key-press-event', self.on_keypress)
         self.treeview.connect_after('row-activated', self.__sig_switch)
@@ -587,7 +589,8 @@ class ViewTree(View):
         expand = attributes.get('expand', False)
         column.set_expand(expand)
         column.set_resizable(True)
-        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        if field and field.attrs['type'] != 'text':
+            column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 
     def get_column_widget(self, column):
         'Return the widget of the column'
@@ -704,12 +707,15 @@ class ViewTree(View):
             if isinstance(b.renderer, CellRendererButton)]
 
     def on_keypress(self, widget, event):
+        control_mask = gtk.gdk.CONTROL_MASK
+        if sys.platform == 'darwin':
+            control_mask = gtk.gdk.MOD2_MASK
         if (event.keyval == gtk.keysyms.c
-                and event.state & gtk.gdk.CONTROL_MASK):
+                and event.state & control_mask):
             self.on_copy()
             return False
         if (event.keyval == gtk.keysyms.v
-                and event.state & gtk.gdk.CONTROL_MASK):
+                and event.state & control_mask):
             self.on_paste()
             return False
         if event.keyval in (gtk.keysyms.Down, gtk.keysyms.Up):

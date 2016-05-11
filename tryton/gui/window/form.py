@@ -72,6 +72,7 @@ class Form(SignalEvent, TabContent):
         (None,) * 4,
         (_('A_ttachments...'), 'tryton-attachment', 'sig_attach',
             '<tryton>/Form/Attachments'),
+        (_('_Notes...'), 'tryton-note', 'sig_note', '<tryton>/Form/Notes'),
         (_('_Actions...'), 'tryton-executable', 'sig_action',
             '<tryton>/Form/Actions'),
         (_('_Relate...'), 'tryton-go-jump', 'sig_relate',
@@ -92,7 +93,7 @@ class Form(SignalEvent, TabContent):
 
     def __init__(self, model, res_id=False, domain=None, order=None, mode=None,
             view_ids=None, context=None, name=False, limit=None,
-            search_value=None, tab_domain=None):
+            search_value=None, tab_domain=None, context_model=None):
         super(Form, self).__init__()
 
         if not mode:
@@ -112,7 +113,8 @@ class Form(SignalEvent, TabContent):
 
         self.screen = Screen(self.model, mode=mode, context=context,
             view_ids=view_ids, domain=domain, limit=limit, order=order,
-            search_value=search_value, tab_domain=tab_domain)
+            search_value=search_value, tab_domain=tab_domain,
+            context_model=context_model)
         self.screen.widget.show()
 
         if not name:
@@ -136,12 +138,7 @@ class Form(SignalEvent, TabContent):
             style.bg[gtk.STATE_INSENSITIVE])
         self.widget.pack_start(url_entry, False, False)
 
-        access = common.MODELACCESS[self.model]
-        for button, access_type in (
-                ('new', 'create'),
-                ('save', 'write'),
-                ):
-            self.buttons[button].props.sensitive = access[access_type]
+        self.set_buttons_sensitive()
 
         self.screen.signal_connect(self, 'record-message',
             self._record_message)
@@ -243,9 +240,11 @@ class Form(SignalEvent, TabContent):
         else:
             self.buttons['note'].set_stock_id('tryton-note')
         record = self.screen.current_record
-        record_id = record.id if record else None
-        self.buttons['note'].props.sensitive = bool(
-            record_id >= 0 and record_id is not False)
+        if not record or record.id < 0:
+            sensitive = False
+        else:
+            sensitive = True
+        self.buttons['note'].props.sensitive = sensitive
 
     def sig_switch(self, widget=None):
         if not self.modified_save():
@@ -328,8 +327,17 @@ class Form(SignalEvent, TabContent):
             self.title.set_label('%s @ %s' % (self.name, revision))
         else:
             self.title.set_label(self.name)
-        for button in ('new', 'save'):
-            self.buttons[button].props.sensitive = not revision
+        self.set_buttons_sensitive(revision)
+
+    def set_buttons_sensitive(self, revision=None):
+        if not revision:
+            access = common.MODELACCESS[self.model]
+            self.buttons['new'].props.sensitive = access['create']
+            self.buttons['save'].props.sensitive = (
+                access['create'] or access['write'])
+        else:
+            for button in ['new', 'save']:
+                self.buttons[button].props.sensitive = False
 
     def sig_remove(self, widget=None):
         if not common.MODELACCESS[self.model]['delete']:
@@ -505,7 +513,7 @@ class Form(SignalEvent, TabContent):
         if self.screen.modified():
             value = sur_3b(
                 _('This record has been modified\n'
-                    'do you want to save it ?'))
+                    'do you want to save it?'))
             if value == 'ok':
                 return self.sig_save(None)
             if value == 'ko':

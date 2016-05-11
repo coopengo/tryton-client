@@ -375,7 +375,7 @@ def selection(title, values, alwaysask=False):
     dialog.set_icon(TRYTON_ICON)
     dialog.set_has_separator(True)
     dialog.set_default_response(gtk.RESPONSE_OK)
-    dialog.set_size_request(400, 400)
+    dialog.set_default_size(400, 400)
 
     label = gtk.Label(title or _('Your selection:'))
     dialog.vbox.pack_start(label, False, False)
@@ -889,7 +889,7 @@ class ErrorDialog(UniqueDialog):
         vbox.pack_start(button_roundup, False, False)
 
         dialog.vbox.pack_start(vbox)
-        dialog.set_size_request(600, 400)
+        dialog.set_default_size(600, 400)
         return dialog
 
     def __call__(self, title, details):
@@ -1062,6 +1062,13 @@ PLOCK = Lock()
 
 
 def process_exception(exception, *args, **kwargs):
+    try:
+        print "Exception Detected !"
+        print exception
+        print traceback.format_exc()
+        traceback.print_last()
+    except:
+        pass
 
     rpc_execute = kwargs.get('rpc_execute', rpc.execute)
 
@@ -1073,7 +1080,7 @@ def process_exception(exception, *args, **kwargs):
                 'until its fingerprint is fixed.'), _('Security risk!'))
             from tryton.gui.main import Main
             Main.sig_quit()
-        elif exception.faultCode == 'NotLogged':
+        elif exception.faultCode.startswith('403'):
             if rpc.CONNECTION is None:
                 message(_('Connection error!\n'
                         'Unable to connect to the server!'))
@@ -1118,16 +1125,8 @@ def process_exception(exception, *args, **kwargs):
             else:
                 message(_('Concurrency Exception'), msg_type=gtk.MESSAGE_ERROR)
                 return False
-        elif exception.faultCode == 'NotLogged':
+        elif exception.faultCode.startswith('403'):
             from tryton.gui.main import Main
-            if kwargs.get('session', rpc._SESSION) != rpc._SESSION:
-                if args:
-                    try:
-                        return rpc_execute(*args)
-                    except TrytonServerError, exception:
-                        return process_exception(exception, *args,
-                            rpc_execute=rpc_execute)
-                return
             if not PLOCK.acquire(False):
                 return False
             hostname = rpc._HOST
@@ -1300,7 +1299,6 @@ class RPCProgress(object):
     def run(self, process_exception_p=True, callback=None):
         self.process_exception_p = process_exception_p
         self.callback = callback
-        self.session = rpc._SESSION
         if self.parent.window:
             watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
             self.parent.window.set_cursor(watch)
@@ -1321,7 +1319,7 @@ class RPCProgress(object):
                     return RPCProgress('execute',
                         args).run(self.process_exception_p)
                 result = process_exception(self.exception, *self.args,
-                    rpc_execute=rpc_execute, session=self.session)
+                    rpc_execute=rpc_execute)
                 if result is False:
                     self.exception = RPCException(self.exception)
                 else:
@@ -1417,6 +1415,7 @@ COLORS = {
     'invalid': '#ff6969',
     'required': '#d2d2ff',
 }
+
 
 def filter_domain(domain):
     '''

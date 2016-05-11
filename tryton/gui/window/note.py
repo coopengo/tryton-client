@@ -13,13 +13,10 @@ class Note(WinForm):
         self.note_callback = callback
         context = record.context_get()
         context['resource'] = self.resource
-        try:
-            screen = Screen('ir.note', domain=[
-                    ('resource', '=', self.resource),
-                    ], mode=['tree', 'form'], context=context,
-                exclude_field='resource')
-        except:
-            return
+        screen = Screen('ir.note', domain=[
+                ('resource', '=', self.resource),
+                ], mode=['tree', 'form'], context=context,
+            exclude_field='resource')
         super(Note, self).__init__(screen, self.callback, view_type='tree')
         screen.search_filter()
         # Set parent after to be allowed to call search_filter
@@ -34,8 +31,10 @@ class Note(WinForm):
             resource = self.screen.group.fields['resource']
             unread = self.screen.group.fields['unread']
             for record in self.screen.group:
-                resource.set_client(record, self.resource)
-                unread.set_client(record, False)
+                if record.loaded or record.id < 0:
+                    resource.set_client(record, self.resource)
+                    if 'unread' not in record.modified_fields:
+                        unread.set_client(record, False)
             self.screen.group.save()
         if self.note_callback:
             self.note_callback()

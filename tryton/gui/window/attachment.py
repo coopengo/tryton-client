@@ -4,6 +4,7 @@
 import os
 import urllib
 import urlparse
+import sys
 
 from tryton.gui.window.view_form.screen import Screen
 from tryton.gui.window.win_form import WinForm
@@ -21,10 +22,11 @@ class Attachment(WinForm):
             ('resource', '=', self.resource),
             ], mode=['tree', 'form'], context=context,
             exclude_field='resource')
-        screen.search_filter()
-        screen.parent = record
         super(Attachment, self).__init__(screen, self.callback,
             view_type='tree')
+        screen.search_filter()
+        # Set parent after to be allowed to call search_filter
+        screen.parent = record
 
     def destroy(self):
         self.prev_view.save_width_height()
@@ -46,5 +48,6 @@ class Attachment(WinForm):
         new_record = self.screen.new()
         file_name = os.path.basename(urlparse.urlparse(uri).path)
         name_field.set_client(new_record, file_name)
+        uri = uri.decode('utf-8').encode(sys.getfilesystemencoding())
         data_field.set_client(new_record, urllib.urlopen(uri).read())
         self.screen.display()

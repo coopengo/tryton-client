@@ -55,31 +55,16 @@ class Action(object):
 
     @staticmethod
     def execute(act_id, data, action_type=None, context=None):
-        def get_action_type(actions):
-            try:
-                action, = actions()
-            except RPCException:
-                return
-            action_type = action['type']
-            exec_action(action_type)
-
-        def exec_action(action_type):
-            def callback(actions):
-                try:
-                    action, = actions()
-                except RPCException:
-                    return
-                Action._exec_action(action, data, context=context)
-
-            RPCExecute('model', action_type, 'search_read',
-                [('action', '=', act_id)], 0, 1, None, None,
-                context=context, callback=callback)
-
+        # Must be executed synchronously to avoid double execution
+        # on double click.
         if not action_type:
-            RPCExecute('model', 'ir.action', 'read', [act_id],
-                ['type'], context=context, callback=get_action_type)
-        else:
-            exec_action(action_type)
+            action, = RPCExecute('model', 'ir.action', 'read', [act_id],
+                ['type'], context=context)
+            action_type = action['type']
+        action, = RPCExecute('model', action_type, 'search_read',
+            [('action', '=', act_id)], 0, 1, None, None,
+            context=context)
+        Action._exec_action(action, data, context=context)
 
     @staticmethod
     def _exec_action(action, data=None, context=None):
@@ -116,7 +101,9 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
-            action_ctx = decoder.decode(action.get('pyson_context') or '{}')
+            action_ctx = context.copy()
+            action_ctx.update(
+                decoder.decode(action.get('pyson_context') or '{}'))
             ctx.update(action_ctx)
             ctx.update(context)
             action_ctx.update(context)
@@ -141,7 +128,8 @@ class Action(object):
                     limit=action.get('limit'),
                     search_value=search_value,
                     icon=(action.get('icon.rec_name') or ''),
-                    tab_domain=tab_domain)
+                    tab_domain=tab_domain,
+                    context_model=action['context_model'])
         elif action['type'] == 'ir.action.wizard':
             context = copy.deepcopy(context)
             context.update(data.get('extra_context', {}))

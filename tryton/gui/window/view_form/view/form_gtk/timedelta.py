@@ -3,6 +3,7 @@
 import gtk
 
 from tryton.config import CONFIG
+from tryton.common.entry_position import reset_position
 from .widget import Widget
 
 
@@ -45,6 +46,7 @@ class TimeDelta(Widget):
         else:
             value = field.get_client(record)
         self.entry.set_text(value)
+        reset_position(self.entry)
 
     def _readonly_set(self, value):
         super(TimeDelta, self)._readonly_set(value)

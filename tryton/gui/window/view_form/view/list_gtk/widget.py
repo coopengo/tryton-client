@@ -6,7 +6,6 @@ import tempfile
 import gtk
 import gettext
 import webbrowser
-import logging
 
 from functools import wraps, partial
 
@@ -31,7 +30,6 @@ from tryton.common.selection import SelectionMixin, PopdownMixin
 from tryton.common.datetime_ import CellRendererDate, CellRendererTime
 from tryton.common.datetime_strftime import datetime_strftime
 from tryton.common.domain_parser import quote
-from tryton.common import FORMAT_ERROR
 
 _ = gettext.gettext
 
@@ -289,12 +287,10 @@ class GenericText(Cell):
             'bg': self._set_background,
             'font': self._set_font
             }
-        if getattr(self.attrs, 'states', None):
-            attrs = record.expr_eval(field.get_state_attrs(record)['states'])
-            states = record.expr_eval(self.attrs['states']).copy()
-            states.update(attrs)
-        else:
-            states = record.expr_eval(field.get_state_attrs(record)['states'])
+        attrs = record.expr_eval(field.get_state_attrs(record).
+            get('states', {}))
+        states = record.expr_eval(self.attrs.get('states', {})).copy()
+        states.update(attrs)
         if isinstance(cell, CellRendererText) and \
                 cell.get_property('font') != 'Normal':
             cell.set_property('font', 'Normal')

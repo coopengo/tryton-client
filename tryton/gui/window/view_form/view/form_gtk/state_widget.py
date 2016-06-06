@@ -87,12 +87,11 @@ class Label(StateMixin, gtk.Label):
             'bg': self._set_background,
             'font': self._set_font
             }
-        if getattr(self.attrs, 'states', None):
-            attrs = record.expr_eval(field.get_state_attrs(record)['states'])
-            states = record.expr_eval(self.attrs['states']).copy()
-            states.update(attrs)
-        else:
-            states = record.expr_eval(field.get_state_attrs(record)['states'])
+        attrs = record.expr_eval(field.get_state_attrs(record).
+            get('states', {}))
+        states = record.expr_eval(self.attrs.get('states', {})).copy()
+        states.update(attrs)
+
         for attr in states.keys():
             if not states[attr]:
                 continue

@@ -226,6 +226,7 @@ class EditableTreeView(TreeView):
                 else:
                     entry.set_active_text(value)
                 entry.handler_unblock(entry.editing_done_id)
+                return True
             self.on_open_remote(record, column,
                 create=(event.keyval == gtk.keysyms.F3), value=value,
                 callback=callback)

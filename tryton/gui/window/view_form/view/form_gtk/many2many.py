@@ -209,6 +209,7 @@ class Many2Many(Widget):
                 self.screen.current_record.cancel()
                 # Force a display to clear the CellCache
                 self.screen.display()
+                return True
         WinForm(screen, callback)
 
     def _sig_new(self):
@@ -230,6 +231,7 @@ class Many2Many(Widget):
                 self.screen.load([record.id], modified=True)
             self.wid_text.set_text('')
             self.wid_text.grab_focus()
+            return True
 
         self.focus_out = False
         WinForm(screen, callback, new=True, save_current=True)

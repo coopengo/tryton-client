@@ -663,7 +663,9 @@ class M2O(GenericText):
                     screen.current_record.rec_name())
                 field.set_client(record, value, force_change=True)
             if callback:
-                callback()
+                return callback()
+            return False
+
         if obj_id:
             screen.load([obj_id])
             WinForm(screen, open_callback, save_current=True)
@@ -788,7 +790,8 @@ class O2M(GenericText):
 
         def open_callback(result):
             if callback:
-                callback()
+                return callback()
+            return False
         WinForm(screen, open_callback, view_type='tree', context=context)
 
 
@@ -809,7 +812,8 @@ class M2M(O2M):
 
         def open_callback(result):
             if callback:
-                callback()
+                return callback()
+            return False
         WinForm(screen, open_callback, view_type='tree', domain=domain,
             context=context)
 

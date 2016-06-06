@@ -170,6 +170,7 @@ class Many2One(Widget):
                     self.value_from_id(screen.current_record.id,
                         screen.current_record.rec_name()))
             self.focus_out = True
+            return True
         WinForm(screen, callback, new=True, save_current=True)
 
     def sig_edit(self, *args):
@@ -195,6 +196,7 @@ class Many2One(Widget):
                         force_change=True)
                 self.focus_out = True
                 self.changed = True
+                return True
             WinForm(screen, callback, save_current=True)
             return
         elif model and not self._readonly:

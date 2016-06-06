@@ -430,8 +430,8 @@ class WinForm(NoModal, InfoBar):
             result = False
         else:
             result = response_id not in cancel_responses
-        self.callback(result)
-        self.destroy()
+        if self.callback(result) or not result:
+            self.destroy()
 
     def new(self):
         self.screen.new()

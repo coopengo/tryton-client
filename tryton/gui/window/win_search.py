@@ -112,15 +112,12 @@ class WinSearch(NoModal):
                 context=self.context, mode=['form'])
 
             def callback(result):
-                saved = False
                 if result and screen.save_current():
                     record = screen.current_record
                     res = [(record.id, record.value.get('rec_name', ''))]
                     self.callback(res)
-                    saved = True
                 else:
                     self.callback(None)
-                return saved
             self.destroy()
             WinForm(screen, callback, new=True)
             return

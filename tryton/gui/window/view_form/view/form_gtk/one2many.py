@@ -368,7 +368,6 @@ class One2Many(Widget):
         def update_sequence():
             if sequence:
                 self.screen.group.set_sequence(field=sequence)
-            return True
 
         for widget in [self] + self.view.widgets[self.field_name]:
             if ((self.attrs.get('group')
@@ -446,7 +445,7 @@ class One2Many(Widget):
             return
         record = self.screen.current_record
         if record:
-            WinForm(self.screen, lambda a: True)
+            WinForm(self.screen, lambda a: None)
 
     def _sig_next(self, widget):
         if not self._validate():

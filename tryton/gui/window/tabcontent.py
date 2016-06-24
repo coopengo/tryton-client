@@ -30,8 +30,10 @@ class TabContent(InfoBar):
         self.widget.pack_start(self.info_bar, False, True)
 
         self.toolbar = self.create_toolbar(self.get_toolbars())
-        self.toolbar.show_all()
-        self.widget.pack_start(self.toolbar, False, True)
+        # JCA : Allow to hide buttons through the context
+        if not self.context.get('disable_main_toolbar', None):
+            self.toolbar.show_all()
+            self.widget.pack_start(self.toolbar, False, True)
 
         viewport = gtk.Viewport()
         viewport.set_shadow_type(gtk.SHADOW_NONE)
@@ -57,14 +59,16 @@ class TabContent(InfoBar):
         title.show()
 
         title_menu = gtk.MenuBar()
-        title_item = gtk.MenuItem('')
-        title_item.remove(title_item.get_children()[0])
-        menu_image = gtk.Image()
-        menu_image.set_from_stock('tryton-preferences-system',
-            gtk.ICON_SIZE_BUTTON)
-        title_item.add(menu_image)
-        title_item.set_submenu(self.set_menu_form())
-        title_menu.append(title_item)
+        # JCA : Allow to hide tab menu
+        if not self.context.get('disable_main_menu', None):
+            title_item = gtk.MenuItem('')
+            title_item.remove(title_item.get_children()[0])
+            menu_image = gtk.Image()
+            menu_image.set_from_stock('tryton-preferences-system',
+                gtk.ICON_SIZE_BUTTON)
+            title_item.add(menu_image)
+            title_item.set_submenu(self.set_menu_form())
+            title_menu.append(title_item)
         title_menu.show_all()
 
         self.status_label = gtk.Label()

@@ -343,11 +343,12 @@ class Screen:
         else:
             domain = [('id', 'in', [x.id for x in self.group])]
 
+        win_domain = self.get_domain()
         if domain:
-            if self.domain:
-                domain = ['AND', domain, self.domain]
+            if win_domain:
+                domain = ['AND', domain, win_domain]
         else:
-            domain = self.domain
+            domain = win_domain
 
         if self.screen_container.but_active.get_active():
             if domain:
@@ -382,11 +383,18 @@ class Screen:
                 self.screen_container.tab_domain):
             if not count or (current and idx != index):
                 continue
-            domain = ['AND', domain, screen_domain]
+            domain = ['AND', self.screen_container.get_tab_domain_for_idx(idx),
+                screen_domain]
             set_tab_counter(lambda: None, idx)
             RPCExecute('model', self.model_name,
                 'search_count', domain, 0, 1000, context=self.context,
                 callback=functools.partial(set_tab_counter, idx=idx))
+
+    def get_domain(self):
+        if not self.domain or not isinstance(self.domain, str):
+            return self.domain
+        decoder = PYSONDecoder(self.context)
+        return decoder.decode(self.domain)
 
     @property
     def context(self):

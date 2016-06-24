@@ -391,7 +391,9 @@ class ScreenContainer(object):
         idx = self.notebook.get_current_page()
         if idx < 0:
             return []
-        return self.tab_domain[idx][1]
+        ctx, domain = self.tab_domain[idx][1]
+        decoder = PYSONDecoder(ctx)
+        return decoder.decode(domain)
 
     def match_selected(self, completion, model, iter):
         def callback():

@@ -23,6 +23,7 @@ from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
+from tryton.pyson import PYSONDecoder
 from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
@@ -263,11 +264,12 @@ class Screen(SignalEvent):
         else:
             domain = [('id', 'in', [x.id for x in self.group])]
 
+        win_domain = self.get_domain()
         if domain:
-            if self.domain:
-                domain = ['AND', domain, self.domain]
+            if win_domain:
+                domain = ['AND', domain, win_domain]
         else:
-            domain = self.domain
+            domain = win_domain
 
         if self.current_view.view_type == 'calendar':
             if domain:
@@ -304,6 +306,12 @@ class Screen(SignalEvent):
         self.clear()
         self.load(ids)
         return bool(ids)
+
+    def get_domain(self):
+        if not self.domain or not isinstance(self.domain, basestring):
+            return self.domain
+        decoder = PYSONDecoder(self.context)
+        return decoder.decode(self.domain)
 
     @property
     def context(self):

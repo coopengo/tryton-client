@@ -101,20 +101,17 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
-            action_ctx = context.copy()
-            action_ctx.update(
-                decoder.decode(action.get('pyson_context') or '{}'))
-            ctx.update(action_ctx)
-            ctx.update(context)
+            action_ctx = decoder.decode(action.get('pyson_context') or '{}')
+            action_ctx.update(ctx)
             action_ctx.update(context)
             action_ctx.update(data.get('extra_context', {}))
+            action_ctx['context'] = ctx
 
-            ctx['context'] = ctx
-            decoder = PYSONDecoder(ctx)
-            domain = decoder.decode(action['pyson_domain'])
+            decoder = PYSONDecoder(action_ctx)
+            domain = action['pyson_domain']
             order = decoder.decode(action['pyson_order'])
             search_value = decoder.decode(action['pyson_search_value'] or '[]')
-            tab_domain = [(n, decoder.decode(d)) for n, d in action['domains']]
+            tab_domain = [(n, (action_ctx, d)) for n, d in action['domains']]
 
             name = False
             if action.get('window_name', True):

@@ -595,7 +595,7 @@ class One2Many(Widget):
             readonly = field.get_state_attrs(record).get('readonly', False)
             domain = field.domain_get(record)
             size_limit = record.expr_eval(self.attrs.get('size'))
-        if self.screen.domain != domain:
+        if self.screen.get_domain() != domain:
             self.screen.domain = domain
         self.screen.group.readonly = readonly
         self.screen.size_limit = size_limit

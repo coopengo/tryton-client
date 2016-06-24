@@ -182,9 +182,11 @@ class TabContent(InfoBar):
         self.widget.pack_start(title_box, expand=False, fill=True, padding=3)
 
         self.toolbar = self.create_toolbar(self.get_toolbars())
-        self.toolbar.show_all()
-        self.widget.pack_start(
-            self.toolbar, expand=False, fill=True, padding=0)
+        # JCA : Allow to hide buttons through the context
+        if not self.context.get('disable_main_toolbar', None):
+            self.toolbar.show_all()
+            self.widget.pack_start(
+                self.toolbar, expand=False, fill=True, padding=0)
 
         self.main = Gtk.HPaned()
         self.main.show()
@@ -217,8 +219,10 @@ class TabContent(InfoBar):
         title.show()
 
         menu = Gtk.MenuButton.new()
-        menu.set_relief(Gtk.ReliefStyle.NONE)
-        menu.set_popup(self.set_menu_form())
+        # JCA : Allow to hide tab menu
+        if not self.context.get('disable_main_menu', None):
+            menu.set_relief(Gtk.ReliefStyle.NONE)
+            menu.set_popup(self.set_menu_form())
         menu.show()
 
         self.status_label = Gtk.Label(

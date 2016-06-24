@@ -227,6 +227,11 @@ Some operations are working with one record or with a selection of
 :term:`records`. In :term:`form view` the actual record is selected for
 operations. In :term:`tree view` all selected records are used for operations.
 
+The tool bar may be deactivated by using the special `disable_main_toolbar`
+value in the context.
+The main menu may be deactivated as well by using the special
+`disable_main_menu` value in the context.
+
 .. _Toolbar-New:
 
 New:

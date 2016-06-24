@@ -1201,7 +1201,7 @@ class ViewTree(View):
         # Set column visibility depending on attributes and domain
         domain = []
         if self.screen.domain:
-            domain.append(self.screen.domain)
+            domain.append(self.screen.get_domain())
         tab_domain = self.screen.screen_container.get_tab_domain()
         if tab_domain:
             domain.append(tab_domain)

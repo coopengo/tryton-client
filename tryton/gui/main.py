@@ -738,7 +738,7 @@ class Main(Gtk.Application):
         ctx = rpc.CONTEXT.copy()
         decoder = PYSONDecoder(ctx)
         action_ctx = decoder.decode(action.get('pyson_context') or '{}')
-        domain = decoder.decode(action['pyson_domain'])
+        domain = action['pyson_domain']
         screen = Screen(action['res_model'], mode=['tree'], view_ids=view_ids,
             domain=domain, context=action_ctx, readonly=True, limit=None,
             row_activate=self.menu_row_activate)

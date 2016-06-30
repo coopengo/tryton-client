@@ -127,8 +127,9 @@ class Field(object):
                     # XXX to remove once server domains are fixed
                     value = None
                 setdefault = True
-                if record.group.domain:
-                    original_domain = merge(record.group.domain)
+                group_domain = record.group.get_domain()
+                if group_domain:
+                    original_domain = merge(group_domain)
                 else:
                     original_domain = merge(domain)
                 domain_readonly = original_domain[0] == 'AND'

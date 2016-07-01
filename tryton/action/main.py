@@ -102,8 +102,8 @@ class Action(object):
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
             action_ctx = decoder.decode(action.get('pyson_context') or '{}')
-            action_ctx.update(ctx)
             action_ctx.update(context)
+            action_ctx.update(ctx)
             action_ctx.update(data.get('extra_context', {}))
             action_ctx['context'] = ctx
 

@@ -129,7 +129,7 @@ def get_version():
 PACKAGE=None
 WEBSITE='http://www.coopengo.com/'
 LICENSE=None
-version = '1.6.4'
+version = '1.8.0'
 major_version, minor_version, _ = version.split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)

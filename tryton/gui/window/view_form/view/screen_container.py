@@ -479,7 +479,7 @@ class ScreenContainer(object):
             self.search_window.set_title('coog')
             self.search_window.set_icon(TRYTON_ICON)
             self.search_window.set_decorated(False)
-            self.search_window.set_deletable(False)
+            self.search_window.set_deletable(True)
             self.search_window.connect('delete-event', lambda *a: True)
             self.search_window.connect('key-press-event', key_press)
             vbox = gtk.VBox()

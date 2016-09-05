@@ -67,7 +67,7 @@ def server_version(host, port):
         logging.getLogger(__name__).debug(repr(result))
         return result
     except (Fault, socket.error):
-        raise
+        return None
 
 
 def login(username, password, host, port, database, date=None, set_date=False):

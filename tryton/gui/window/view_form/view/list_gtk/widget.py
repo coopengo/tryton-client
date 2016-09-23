@@ -308,6 +308,8 @@ class GenericText(Cell):
                 key = key[1:]
             if key[0] == 'label':
                 continue
+            if isinstance(states[attr], basestring):
+                key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
                     err = 'Wrong key format [type]_[style]_[value]: '

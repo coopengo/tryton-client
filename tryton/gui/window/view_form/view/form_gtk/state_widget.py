@@ -100,6 +100,8 @@ class Label(StateMixin, gtk.Label):
                 continue
             if key[0] == 'label':
                 key = key[1:]
+            if isinstance(states[attr], basestring):
+                key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
                     raise ValueError(FORMAT_ERROR + attr)

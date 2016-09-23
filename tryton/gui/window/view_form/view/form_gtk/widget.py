@@ -183,6 +183,8 @@ class Widget(object):
                 key = key[1:]
             if key[0] == 'label':
                 continue
+            if isinstance(states[attr], basestring):
+                key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
                     raise ValueError(FORMAT_ERROR + attr)

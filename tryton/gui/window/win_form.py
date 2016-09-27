@@ -38,7 +38,11 @@ class WinForm(NoModal, InfoBar):
         self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.win.set_icon(TRYTON_ICON)
         self.win.set_has_separator(False)
-        self.win.set_deletable(False)
+        # set_deletable is False on tryton master repo
+        # But this is not working on each graphical environnement
+        # Further more, setting theses windows deletable does not seems
+        # to bring any trouble.
+        self.win.set_deletable(True)
         self.win.connect('delete-event', lambda *a: True)
         self.win.connect('close', self.close)
         self.win.connect('delete-event', self.delete_event)

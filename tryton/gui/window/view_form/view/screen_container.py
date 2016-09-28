@@ -484,7 +484,7 @@ class ScreenContainer(object):
             # set_deletable is False on tryton master repo
             # But this is not working on each graphical environnement
             # Further more, setting theses windows deletable does not seems
-            # to bring any trouble.
+            # to bring any trouble.
             self.search_window.set_deletable(True)
             self.search_window.connect('delete-event', lambda *a: True)
             self.search_window.connect('key-press-event', key_press)

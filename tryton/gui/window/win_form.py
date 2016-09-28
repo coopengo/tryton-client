@@ -41,7 +41,7 @@ class WinForm(NoModal, InfoBar):
         # set_deletable is False on tryton master repo
         # But this is not working on each graphical environnement
         # Further more, setting theses windows deletable does not seems
-        # to bring any trouble.
+        # to bring any trouble.
         self.win.set_deletable(True)
         self.win.connect('delete-event', lambda *a: True)
         self.win.connect('close', self.close)

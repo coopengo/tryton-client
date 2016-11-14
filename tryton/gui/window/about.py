@@ -19,10 +19,6 @@ Copyright (C) 2008-2011 virtual things - Preisler & Spallek GbR.
 Copyright (C) 2007-2009 Lorenzo Gil Sanchez.
 Copyright (C) 2004-2008 Tiny SPRL.
 '''
-
-"""
-#5107 : qui ajouter dans la partie 'AUTHORS' pour Coog ?
-"""
 AUTHORS = [
         'Bertrand Chenal <bertrand.chenal@b2ck.com>',
         'Cédric Krier <cedric.krier@b2ck.com>',
@@ -33,6 +29,7 @@ AUTHORS = [
         'Nicolas Évrard <nicolas.evrard@b2ck.com>',
         'Sednacom <contact@sednacom.fr>',
         'Udo Spallek <info@virtual-things.biz>',
+        'Coopengo <support@coopengo.com>',
         ]
 LICENSE = '''                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
@@ -723,13 +720,11 @@ class About(object):
         parent = get_toplevel_window()
         self.win = gtk.AboutDialog()
         self.win.set_transient_for(parent)
-        # replace self.win.set_name('Tryton')
+        # MAR : Fix #5107 : Replace tryton references with Coog
         self.win.set_name('Coog')
-        # replace self.win.set_version('__version__')
         self.win.set_version(__version_coog__)
         self.win.set_copyright(COPYRIGHT)
         self.win.set_license(LICENSE)
-        # replace self.win.set_website('http://tryton.org/')
         self.win.set_website('http://coopengo.com/')
         self.win.set_authors(AUTHORS)
         self.win.set_logo(TRYTON_ICON)

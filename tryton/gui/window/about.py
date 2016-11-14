@@ -6,9 +6,10 @@ import gettext
 import webbrowser
 from tryton.config import TRYTON_ICON
 from tryton.common import get_toplevel_window
-from tryton import __version__
+from tryton import __version_coog__
 
 COPYRIGHT = '''\
+Copyright (C) 2012-2016 Coopengo
 Copyright (C) 2010-2011 Nicolas Évrard.
 Copyright (C) 2007-2011 Cédric Krier.
 Copyright (C) 2007-2011 Bertrand Chenal.
@@ -18,6 +19,10 @@ Copyright (C) 2008-2011 virtual things - Preisler & Spallek GbR.
 Copyright (C) 2007-2009 Lorenzo Gil Sanchez.
 Copyright (C) 2004-2008 Tiny SPRL.
 '''
+
+"""
+#5107 : qui ajouter dans la partie 'AUTHORS' pour Coog ?
+"""
 AUTHORS = [
         'Bertrand Chenal <bertrand.chenal@b2ck.com>',
         'Cédric Krier <cedric.krier@b2ck.com>',
@@ -718,11 +723,14 @@ class About(object):
         parent = get_toplevel_window()
         self.win = gtk.AboutDialog()
         self.win.set_transient_for(parent)
-        self.win.set_name('Tryton')
-        self.win.set_version(__version__)
+        # replace self.win.set_name('Tryton')
+        self.win.set_name('Coog')
+        # replace self.win.set_version('__version__')
+        self.win.set_version(__version_coog__)
         self.win.set_copyright(COPYRIGHT)
         self.win.set_license(LICENSE)
-        self.win.set_website('http://www.tryton.org/')
+        # replace self.win.set_website('http://tryton.org/')
+        self.win.set_website('http://coopengo.com/')
         self.win.set_authors(AUTHORS)
         self.win.set_logo(TRYTON_ICON)
 

@@ -6,7 +6,7 @@ import os
 
 from gi.repository import GdkPixbuf, Gtk
 
-from tryton import __version__
+from tryton import __version_coog__
 from tryton.common import get_toplevel_window
 from tryton.config import CONFIG, PIXMAPS_DIR
 
@@ -25,6 +25,7 @@ AUTHORS = [
         'Nicolas Évrard <nicolas.evrard@b2ck.com>',
         'Sednacom <contact@sednacom.fr>',
         'Udo Spallek <info@virtual-things.biz>',
+        'Coopengo <support@coopengo.com>',
         ]
 _ = gettext.gettext
 
@@ -37,12 +38,13 @@ class About(object):
         self.win.set_program_name('Coog')
         self.win.set_transient_for(parent)
         self.win.set_name(CONFIG['client.title'])
-        self.win.set_version(__version__)
+        # MAR : Fix #5107 : Replace tryton references with Coog
+        self.win.set_version(__version_coog__)
         self.win.set_comments(_("modularity, scalability and security"))
         self.win.set_copyright(COPYRIGHT)
         self.win.set_license_type(Gtk.License.GPL_3_0)
-        self.win.set_website('http://www.tryton.org/')
-        self.win.set_website_label("Tryton")
+        self.win.set_website('http://coopengo.com/')
+        self.win.set_website_label("Coopengo")
         self.win.set_authors(AUTHORS)
         self.win.set_translator_credits(_('translator-credits'))
         self.win.set_logo(GdkPixbuf.Pixbuf.new_from_file(

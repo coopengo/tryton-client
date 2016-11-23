@@ -555,6 +555,12 @@ class Main(Gtk.Application):
             Action.execute(action_id, {})
         connexion_date = date.strftime('%d/%m/%Y') if date else ''
         self.set_title(prefs.get('status_bar', ''), connexion_date)
+        # AKE: change bg color based on preferences
+        color_bg = prefs.get('color_bg', None
+            ) or os.environ.get('TRYTON_CLIENT_BG_COLOR', None)
+        if color_bg:
+            self.window.modify_bg(Gtk.StateType.NORMAL,
+                Gdk.color_parse(color_bg))
         if prefs and 'language' in prefs:
             translate.setlang(prefs['language'], prefs.get('locale'))
             if CONFIG['client.lang'] != prefs['language']:

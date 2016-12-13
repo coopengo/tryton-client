@@ -27,14 +27,15 @@ class Many2Many(Widget):
         vbox = gtk.VBox(homogeneous=False, spacing=5)
         self.widget.add(vbox)
         self._readonly = True
+        self._required = False
         self._position = 0
 
         hbox = gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
 
-        label = gtk.Label(attrs.get('string', ''))
-        label.set_alignment(0.0, 0.5)
-        hbox.pack_start(label, expand=True, fill=True)
+        self.title = gtk.Label(attrs.get('string', ''))
+        self.title.set_alignment(0.0, 0.5)
+        hbox.pack_start(self.title, expand=True, fill=True)
 
         hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
@@ -174,7 +175,8 @@ class Many2Many(Widget):
             context=context, domain=domain,
             view_ids=self.attrs.get('view_ids', '').split(','),
             views_preload=self.attrs.get('views', {}),
-            new=self.attrs.get('create', True))
+            new=self.attrs.get('create', True),
+            title=self.attrs.get('string'))
         win.screen.search_filter(quote(value))
         win.show()
 
@@ -184,22 +186,27 @@ class Many2Many(Widget):
     def _on_activate(self):
         self._sig_edit()
 
-    def _sig_edit(self):
-        if not self.screen.current_record:
-            return
-        # Create a new screen that is not linked to the parent otherwise on the
-        # save of the record will trigger the save of the parent
+    def _get_screen_form(self):
         domain = self.field.domain_get(self.record)
         add_remove = self.record.expr_eval(self.attrs.get('add_remove'))
         if add_remove:
             domain = [domain, add_remove]
         context = self.field.context_get(self.record)
-
-        screen = Screen(self.attrs['relation'], domain=domain,
-            view_ids=self.attrs.get('view_ids', '').split(','),
+        view_ids = self.attrs.get('view_ids', '').split(',')
+        if view_ids:
+            # Remove the first tree view as mode is form only
+            view_ids.pop(0)
+        return Screen(self.attrs['relation'], domain=domain,
+            view_ids=view_ids,
             mode=['form'], views_preload=self.attrs.get('views', {}),
-            readonly=self.attrs.get('readonly', False),
             context=context)
+
+    def _sig_edit(self):
+        if not self.screen.current_record:
+            return
+        # Create a new screen that is not linked to the parent otherwise on the
+        # save of the record will trigger the save of the parent
+        screen = self._get_screen_form()
         screen.load([self.screen.current_record.id])
 
         def callback(result):
@@ -209,19 +216,10 @@ class Many2Many(Widget):
                 self.screen.current_record.cancel()
                 # Force a display to clear the CellCache
                 self.screen.display()
-        WinForm(screen, callback)
+        WinForm(screen, callback, title=self.attrs.get('string'))
 
     def _sig_new(self):
-        domain = self.field.domain_get(self.record)
-        add_remove = self.record.expr_eval(self.attrs.get('add_remove'))
-        if add_remove:
-            domain = [domain, add_remove]
-        context = self.field.context_get(self.record)
-
-        screen = Screen(self.attrs['relation'], domain=domain,
-            view_ids=self.attrs.get('view_ids', '').split(','),
-            mode=['form'], views_preload=self.attrs.get('views', {}),
-            context=context)
+        screen = self._get_screen_form()
 
         def callback(result):
             self.focus_out = True
@@ -232,12 +230,22 @@ class Many2Many(Widget):
             self.wid_text.grab_focus()
 
         self.focus_out = False
-        WinForm(screen, callback, new=True, save_current=True)
+        WinForm(screen, callback, new=True, save_current=True,
+            title=self.attrs.get('string'), rec_name=self.wid_text.get_text())
 
     def _readonly_set(self, value):
         self._readonly = value
         self._set_button_sensitive()
         self.wid_text.set_sensitive(not value)
+        self._set_label_state()
+
+    def _required_set(self, value):
+        self._required = value
+        self._set_label_state()
+
+    def _set_label_state(self):
+        attrlist = common.get_label_attributes(self._readonly, self._required)
+        self.title.set_attributes(attrlist)
 
     def _set_button_sensitive(self):
         if self.record and self.field:

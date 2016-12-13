@@ -43,19 +43,11 @@ def db_list(host, port):
         return result
     except Fault, exception:
         if exception.faultCode == 'AccessDenied':
-            logging.getLogger(__name__).debug(-2)
-            return -2
+            logging.getLogger(__name__).debug('AccessDenied')
+            return None
         else:
             logging.getLogger(__name__).debug(repr(None))
             return None
-
-
-def db_exec(host, port, method, database='', *args):
-    connection = ServerProxy(host, port, database=database)
-    logging.getLogger(__name__).info('common.db.%s(%s)' % (method, args))
-    result = getattr(connection.common.db, method)(*args)
-    logging.getLogger(__name__).debug(repr(result))
-    return result
 
 
 def server_version(host, port):
@@ -70,41 +62,31 @@ def server_version(host, port):
         return None
 
 
-def login(username, password, host, port, database, date=None, set_date=False):
+def login(host, port, database, username, parameters, language=None, date=None,
+        set_date=None):
     global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
-    _VIEW_CACHE = {}
-    _TOOLBAR_CACHE = {}
-    _KEYWORD_CACHE = {}
-    try:
-        if CONNECTION is not None:
-            CONNECTION.close()
-        CONNECTION = ServerPool(host, port, database)
-        logging.getLogger(__name__).info('common.db.login(%s, %s)' %
-            (username, 'x' * 10))
-        with CONNECTION() as conn:
-            result = conn.common.db.login(username, password)
-        logging.getLogger(__name__).debug(repr(result))
-    except socket.error:
-        _USER = None
-        _CLIENT_DATE = None
-        return -1
-    if not result:
-        _USER = None
-        _CLIENT_DATE = None
-        return -2
+    connection = ServerProxy(host, port, database)
+    logging.getLogger(__name__).info('common.db.login(%s, %s, %s)'
+        % (username, 'x' * 10, language))
+    result = connection.common.db.login(username, parameters, language)
+    logging.getLogger(__name__).debug(repr(result))
     _USER = result[0]
     _USERNAME = username
     session = ':'.join(map(str, [username] + result))
+    if CONNECTION is not None:
+        CONNECTION.close()
     CONNECTION = ServerPool(host, port, database, session=session)
     if set_date:
         _CLIENT_DATE = date
     _HOST = host
     _PORT = port
     _DATABASE = database
+    _VIEW_CACHE = {}
+    _TOOLBAR_CACHE = {}
+    _KEYWORD_CACHE = {}
     IPCServer(host, port, database).run()
-    return 1
 
 
 def logout():

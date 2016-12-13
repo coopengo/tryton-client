@@ -29,15 +29,16 @@ class One2Many(Widget):
         vbox = gtk.VBox(homogeneous=False, spacing=2)
         self.widget.add(vbox)
         self._readonly = True
+        self._required = False
         self._position = 0
         self._length = 0
 
         self.title_box = hbox = gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
 
-        label = gtk.Label(attrs.get('string', ''))
-        label.set_alignment(0.0, 0.5)
-        hbox.pack_start(label, expand=True, fill=True)
+        self.title = gtk.Label(attrs.get('string', ''))
+        self.title.set_alignment(0.0, 0.5)
+        hbox.pack_start(self.title, expand=True, fill=True)
 
         hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
@@ -191,7 +192,6 @@ class One2Many(Widget):
             view_ids=attrs.get('view_ids', '').split(','),
             views_preload=attrs.get('views', {}),
             row_activate=self._on_activate,
-            readonly=self.attrs.get('readonly', False),
             exclude_field=attrs.get('relation_field', None))
         self.screen.pre_validate = bool(int(attrs.get('pre_validate', 0)))
         self.screen.signal_connect(self, 'record-message', self._sig_label)
@@ -269,6 +269,15 @@ class One2Many(Widget):
     def _readonly_set(self, value):
         self._readonly = value
         self._set_button_sensitive()
+        self._set_label_state()
+
+    def _required_set(self, value):
+        self._required = value
+        self._set_label_state()
+
+    def _set_label_state(self):
+        attrlist = common.get_label_attributes(self._readonly, self._required)
+        self.title.set_attributes(attrlist)
 
     def _set_button_sensitive(self):
         access = common.MODELACCESS[self.screen.model_name]
@@ -386,7 +395,7 @@ class One2Many(Widget):
             field_size = self.record.expr_eval(self.attrs.get('size')) or -1
             field_size -= len(self.field.get_eval(self.record)) + 1
             WinForm(self.screen, lambda a: update_sequence(), new=True,
-                many=field_size, context=ctx)
+                many=field_size, context=ctx, title=self.attrs.get('string'))
 
     def _new_product(self):
         fields = self.attrs['product'].split(',')
@@ -412,7 +421,7 @@ class One2Many(Widget):
                     product[field.name] = result
 
             win_search = WinSearch(relation, callback, sel_multi=True,
-                context=context, domain=domain)
+                context=context, domain=domain, title=self.attrs.get('string'))
             win_search.win.connect('destroy', search_set)
             win_search.screen.search_filter()
             win_search.show()
@@ -445,7 +454,8 @@ class One2Many(Widget):
             return
         record = self.screen.current_record
         if record:
-            WinForm(self.screen, lambda a: None)
+            WinForm(self.screen, lambda a: None,
+                title=self.attrs.get('string'))
 
     def _sig_next(self, widget):
         if not self._validate():
@@ -504,7 +514,8 @@ class One2Many(Widget):
             context=context, domain=domain,
             view_ids=self.attrs.get('view_ids', '').split(','),
             views_preload=self.attrs.get('views', {}),
-            new=self.but_new.get_property('sensitive'))
+            new=self.but_new.get_property('sensitive'),
+            title=self.attrs.get('string'))
         win.screen.search_filter(quote(text))
         win.show()
 
@@ -588,16 +599,13 @@ class One2Many(Widget):
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:
                 self.screen.current_record = None
-        readonly = False
         domain = []
         size_limit = None
         if record:
-            readonly = field.get_state_attrs(record).get('readonly', False)
             domain = field.domain_get(record)
             size_limit = record.expr_eval(self.attrs.get('size'))
         if self.screen.get_domain() != domain:
             self.screen.domain = domain
-        self.screen.group.readonly = readonly
         self.screen.size_limit = size_limit
         self.screen.display()
         return True

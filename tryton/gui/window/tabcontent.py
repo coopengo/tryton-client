@@ -26,9 +26,6 @@ class TabContent(InfoBar):
         title_box = self.make_title_bar()
         self.widget.pack_start(title_box, expand=False, fill=True, padding=3)
 
-        self.create_info_bar()
-        self.widget.pack_start(self.info_bar, False, True)
-
         self.toolbar = self.create_toolbar(self.get_toolbars())
         # JCA : Allow to hide buttons through the context
         if not self.context.get('disable_main_toolbar', None):
@@ -47,6 +44,9 @@ class TabContent(InfoBar):
         self.scrolledwindow.show()
 
         self.widget.pack_start(self.scrolledwindow)
+
+        self.create_info_bar()
+        self.widget.pack_start(self.info_bar, False, True)
 
     def make_title_bar(self):
         self.title = title = gtk.Label()
@@ -127,6 +127,7 @@ class TabContent(InfoBar):
         for label, stock_id, callback, accel_path in self.menu_def:
             if label:
                 menuitem = gtk.ImageMenuItem(label, self.accel_group)
+                menuitem.set_use_underline(True)
                 if callback:
                     menuitem.connect('activate', getattr(self, callback))
                 else:

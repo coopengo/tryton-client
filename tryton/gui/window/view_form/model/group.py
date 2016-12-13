@@ -305,11 +305,31 @@ class Group(SignalEvent, list):
         return record
 
     def set_sequence(self, field='sequence'):
-        index = 0
         changed = False
+        prev = None
         for record in self:
-            if record[field]:
-                if index >= record[field].get(record):
+            # Assume not loaded records are correctly ordered
+            # as far as we do not change any previous records.
+            if (record.get_loaded([field]) and not changed) or record.id < 0:
+                if prev:
+                    index = prev[field].get(prev)
+                else:
+                    index = None
+                update = False
+                value = record[field].get(record)
+                if value is None:
+                    if index:
+                        update = True
+                    elif prev and record.id >= 0:
+                        update = record.id < prev.id
+                if value == index:
+                    if prev and record.id >= 0:
+                        update = record.id < prev.id
+                elif value < index:
+                    update = True
+                if update:
+                    if index is None:
+                        index = 0
                     index += 1
                     record.signal_unconnect(self, 'record-changed')
                     try:
@@ -318,15 +338,14 @@ class Group(SignalEvent, list):
                         record.signal_connect(self, 'record-changed',
                             self._record_changed)
                     changed = record
-                else:
-                    index = record[field].get(record)
+            prev = record
         if changed:
             self.signal('group-changed', changed)
 
-    def new(self, default=True, obj_id=None):
+    def new(self, default=True, obj_id=None, rec_name=None):
         record = Record(self.model_name, obj_id, group=self)
         if default:
-            record.default_get()
+            record.default_get(rec_name=rec_name)
         record.signal_connect(self, 'record-changed', self._record_changed)
         record.signal_connect(self, 'record-modified', self._record_modified)
         return record

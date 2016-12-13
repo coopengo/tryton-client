@@ -7,8 +7,11 @@ from HTMLParser import HTMLParser
 
 import pango
 import gtk
+import chardet
 
 MIME = 'text/html'
+if hasattr(gtk.gdk, 'Atom'):
+    MIME = gtk.gdk.Atom.intern(MIME, False)
 
 
 def _reverse_dict(dct):
@@ -259,7 +262,8 @@ def serialize(register, content, start, end, data):
 
 def deserialize(register, content, iter_, text, create_tags, data):
     if not isinstance(text, unicode):
-        text = text.decode('utf-8')
+        encoding = chardet.detect(text)['encoding'] or 'utf-8'
+        text = text.decode(encoding)
     text = text.encode('utf-8')
     text, tags = parse_markup(normalize_markup(text, method='xml'))
     offset = iter_.get_offset()

@@ -232,7 +232,8 @@ def convert_value(field, value, context=None):
     def convert_boolean():
         if isinstance(value, basestring):
             return any(test.decode('utf-8').lower().startswith(value.lower())
-                for test in (_('y'), _('yes'), _('true'), _('t'), '1'))
+                for test in (
+                    _('y'), _('Yes'), _('True'), _('t'), '1'))
         else:
             return bool(value)
 
@@ -753,6 +754,25 @@ def test_complete_selection():
             (['male', 'f'], [['male', 'female']]),
             ):
         assert list(complete_value(field_with_empty, value)) == result
+
+
+def test_complete_reference():
+    field = {
+        'type': 'reference',
+        'selection': [
+            ('spam', 'Spam'),
+            ('ham', 'Ham'),
+            ('', ''),
+            ],
+        }
+    for value, result in (
+            ('s', ['%spam%']),
+            ('test', []),
+            ('', ['%spam%', '%ham%', '%']),
+            (None, ['%spam%', '%ham%', '%']),
+            (['spam', 'h'], [['spam', 'ham']]),
+            ):
+        assert list(complete_value(field, value)) == result
 
 
 def parenthesize(tokens):
@@ -1451,6 +1471,11 @@ def test_parse_clause():
     assert rlist(dom.parse_clause([('Reference', None, ['foo', 'bar'])])) == [
         ('reference', 'in', ['foo', 'bar']),
         ]
+    assert rlist(dom.parse_clause(['OR',
+                ('Name', None, 'John'), ('Name', None, 'Jane')])) == ['OR',
+        ('name', 'ilike', '%John%'),
+        ('name', 'ilike', '%Jane%'),
+        ]
     assert rlist(dom.parse_clause([('Many2One', None, 'John')])) == [
         ('many2one', 'ilike', '%John%'),
         ]
@@ -1472,3 +1497,5 @@ def test_completion():
     assert list(dom.completion(u'Name: foo')) == []
     assert list(dom.completion(u'Name: !=')) == []
     assert list(dom.completion(u'Name: !=foo')) == []
+    assert list(dom.completion(u'')) == ['Name: ']
+    assert list(dom.completion(u' ')) == ['', 'Name: ']

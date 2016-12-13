@@ -16,7 +16,6 @@ class ViewBoard(object):
 
     def __init__(self, arch, context=None):
         self.context = context
-        self.widgets = []
         self.actions = []
 
         xml_dom = xml.dom.minidom.parseString(arch)
@@ -153,10 +152,6 @@ class ViewBoard(object):
         action.signal_connect(self, 'active-changed', self._active_changed)
         self.actions.append(action)
         container.add(action.widget, attributes)
-
-    @property
-    def title(self):
-        self.attributes.get('string', '')
 
     def widget_get(self):
         return self.widget

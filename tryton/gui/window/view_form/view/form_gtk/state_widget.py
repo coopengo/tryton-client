@@ -4,7 +4,7 @@ import gtk
 import pango
 import logging
 
-from tryton.common import COLOR_RGB, FORMAT_ERROR
+import tryton.common as common
 
 
 class StateMixin(object):
@@ -42,37 +42,28 @@ class Label(StateMixin, gtk.Label):
             state_changes = record.expr_eval(self.attrs.get('states', {}))
         else:
             state_changes = {}
-        if ((field and field.attrs.get('required'))
-                or state_changes.get('required')):
-            weight = pango.WEIGHT_BOLD
-        else:
-            weight = pango.WEIGHT_NORMAL
-        if ((field and field.attrs.get('readonly'))
-                or state_changes.get('readonly')):
-            style = pango.STYLE_NORMAL
-            weight = pango.WEIGHT_NORMAL
-        else:
-            style = pango.STYLE_ITALIC
-        attrlist = pango.AttrList()
-        attrlist.change(pango.AttrWeight(weight, 0, -1))
-        attrlist.change(pango.AttrStyle(style, 0, -1))
+        required = ((field and field.attrs.get('required'))
+                or state_changes.get('required'))
+        readonly = ((field and field.attrs.get('readonly'))
+                or state_changes.get('readonly'))
+        attrlist = common.get_label_attributes(readonly, required)
         if field is not None:
             self._format_set(record, field, attrlist)
         self.set_attributes(attrlist)
 
     def _set_background(self, value, attrlist):
-        if value not in COLOR_RGB:
+        if value not in common.COLOR_RGB:
             logging.getLogger(__name__).info('This color is not supported' +
                 '=> %s' % value)
-        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        color = common.COLOR_RGB.get(value, common.COLOR_RGB['black'])
         attrlist.change(pango.AttrBackground(color[0], color[1],
                 color[2], 0, -1))
 
     def _set_foreground(self, value, attrlist):
-        if value not in COLOR_RGB:
+        if value not in common.COLOR_RGB:
             logging.getLogger(__name__).info('This color is not supported' +
                 '=> %s' % value)
-        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        color = common.COLOR_RGB.get(value, common.COLOR_RGB['black'])
         attrlist.change(pango.AttrForeground(color[0], color[1],
                 color[2], 0, -1))
 
@@ -104,7 +95,7 @@ class Label(StateMixin, gtk.Label):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
-                    raise ValueError(FORMAT_ERROR + attr)
+                    raise ValueError(common.FORMAT_ERROR + attr)
                 functions[key[0]](key[1], attrlist)
 
 

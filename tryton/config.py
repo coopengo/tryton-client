@@ -63,7 +63,6 @@ class ConfigManager(object):
             'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
             'menu.pane': 200,
             'menu.expanded': True,
-            'sentry.dsn': None,
             'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
@@ -104,9 +103,7 @@ class ConfigManager(object):
         self.load()
 
         self.options['dev'] = opt.dev
-        format = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
-        datefmt = '%Y-%m-%d %H:%M:%S'
-        logging.basicConfig(format=format, datefmt=datefmt)
+        logging.basicConfig()
         loglevels = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,

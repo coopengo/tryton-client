@@ -7,7 +7,7 @@
 !endif
 
 ;General
-Name "coog ${VERSION}"
+Name "Coog ${VERSION}"
 OutFile "coog-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
@@ -33,5 +33,5 @@ Section
 
     ;Run the exe
     SetOutPath '$EXEDIR'
-    nsExec::Exec $PLUGINSDIR\tryton.exe
+    nsExec::Exec $PLUGINSDIR\coog.exe
 SectionEnd

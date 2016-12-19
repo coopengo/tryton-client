@@ -112,6 +112,7 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
+            # TODO: comment changes
             action_ctx = decoder.decode(action.get('pyson_context') or '{}')
             action_ctx.update(context)
             action_ctx.update(ctx)

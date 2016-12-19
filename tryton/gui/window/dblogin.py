@@ -483,24 +483,16 @@ class DBLogin(object):
             self.label_date.set_padding(3, 3)
             self.table_main.attach(self.label_date, 0, 1, 8, 9,
                 xoptions=gtk.FILL)
-            self.date_entry = Date()
-            self.date_entry.props.format = '%d/%m/%Y'
-            self.date_entry.props.value = datetime.date.today()
-            self.table_main.attach(self.date_entry, 1, 3, 8, 9)
+            self.entry_date = Date()
+            self.entry_date.props.format = '%d/%m/%Y'
+            self.entry_date.props.value = datetime.date.today()
+            self.table_main.attach(self.entry_date, 1, 3, 8, 9)
 
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
         self.profiles = ConfigParser.SafeConfigParser({'port': '8000'})
         # JCA : Deactivate demo tryton database
-        if not os.path.exists(self.profile_cfg) and False:
-            short_version = '.'.join(__version__.split('.', 2)[:2])
-            name = 'demo%s.tryton.org' % short_version
-            self.profiles.add_section(name)
-            self.profiles.set(name, 'host', name)
-            self.profiles.set(name, 'port', '8000')
-            self.profiles.set(name, 'database', 'demo%s' % short_version)
-            self.profiles.set(name, 'username', 'demo')
-        else:
+        if os.path.exists(self.profile_cfg):
             self.profiles.read(self.profile_cfg)
         for section in self.profiles.sections():
             active = all(self.profiles.has_option(section, option)
@@ -607,7 +599,7 @@ class DBLogin(object):
         # The previous action did not called expand_hostspec
         self.expand_hostspec(self.expander)
 
-        res, result = None, ('', '', '', '', '')
+        response, result = None, ('', '', '', '')
         while not all(result):
             response = self.dialog.run()
             if response != gtk.RESPONSE_OK:
@@ -643,7 +635,7 @@ class DBLogin(object):
                 host, port, database, self.entry_login.get_text())
 
         if CONFIG['login.date']:
-            date = self.date_entry.props.value
+            date = self.entry_date.props.value
         else:
             date = None
         self.parent.present()

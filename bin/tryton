@@ -14,15 +14,6 @@ if hasattr(sys, 'frozen'):
             '-l' in sys.argv or '--log-level' in sys.argv):
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
-    # AKE: pipe client output to a file
-    else:
-        log_path = os.path.join(os.environ.get('COOG_LOG_PATH',
-                os.environ['APPDATA']), 'Coog.log')
-        if not os.path.isdir(os.path.dirname(log_path)):
-            os.makedirs(os.path.dirname(log_path))
-        file_ = open(log_path, 'a')
-        sys.stdout = file_
-        sys.stderr = file_
     prefix = os.path.dirname(sys.executable)
     os.environ['GTK_EXE_PREFIX'] = prefix
     os.environ['GTK_DATA_PREFIX'] = prefix

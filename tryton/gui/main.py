@@ -857,14 +857,13 @@ class Main(object):
             return
         language = CONFIG['client.lang']
         try:
-            host, port, database, username = DBLogin().run()
+            host, port, database, username, date = DBLogin().run()
         except TrytonError, exception:
             if exception.faultCode == 'QueryCanceled':
                 return
             raise
         func = lambda parameters: rpc.login(
-            host, port, database, username, parameters, language,
-            set_date=True)
+            host, port, database, username, parameters, language, date, True)
         try:
             common.Login(func)
         except Exception, exception:
@@ -996,6 +995,7 @@ class Main(object):
         ctx = rpc.CONTEXT.copy()
         decoder = PYSONDecoder(ctx)
         action_ctx = decoder.decode(action.get('pyson_context') or '{}')
+        # Postpone domain eval
         domain = action['pyson_domain']
         screen = Screen(action['res_model'], mode=['tree'], view_ids=view_ids,
             domain=domain, context=action_ctx, readonly=True)

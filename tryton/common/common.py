@@ -1018,13 +1018,6 @@ PLOCK = Lock()
 
 
 def process_exception(exception, *args, **kwargs):
-    try:
-        print "Exception Detected !"
-        print exception
-        print traceback.format_exc()
-        traceback.print_last()
-    except:
-        pass
 
     rpc_execute = kwargs.get('rpc_execute', rpc.execute)
 
@@ -1109,7 +1102,7 @@ def process_exception(exception, *args, **kwargs):
 
     if isinstance(exception, TrytonServerError):
         error_title, error_detail = exception.faultCode, exception.faultString
-    elif CONFIG['sentry.dsn'] and kwargs.get('sentry_id'):
+    elif kwargs.get('sentry_id'):
         sentry(kwargs.get('sentry_id'))
         return False
     else:

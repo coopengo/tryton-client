@@ -70,6 +70,8 @@ def login(host, port, database, username, parameters, language=None, date=None,
     connection = ServerProxy(host, port, database)
     logging.getLogger(__name__).info('common.db.login(%s, %s, %s)'
         % (username, 'x' * 10, language))
+    if set_date:
+        _CLIENT_DATE = date
     result = connection.common.db.login(username, parameters, language)
     logging.getLogger(__name__).debug(repr(result))
     _USER = result[0]
@@ -78,8 +80,6 @@ def login(host, port, database, username, parameters, language=None, date=None,
     if CONNECTION is not None:
         CONNECTION.close()
     CONNECTION = ServerPool(host, port, database, session=session)
-    if set_date:
-        _CLIENT_DATE = date
     _HOST = host
     _PORT = port
     _DATABASE = database
@@ -104,8 +104,8 @@ def logout():
             pass
         CONNECTION.close()
         CONNECTION = None
-    _USER = None
     _CLIENT_DATE = None
+    _USER = None
     _USERNAME = ''
     _HOST = ''
     _PORT = None

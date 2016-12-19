@@ -79,9 +79,9 @@ class Screen(SignalEvent):
         self.tree_states = collections.defaultdict(
             lambda: collections.defaultdict(lambda: None))
         self.tree_states_done = set()
+        self.__current_record = None
         self.__group = None
         self.new_group(context or {})
-        self.__current_record = None
         self.current_record = None
         self.screen_container = ScreenContainer(tab_domain)
         self.screen_container.alternate_view = alternate_view
@@ -309,7 +309,7 @@ class Screen(SignalEvent):
             if my_domain:
                 domain = ['AND', domain, my_domain]
         else:
-            domain = my_domain	
+            domain = my_domain
 
         if self.current_view and self.current_view.view_type == 'calendar':
             if domain:

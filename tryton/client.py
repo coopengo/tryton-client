@@ -142,8 +142,6 @@ except ImportError:
 gobject.threads_init()
 from urlparse import urlparse
 import threading
-import logging
-from raven import Client
 
 import tryton.common as common
 from tryton.config import CONFIG, get_config_dir
@@ -213,21 +211,11 @@ class TrytonClient(object):
             signal.signal(signal.SIGQUIT,
                 lambda signum, frame: main.sig_quit())
 
-        def excepthook(exctyp, exception, tb):
+        def excepthook(*args):
             import common
             import traceback
-            from tryton.exceptions import TrytonServerError
-            if (CONFIG['sentry.dsn']
-                    and not isinstance(exception, TrytonServerError)):
-                log = logging.getLogger(__name__)
-                log.error(''.join(traceback.format_exception(
-                            exctyp, exception, tb)) + '\n' + str(exception))
-                sentry = Client(CONFIG['sentry.dsn'])
-                sentry_id = sentry.captureException((exctyp, exception, tb))
-            else:
-                sentry_id = None
-            tb = ''.join(traceback.format_exception(exctyp, exception, tb))
-            common.process_exception(exception, tb=tb, sentry_id=sentry_id)
+            detail = ''.join(traceback.format_exception(*args))
+            common.error(str(args[1]), detail)
 
         sys.excepthook = excepthook
 

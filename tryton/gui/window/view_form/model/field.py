@@ -605,7 +605,7 @@ class O2MField(Field):
         if mode == 'list values':
             context = self.context_get(record)
             field_names = set(f for v in value for f in v
-                if f not in group.fields and not f.endswith('.rec_name'))
+                if f not in group.fields and '.' not in f)
             if field_names:
                 try:
                     fields = RPCExecute('model', self.attrs['relation'],

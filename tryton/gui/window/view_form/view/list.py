@@ -1359,6 +1359,7 @@ class ViewTree(View):
 
     def expand_nodes(self, nodes):
         model = self.treeview.get_model()
+        # JCA : Manage always_expand atrtibute to force tree expansion
         if self.view_type == 'tree' and self.always_expand:
             group = model.group
 

@@ -1,25 +1,25 @@
-model/group.py                   |  21   +-
-model/record.py                  |  32   +-
-screen/screen.py                 |  58   +-
-view/__init__.py                 |  5    +-
-view/form.py                     |  16   +-
-view/form_gtk/binary.py          |  6    +
-view/form_gtk/calendar.py        |  6    +
-view/form_gtk/char.py            |  5    +
-view/form_gtk/dictionary.py      |  104  +--
-view/form_gtk/icon.py            |  35   +
-view/form_gtk/many2many.py       |  21   +-
-view/form_gtk/many2one.py        |  3    +
-view/form_gtk/multiselection.py  |  3    +
-view/form_gtk/one2many.py        |  117  ++-
-view/form_gtk/richtextbox.py     |  11   +-
-view/form_gtk/selection.py       |  8    +-
-view/form_gtk/sourceeditor.py    |  387  +++++++++
-view/form_gtk/state_widget.py    |  51   ++
-view/form_gtk/textbox.py         |  3    +
-view/form_gtk/timedelta.py       |  3    +
-view/form_gtk/widget.py          |  116  ++-
-view/list.py                     |  178  +++-
-view/list_gtk/editabletree.py    |  4    +-
-view/list_gtk/widget.py          |  85   +-
-view/screen_container.py         |  12   +-
+OK model/group.py                   |  21   +-
+OK model/record.py                  |  32   +-
+OK screen/screen.py                 |  58   +-
+OK view/__init__.py                 |  5    +-
+OK view/form.py                     |  16   +-
+OK view/form_gtk/binary.py          |  6    +
+OK view/form_gtk/calendar.py        |  6    +
+OK view/form_gtk/char.py            |  5    +
+OK view/form_gtk/dictionary.py      |  104  +--
+OK view/form_gtk/icon.py            |  35   +
+OK view/form_gtk/many2many.py       |  21   +-
+OK view/form_gtk/many2one.py        |  3    +
+OK view/form_gtk/multiselection.py  |  3    +
+OK view/form_gtk/one2many.py        |  117  ++-
+OK view/form_gtk/richtextbox.py     |  11   +-
+OK view/form_gtk/selection.py       |  8    +-
+OK view/form_gtk/sourceeditor.py    |  387  +++++++++
+OK view/form_gtk/state_widget.py    |  51   ++
+OK view/form_gtk/textbox.py         |  3    +
+OK view/form_gtk/timedelta.py       |  3    +
+OK view/form_gtk/widget.py          |  116  ++-
+OK view/list.py                     |  178  +++-
+OK view/list_gtk/editabletree.py    |  4    +-
+OK view/list_gtk/widget.py          |  85   +-
+OK view/screen_container.py         |  12   +-

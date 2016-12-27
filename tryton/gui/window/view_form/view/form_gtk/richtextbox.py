@@ -111,8 +111,8 @@ class RichTextBox(TextBox):
         start = self.text_buffer.get_start_iter()
         end = self.text_buffer.get_end_iter()
         if _use_serialize_func:
-        	return self.text_buffer.serialize(
-            	self.text_buffer, MIME, start, end).decode('utf-8')
+            return self.text_buffer.serialize(
+                self.text_buffer, MIME, start, end).decode('utf-8')
         else:
             return serialize(
                 self.text_buffer, self.text_buffer, start, end,
@@ -142,8 +142,8 @@ class RichTextBox(TextBox):
     def _readonly_set(self, value):
         super(RichTextBox, self)._readonly_set(value)
         if self.toolbar:
-		    self.toolbar.set_sensitive(not value)
-		    self.toolbar.set_visible(not value)
+            self.toolbar.set_sensitive(not value)
+            self.toolbar.set_visible(not value)
 
     def detect_style(self, *args):
         try:

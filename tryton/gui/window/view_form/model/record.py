@@ -13,6 +13,8 @@ from tryton.config import CONFIG
 
 class Record(SignalEvent):
 
+    # JCA : Make sure we cannot have id conflicts in case of bugs on temporary
+    # ids being inverted
     id = -100000000
 
     def __init__(self, model_name, obj_id, group=None):

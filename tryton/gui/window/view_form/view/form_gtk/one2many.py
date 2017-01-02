@@ -255,7 +255,9 @@ class One2Many(Widget):
 
     @property
     def modified(self):
-        return self.screen.current_view.modified
+        # JCA : Check current_view is not None
+        return (self.screen.current_view.modified if self.screen.current_view
+            else False)
 
     def color_set(self, name):
         super(One2Many, self).color_set(name)

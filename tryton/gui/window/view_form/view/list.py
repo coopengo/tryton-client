@@ -1186,7 +1186,9 @@ class ViewTree(View):
             if current_record:
                 selection = self.treeview.get_selection()
                 path = current_record.get_index_path(model.group)
-                selection.select_path(path)
+                # JCA : Check selection is not empty before updateing path
+                if selection:
+                    selection.select_path(path)
             # The search column must be set each time the model is changed
             self.treeview.set_search_column(0)
         if not current_record:

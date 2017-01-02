@@ -281,7 +281,9 @@ class One2Many(Widget):
 
     @property
     def modified(self):
-        return self.screen.current_view.modified
+        # JCA : Check current_view is not None
+        return (self.screen.current_view.modified if self.screen.current_view
+            else False)
 
     def _readonly_set(self, value):
         self._readonly = value

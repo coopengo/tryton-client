@@ -1357,7 +1357,10 @@ def RPCExecute(*args, **kwargs):
 def RPCContextReload(callback=None):
     def update(context):
         rpc.CONTEXT.clear()
-        rpc.CONTEXT.update(context())
+        try:
+            rpc.CONTEXT.update(context())
+        except RPCException:
+            pass
         if rpc._CLIENT_DATE:
             rpc.CONTEXT['client_defined_date'] = rpc._CLIENT_DATE
         if callback:

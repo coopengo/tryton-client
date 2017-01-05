@@ -1231,10 +1231,6 @@ def test_string():
                 'name': 'many2one',
                 'type': 'many2one',
                 },
-            'rec_name': {
-                'string': 'Name',
-                'type': 'char',
-                },
             })
     assert dom.string([('name', '=', 'Doe')]) == 'Name: =Doe'
     assert dom.string([('name', '=', None)]) == 'Name: ='

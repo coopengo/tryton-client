@@ -1027,29 +1027,34 @@ class DomainParser(object):
             value = ''
         if not name:
             name = ''
-        if (name.lower() not in self.strings
-                and name not in self.fields):
-            for field in self.strings.itervalues():
-                if field['string'].lower().startswith(name.lower()):
-                    operator = default_operator(field)
-                    value = ''
-                    if 'ilike' in operator:
-                        value = likify(value)
-                    yield (field['name'], operator, value)
-            return
-        if name in self.fields:
-            field = self.fields[name]
+        if not type(name) == list:
+            names = [name]
         else:
-            field = self.strings[name.lower()]
-        if not operator:
-            operator = default_operator(field)
-            value = ''
-            if 'ilike' in operator:
-                value = likify(value)
-            yield (field['name'], operator, value)
-        else:
-            for comp in complete_value(field, value):
-                yield (field['name'], operator, comp)
+            names = name
+        for name in names:
+            if (name.lower() not in self.strings
+                    and name not in self.fields):
+                for field in self.strings.itervalues():
+                    if field['string'].lower().startswith(name.lower()):
+                        operator = default_operator(field)
+                        value = ''
+                        if 'ilike' in operator:
+                            value = likify(value)
+                        yield (field['name'], operator, value)
+                return
+            if name in self.fields:
+                field = self.fields[name]
+            else:
+                field = self.strings[name.lower()]
+            if not operator:
+                operator = default_operator(field)
+                value = ''
+                if 'ilike' in operator:
+                    value = likify(value)
+                yield (field['name'], operator, value)
+            else:
+                for comp in complete_value(field, value):
+                    yield (field['name'], operator, comp)
 
     def group(self, tokens):
         "Group tokens by clause"
@@ -1225,6 +1230,10 @@ def test_string():
                 'string': 'Many2One',
                 'name': 'many2one',
                 'type': 'many2one',
+                },
+            'rec_name': {
+                'string': 'Name',
+                'type': 'char',
                 },
             })
     assert dom.string([('name', '=', 'Doe')]) == 'Name: =Doe'
@@ -1472,3 +1481,16 @@ def test_completion():
     assert list(dom.completion(u'Name: foo')) == []
     assert list(dom.completion(u'Name: !=')) == []
     assert list(dom.completion(u'Name: !=foo')) == []
+    assert list(dom.completion(u'Name: ;')) == []
+    assert list(dom.completion(u'Name: ;;')) == ['Name: ;']
+    assert list(dom.completion(u'Name: Foo;Bar')) == []
+    dom = DomainParser({
+            'rec_name': {
+                'string': 'Name',
+                'name': 'name',
+                'type': 'char',
+                },
+            })
+    assert list(dom.completion(u'Name: Foo;Bar')) == []
+    assert list(dom.completion(u'Name: ;;')) == []
+    assert list(dom.completion(u'Name: Foo;')) == []

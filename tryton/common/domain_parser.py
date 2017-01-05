@@ -1016,6 +1016,8 @@ class DomainParser(object):
                 name = name[:-9]
             value = target
         if name == 'rec_name':
+            if type(value) is list:
+                return
             if operator == 'ilike':
                 escaped = value.replace('%%', '__')
                 if escaped.startswith('%') and escaped.endswith('%'):
@@ -1027,31 +1029,29 @@ class DomainParser(object):
             value = ''
         if not name:
             name = ''
-        names = [name] if type(name) is not list else name
-        for name in names:
-            if (name.lower() not in self.strings
-                    and name not in self.fields):
-                for field in self.strings.itervalues():
-                    if field['string'].lower().startswith(name.lower()):
-                        operator = default_operator(field)
-                        value = ''
-                        if 'ilike' in operator:
-                            value = likify(value)
-                        yield (field['name'], operator, value)
-                return
-            if name in self.fields:
-                field = self.fields[name]
-            else:
-                field = self.strings[name.lower()]
-            if not operator:
-                operator = default_operator(field)
-                value = ''
-                if 'ilike' in operator:
-                    value = likify(value)
-                yield (field['name'], operator, value)
-            else:
-                for comp in complete_value(field, value):
-                    yield (field['name'], operator, comp)
+        if (name.lower() not in self.strings
+                and name not in self.fields):
+            for field in self.strings.itervalues():
+                if field['string'].lower().startswith(name.lower()):
+                    operator = default_operator(field)
+                    value = ''
+                    if 'ilike' in operator:
+                        value = likify(value)
+                    yield (field['name'], operator, value)
+            return
+        if name in self.fields:
+            field = self.fields[name]
+        else:
+            field = self.strings[name.lower()]
+        if not operator:
+            operator = default_operator(field)
+            value = ''
+            if 'ilike' in operator:
+                value = likify(value)
+            yield (field['name'], operator, value)
+        else:
+            for comp in complete_value(field, value):
+                yield (field['name'], operator, comp)
 
     def group(self, tokens):
         "Group tokens by clause"

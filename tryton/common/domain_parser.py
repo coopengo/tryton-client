@@ -1027,10 +1027,7 @@ class DomainParser(object):
             value = ''
         if not name:
             name = ''
-        if not type(name) == list:
-            names = [name]
-        else:
-            names = name
+        names = [name] if type(name) is not list else name
         for name in names:
             if (name.lower() not in self.strings
                     and name not in self.fields):
@@ -1478,4 +1475,3 @@ def test_completion():
     assert list(dom.completion(u'Name: !=')) == []
     assert list(dom.completion(u'Name: !=foo')) == []
     assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []
-    assert list(dom.complete(['rec_name', 'in', ['Foo', 'Bar']])) == []

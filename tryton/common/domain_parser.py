@@ -1477,16 +1477,5 @@ def test_completion():
     assert list(dom.completion(u'Name: foo')) == []
     assert list(dom.completion(u'Name: !=')) == []
     assert list(dom.completion(u'Name: !=foo')) == []
-    assert list(dom.completion(u'Name: ;')) == []
-    assert list(dom.completion(u'Name: ;;')) == ['Name: ;']
-    assert list(dom.completion(u'Name: Foo;Bar')) == []
-    dom = DomainParser({
-            'rec_name': {
-                'string': 'Name',
-                'name': 'name',
-                'type': 'char',
-                },
-            })
-    assert list(dom.completion(u'Name: Foo;Bar')) == []
-    assert list(dom.completion(u'Name: ;;')) == []
-    assert list(dom.completion(u'Name: Foo;')) == []
+    assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []
+    assert list(dom.complete(['rec_name', 'in', ['Foo', 'Bar']])) == []

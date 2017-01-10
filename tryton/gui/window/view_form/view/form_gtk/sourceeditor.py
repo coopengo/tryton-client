@@ -7,7 +7,6 @@ import pyflakes.messages
 import gobject
 import gtk
 import pango
-import gtksourceview2 as gtksourceview
 
 from .widget import Widget
 
@@ -84,12 +83,10 @@ class SourceView(Widget):
         sc_editor.set_shadow_type(gtk.SHADOW_ETCHED_IN)
         sc_editor.set_size_request(-1, 80)
 
-        language_manager = gtksourceview.language_manager_get_default()
-        python = language_manager.get_language('python')
-        self.sourcebuffer = gtksourceview.Buffer(language=python)
+        self.sourcebuffer = gtk.TextBuffer()
         self.sourcebuffer.connect('changed', self._clear_marks)
 
-        self.sourceview = gtksourceview.View(self.sourcebuffer)
+        self.sourceview = gtk.TextView(self.sourcebuffer)
         self.sourceview.connect('focus-out-event', lambda x, y:
             self._focus_out())
         self.sourceview.connect('key-press-event', self.send_modified)

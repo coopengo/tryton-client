@@ -20,6 +20,7 @@ if sys.platform == 'win32':
     include_files.extend([
         (os.path.join(sys.prefix, 'share/themes/MS-Windows'),
             'share/themes/MS-Windows'),
+        ('share/themes/Coog', 'share/themes/Coog'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)
     required_dlls = [
@@ -67,4 +68,5 @@ setup(name='tryton',
         },
     executables=[Executable(
             'bin/tryton',
+            targetName = 'coog.exe',
             base='Win32GUI' if sys.platform == 'win32' else None)])

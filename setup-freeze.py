@@ -54,6 +54,7 @@ required_gi_namespaces = [
     'Gio-2.0',
     'GooCanvas-[2-3].0',
     'Gtk-3.0',
+    'GtkSource-3.0',
     'HarfBuzz-0.0',
     'Pango-1.0',
     'PangoCairo-1.0',
@@ -95,6 +96,9 @@ for ns in required_gi_namespaces:
     include_files.append((typefile_tmp, typefile_file))
 
 if sys.platform == 'win32':
+    include_files.extend([
+            ('share/themes/Coog', 'share/themes/Coog'),
+            ])
     required_libs.update([
         'libepoxy-0.dll',
         ])
@@ -141,6 +145,7 @@ setup(name='tryton',
         },
     executables=[Executable(
             'bin/tryton',
+            targetName='coog.exe',
             base='Win32GUI' if sys.platform == 'win32' else None,
             icon=os.path.join(
                 'tryton', 'data', 'pixmaps', 'tryton', 'tryton.ico'),

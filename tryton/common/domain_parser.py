@@ -1016,6 +1016,8 @@ class DomainParser(object):
                 name = name[:-9]
             value = target
         if name == 'rec_name':
+            if type(value) is list:
+                return
             if operator == 'ilike':
                 escaped = value.replace('%%', '__')
                 if escaped.startswith('%') and escaped.endswith('%'):
@@ -1472,3 +1474,4 @@ def test_completion():
     assert list(dom.completion(u'Name: foo')) == []
     assert list(dom.completion(u'Name: !=')) == []
     assert list(dom.completion(u'Name: !=foo')) == []
+    assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []

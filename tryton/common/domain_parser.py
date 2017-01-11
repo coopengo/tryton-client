@@ -711,6 +711,8 @@ class DomainParser(object):
                 name = name[:-9]
             value = target
         if name == 'rec_name':
+            if type(value) is list:
+                return
             if operator == 'ilike':
                 escaped = value.replace('%%', '__')
                 if escaped.startswith('%') and escaped.endswith('%'):

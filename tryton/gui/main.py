@@ -8,10 +8,7 @@ from urlparse import urlparse, parse_qsl
 import urllib
 import gobject
 import gtk
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
 import webbrowser
 import threading
 
@@ -29,19 +26,15 @@ from tryton.gui.window.preference import Preference
 from tryton.gui.window import Limit
 from tryton.gui.window import Email
 from tryton.gui.window.dblogin import DBLogin
-from tryton.gui.window.dbcreate import DBCreate
-from tryton.gui.window.dbdumpdrop import DBBackupDrop
 from tryton.gui.window.tips import Tips
 from tryton.gui.window.about import About
 from tryton.gui.window.shortcuts import Shortcuts
-from tryton.gui.window.dbrestore import DBRestore
 from tryton.common.cellrendererclickablepixbuf import \
     CellRendererClickablePixbuf
 import tryton.translate as translate
 import tryton.plugins
 from tryton.common.placeholder_entry import PlaceholderEntry
 import pango
-import time
 if os.environ.get('GTKOSXAPPLICATION'):
     import gtkosx_application
 else:
@@ -89,9 +82,9 @@ class Main(object):
             self.macapp.connect("NSApplicationBlockTermination",
                 self.sig_close)
 
-        gtk.accel_map_add_entry('<tryton>/File/Connect', gtk.keysyms.O,
+        gtk.accel_map_add_entry('<tryton>/Connection/Connect', gtk.keysyms.O,
                 gtk.gdk.CONTROL_MASK)
-        gtk.accel_map_add_entry('<tryton>/File/Quit', gtk.keysyms.Q,
+        gtk.accel_map_add_entry('<tryton>/Connection/Quit', gtk.keysyms.Q,
                 gtk.gdk.CONTROL_MASK)
         if sys.platform != 'darwin':
             gtk.accel_map_add_entry('<tryton>/User/Reload Menu', gtk.keysyms.T,
@@ -147,6 +140,7 @@ class Main(object):
         self.buttons = {}
 
         self.pane = gtk.HPaned()
+        self.vbox.pack_start(self.pane, True, True)
         self.pane.connect('button-press-event',
             self.on_paned_button_press_event)
 
@@ -158,9 +152,7 @@ class Main(object):
         else:
             self.menu_expander.set_direction(gtk.TEXT_DIR_RTL)
         self.menu_expander.set_expanded(CONFIG['menu.expanded'])
-        self.pane.add(self.menu_expander)
-
-        self.vbox.pack_start(self.pane, True, True)
+        self.pane.add1(self.menu_expander)
 
         self.notebook = gtk.Notebook()
         self.notebook.popup_enable()
@@ -215,15 +207,16 @@ class Main(object):
         self.vbox.pack_start(menubar, False, True)
         self.vbox.reorder_child(menubar, 0)
 
-        menuitem_file = gtk.MenuItem(_('_File'))
-        menubar.add(menuitem_file)
+        menuitem_connection = gtk.MenuItem(
+            _('_Connection'), use_underline=True)
+        menubar.add(menuitem_connection)
 
-        menu_file = self._set_menu_file()
-        menuitem_file.set_submenu(menu_file)
-        menu_file.set_accel_group(self.accel_group)
-        menu_file.set_accel_path('<tryton>/File')
+        menu_connection = self._set_menu_connection()
+        menuitem_connection.set_submenu(menu_connection)
+        menu_connection.set_accel_group(self.accel_group)
+        menu_connection.set_accel_path('<tryton>/Connection')
 
-        menuitem_user = gtk.MenuItem(_('_User'))
+        menuitem_user = gtk.MenuItem(_('_User'), use_underline=True)
         if self.menuitem_user:
             menuitem_user.set_sensitive(
                     self.menuitem_user.get_property('sensitive'))
@@ -237,7 +230,7 @@ class Main(object):
         menu_user.set_accel_group(self.accel_group)
         menu_user.set_accel_path('<tryton>/User')
 
-        menuitem_options = gtk.MenuItem(_('_Options'))
+        menuitem_options = gtk.MenuItem(_('_Options'), use_underline=True)
         menubar.add(menuitem_options)
 
         menu_options = self._set_menu_options()
@@ -245,7 +238,7 @@ class Main(object):
         menu_options.set_accel_group(self.accel_group)
         menu_options.set_accel_path('<tryton>/Options')
 
-        menuitem_favorite = gtk.MenuItem(_('Fa_vorites'))
+        menuitem_favorite = gtk.MenuItem(_('Fa_vorites'), use_underline=True)
         if self.menuitem_favorite:
             menuitem_favorite.set_sensitive(
                 self.menuitem_favorite.get_property('sensitive'))
@@ -261,7 +254,7 @@ class Main(object):
                 self.favorite_set()
         menuitem_favorite.connect('select', favorite_activate)
 
-        menuitem_help = gtk.MenuItem(_('_Help'))
+        menuitem_help = gtk.MenuItem(_('_Help'), use_underline=True)
         menubar.add(menuitem_help)
 
         menu_help = self._set_menu_help()
@@ -273,7 +266,7 @@ class Main(object):
             self.menubar.set_no_show_all(True)
             self.macapp.set_menu_bar(self.menubar)
             self.macapp.insert_app_menu_item(self.aboutitem, 0)
-            menuitem_file.show_all()
+            menuitem_connection.show_all()
             menuitem_user.show_all()
             menuitem_options.show_all()
             menuitem_favorite.show_all()
@@ -287,7 +280,7 @@ class Main(object):
         global_search_completion = gtk.EntryCompletion()
         global_search_completion.set_match_func(lambda *a: True)
         global_search_completion.set_model(gtk.ListStore(
-                gtk.gdk.Pixbuf, str, str, int))
+                gtk.gdk.Pixbuf, str, str, int, str))
         pixbuf_cell = gtk.CellRendererPixbuf()
         global_search_completion.pack_start(pixbuf_cell, False)
         global_search_completion.add_attribute(pixbuf_cell, 'pixbuf', 0)
@@ -300,7 +293,7 @@ class Main(object):
             'gtk-find')
 
         def match_selected(completion, model, iter_):
-            model, record_id = model.get(iter_, 2, 3)
+            model, record_id, model_name = model.get(iter_, 2, 3, 4)
             if model == self.menu_screen.model_name:
                 Action.exec_keyword('tree_open', {
                         'model': model,
@@ -309,7 +302,7 @@ class Main(object):
                         }, context=self.menu_screen.context.copy())
             else:
                 Window.create(False, model, res_id=record_id,
-                    mode=['form', 'tree'])
+                    mode=['form', 'tree'], name=model_name)
             self.global_search_entry.set_text('')
             return True
 
@@ -352,7 +345,7 @@ class Main(object):
                             common.to_xml(model_name),
                             common.to_xml(record_name))
                         pixbuf = None
-                    gmodel.append([pixbuf, text, model, record_id])
+                    gmodel.append([pixbuf, text, model, record_id, model_name])
                 gmodel.search_text = search_text
                 # Force display of popup
                 widget.emit('changed')
@@ -385,98 +378,54 @@ class Main(object):
         self.global_search_entry.grab_focus()
 
     def set_title(self, value='', date=''):
-        title = 'coog'
+        title = CONFIG['client.title']
         if value:
             title += ' - ' + value
         if date:
             title += ' (' + date + ')'
         self.window.set_title(title)
 
-    def _set_menu_file(self):
-        menu_file = gtk.Menu()
+    def _set_menu_connection(self):
+        menu_connection = gtk.Menu()
 
         imagemenuitem_connect = gtk.ImageMenuItem(_('_Connect...'),
             self.accel_group)
+        imagemenuitem_connect.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-connect', gtk.ICON_SIZE_MENU)
         imagemenuitem_connect.set_image(image)
         imagemenuitem_connect.connect('activate', self.sig_login)
-        imagemenuitem_connect.set_accel_path('<tryton>/File/Connect')
-        menu_file.add(imagemenuitem_connect)
+        imagemenuitem_connect.set_accel_path('<tryton>/Connection/Connect')
+        menu_connection.add(imagemenuitem_connect)
 
         imagemenuitem_disconnect = gtk.ImageMenuItem(_('_Disconnect'))
+        imagemenuitem_disconnect.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-disconnect', gtk.ICON_SIZE_MENU)
         imagemenuitem_disconnect.set_image(image)
         imagemenuitem_disconnect.connect('activate', self.sig_logout)
-        imagemenuitem_disconnect.set_accel_path('<tryton>/File/Disconnect')
-        menu_file.add(imagemenuitem_disconnect)
-
-        menu_file.add(gtk.SeparatorMenuItem())
-
-        imagemenuitem_database = gtk.ImageMenuItem(_('Data_base'))
-        image = gtk.Image()
-        image.set_from_stock('tryton-system-file-manager', gtk.ICON_SIZE_MENU)
-        imagemenuitem_database.set_image(image)
-        menu_file.add(imagemenuitem_database)
-
-        menu_database = gtk.Menu()
-        menu_database.set_accel_group(self.accel_group)
-        menu_database.set_accel_path('<tryton>/File/Database')
-        imagemenuitem_database.set_submenu(menu_database)
-
-        imagemenuitem_db_new = gtk.ImageMenuItem(_('_New Database...'))
-        image = gtk.Image()
-        image.set_from_stock('tryton-folder-new', gtk.ICON_SIZE_MENU)
-        imagemenuitem_db_new.set_image(image)
-        imagemenuitem_db_new.connect('activate', self.sig_db_new)
-        imagemenuitem_db_new.set_accel_path(
-            '<tryton>/File/Database/New Database')
-        menu_database.add(imagemenuitem_db_new)
-
-        imagemenuitem_db_restore = gtk.ImageMenuItem(_('_Restore Database...'))
-        image = gtk.Image()
-        image.set_from_stock('tryton-folder-saved-search', gtk.ICON_SIZE_MENU)
-        imagemenuitem_db_restore.set_image(image)
-        imagemenuitem_db_restore.connect('activate', self.sig_db_restore)
-        imagemenuitem_db_restore.set_accel_path(
-            '<tryton>/File/Database/Restore Database')
-        menu_database.add(imagemenuitem_db_restore)
-
-        imagemenuitem_db_dump = gtk.ImageMenuItem(_('_Backup Database...'))
-        image = gtk.Image()
-        image.set_from_stock('tryton-save-as', gtk.ICON_SIZE_MENU)
-        imagemenuitem_db_dump.set_image(image)
-        imagemenuitem_db_dump.connect('activate', self.sig_db_dump)
-        imagemenuitem_db_dump.set_accel_path(
-            '<tryton>/File/Database/Backup Database')
-        menu_database.add(imagemenuitem_db_dump)
-
-        imagemenuitem_db_drop = gtk.ImageMenuItem(_('Dro_p Database...'))
-        image = gtk.Image()
-        image.set_from_stock('tryton-delete', gtk.ICON_SIZE_MENU)
-        imagemenuitem_db_drop.set_image(image)
-        imagemenuitem_db_drop.connect('activate', self.sig_db_drop)
-        imagemenuitem_db_drop.set_accel_path(
-            '<tryton>/File/Database/Drop Database')
-        menu_database.add(imagemenuitem_db_drop)
+        imagemenuitem_disconnect.set_accel_path(
+            '<tryton>/Connection/Disconnect')
+        menu_connection.add(imagemenuitem_disconnect)
 
         imagemenuitem_close = gtk.ImageMenuItem(_('_Quit...'),
             self.accel_group)
+        imagemenuitem_close.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-log-out', gtk.ICON_SIZE_MENU)
         imagemenuitem_close.set_image(image)
         imagemenuitem_close.connect('activate', self.sig_close)
-        imagemenuitem_close.set_accel_path('<tryton>/File/Quit')
+        imagemenuitem_close.set_accel_path('<tryton>/Connection/Quit')
         if self.macapp is None:
-            menu_file.add(gtk.SeparatorMenuItem())
-            menu_file.add(imagemenuitem_close)
-        return menu_file
+            menu_connection.add(gtk.SeparatorMenuItem())
+            menu_connection.add(imagemenuitem_close)
+        return menu_connection
 
     def _set_menu_user(self):
         menu_user = gtk.Menu()
 
         imagemenuitem_preference = gtk.ImageMenuItem(_('_Preferences...'))
+        imagemenuitem_preference.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-preferences-system-session',
                 gtk.ICON_SIZE_MENU)
@@ -489,6 +438,7 @@ class Main(object):
 
         imagemenuitem_menu = gtk.ImageMenuItem(_('_Menu Reload'),
             self.accel_group)
+        imagemenuitem_menu.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-start-here', gtk.ICON_SIZE_MENU)
         imagemenuitem_menu.set_image(image)
@@ -498,6 +448,7 @@ class Main(object):
 
         imagemenuitem_menu_toggle = gtk.ImageMenuItem(_('_Menu Toggle'),
                 self.accel_group)
+        imagemenuitem_menu_toggle.set_use_underline(True)
         imagemenuitem_menu_toggle.connect('activate',
             lambda *a: self.menu_toggle())
         imagemenuitem_menu_toggle.set_accel_path('<tryton>/User/Toggle Menu')
@@ -505,6 +456,7 @@ class Main(object):
 
         imagemenuitem_global_search = gtk.ImageMenuItem(_('_Global Search'),
             self.accel_group)
+        imagemenuitem_global_search.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('gtk-find', gtk.ICON_SIZE_MENU)
         imagemenuitem_global_search.set_image(image)
@@ -518,7 +470,7 @@ class Main(object):
     def _set_menu_options(self):
         menu_options = gtk.Menu()
 
-        menuitem_toolbar = gtk.MenuItem(_('_Toolbar'))
+        menuitem_toolbar = gtk.MenuItem(_('_Toolbar'), use_underline=True)
         menu_options.add(menuitem_toolbar)
 
         menu_toolbar = gtk.Menu()
@@ -526,7 +478,8 @@ class Main(object):
         menu_toolbar.set_accel_path('<tryton>/Options/Toolbar')
         menuitem_toolbar.set_submenu(menu_toolbar)
 
-        radiomenuitem_default = gtk.RadioMenuItem(label=_('_Default'))
+        radiomenuitem_default = gtk.RadioMenuItem(label=_('_Default'),
+            use_underline=True)
         radiomenuitem_default.connect('activate',
                 lambda x: self.sig_toolbar('default'))
         radiomenuitem_default.set_accel_path(
@@ -536,7 +489,7 @@ class Main(object):
             radiomenuitem_default.set_active(True)
 
         radiomenuitem_both = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Text and Icons'))
+                label=_('_Text and Icons'), use_underline=True)
         radiomenuitem_both.connect('activate',
                 lambda x: self.sig_toolbar('both'))
         radiomenuitem_both.set_accel_path(
@@ -546,7 +499,7 @@ class Main(object):
             radiomenuitem_both.set_active(True)
 
         radiomenuitem_icons = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Icons'))
+                label=_('_Icons'), use_underline=True)
         radiomenuitem_icons.connect('activate',
                 lambda x: self.sig_toolbar('icons'))
         radiomenuitem_icons.set_accel_path('<tryton>/Options/Toolbar/Icons')
@@ -555,7 +508,7 @@ class Main(object):
             radiomenuitem_icons.set_active(True)
 
         radiomenuitem_text = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Text'))
+                label=_('_Text'), use_underline=True)
         radiomenuitem_text.connect('activate',
                 lambda x: self.sig_toolbar('text'))
         radiomenuitem_text.set_accel_path('<tryton>/Options/Toolbar/Text')
@@ -564,7 +517,7 @@ class Main(object):
             radiomenuitem_text.set_active(True)
 
         # Menubar accelerators
-        menuitem_menubar = gtk.MenuItem(_('_Menubar'))
+        menuitem_menubar = gtk.MenuItem(_('_Menubar'), use_underline=True)
         menu_options.add(menuitem_menubar)
 
         menu_menubar = gtk.Menu()
@@ -572,7 +525,8 @@ class Main(object):
         menu_menubar.set_accel_path('<tryton>/Options/Menubar')
         menuitem_menubar.set_submenu(menu_menubar)
 
-        checkmenuitem_accel = gtk.CheckMenuItem(_('Change Accelerators'))
+        checkmenuitem_accel = gtk.CheckMenuItem(_('Change Accelerators'),
+            use_underline=True)
         checkmenuitem_accel.connect('activate',
                 lambda menuitem: self.sig_accel_change(menuitem.get_active()))
         checkmenuitem_accel.set_accel_path('<tryton>/Options/Menubar/Accel')
@@ -580,7 +534,7 @@ class Main(object):
         if CONFIG['client.can_change_accelerators']:
             checkmenuitem_accel.set_active(True)
 
-        menuitem_mode = gtk.MenuItem(_('_Mode'))
+        menuitem_mode = gtk.MenuItem(_('_Mode'), use_underline=True)
         menu_options.add(menuitem_mode)
 
         menu_mode = gtk.Menu()
@@ -588,7 +542,8 @@ class Main(object):
         menu_mode.set_accel_path('<tryton>/Options/Mode')
         menuitem_mode.set_submenu(menu_mode)
 
-        radiomenuitem_normal = gtk.RadioMenuItem(label=_('_Normal'))
+        radiomenuitem_normal = gtk.RadioMenuItem(label=_('_Normal'),
+            use_underline=True)
         self.radiomenuitem_normal = radiomenuitem_normal
         radiomenuitem_normal.connect('activate',
                 lambda x: self.sig_mode_change(False))
@@ -596,14 +551,14 @@ class Main(object):
         menu_mode.add(radiomenuitem_normal)
 
         radiomenuitem_pda = gtk.RadioMenuItem(group=radiomenuitem_normal,
-                label=_('_PDA'))
+                label=_('_PDA'), use_underline=True)
         self.radiomenuitem_pda = radiomenuitem_pda
         radiomenuitem_pda.connect('activate',
                 lambda x: self.sig_mode_change(True))
         radiomenuitem_pda.set_accel_path('<tryton>/Options/Mode/PDA')
         menu_mode.add(radiomenuitem_pda)
 
-        menuitem_form = gtk.MenuItem(_('_Form'))
+        menuitem_form = gtk.MenuItem(_('_Form'), use_underline=True)
         menu_options.add(menuitem_form)
 
         menu_form = gtk.Menu()
@@ -612,7 +567,7 @@ class Main(object):
         menuitem_form.set_submenu(menu_form)
 
         checkmenuitem_save_width_height = gtk.CheckMenuItem(
-            _('Save Width/Height'))
+            _('Save Width/Height'), use_underline=True)
         checkmenuitem_save_width_height.connect('activate',
             lambda menuitem: CONFIG.__setitem__('client.save_width_height',
                 menuitem.get_active()))
@@ -623,7 +578,7 @@ class Main(object):
             checkmenuitem_save_width_height.set_active(True)
 
         checkmenuitem_save_tree_state = gtk.CheckMenuItem(
-            _('Save Tree State'))
+            _('Save Tree State'), use_underline=True)
         checkmenuitem_save_tree_state.connect('activate',
             lambda menuitem: CONFIG.__setitem__(
                 'client.save_tree_state',
@@ -635,7 +590,7 @@ class Main(object):
             checkmenuitem_save_tree_state.set_active(True)
 
         checkmenuitem_fast_tabbing = gtk.CheckMenuItem(
-            _('Fast Tabbing'))
+            _('Fast Tabbing'), use_underline=True)
         checkmenuitem_fast_tabbing.connect('activate',
             lambda menuitem: CONFIG.__setitem__('client.fast_tabbing',
                 menuitem.get_active()))
@@ -645,7 +600,8 @@ class Main(object):
         checkmenuitem_fast_tabbing.set_active(CONFIG['client.fast_tabbing'])
 
         if gtkspell:
-            checkmenuitem_spellcheck = gtk.CheckMenuItem(_('Spell Checking'))
+            checkmenuitem_spellcheck = gtk.CheckMenuItem(_('Spell Checking'),
+                use_underline=True)
             checkmenuitem_spellcheck.connect('activate',
                     lambda menuitem: CONFIG.__setitem__('client.spellcheck',
                         menuitem.get_active()))
@@ -657,23 +613,25 @@ class Main(object):
 
         imagemenuitem_win_prev = gtk.ImageMenuItem(_('_Previous Tab'),
             self.accel_group)
+        imagemenuitem_win_prev.set_use_underline(True)
         imagemenuitem_win_prev.connect('activate', self.sig_win_prev)
         imagemenuitem_win_prev.set_accel_path('<tryton>/Form/Previous Tab')
         menu_form.add(imagemenuitem_win_prev)
 
         imagemenuitem_win_next = gtk.ImageMenuItem(_('_Next Tab'),
             self.accel_group)
+        imagemenuitem_win_next.set_use_underline(True)
         imagemenuitem_win_next.connect('activate', self.sig_win_next)
         imagemenuitem_win_next.set_accel_path('<tryton>/Form/Next Tab')
         menu_form.add(imagemenuitem_win_next)
 
-        menuitem_limit = gtk.MenuItem(_('Search Limit...'))
+        menuitem_limit = gtk.MenuItem(_('Search Limit...'), use_underline=True)
         self.menuitem_limit = menuitem_limit
         menuitem_limit.connect('activate', self.sig_limit)
         menuitem_limit.set_accel_path('<tryton>/Options/Search Limit')
         menu_options.add(menuitem_limit)
 
-        menuitem_email = gtk.MenuItem(_('_Email...'))
+        menuitem_email = gtk.MenuItem(_('_Email...'), use_underline=True)
         self.menuitem_email = menuitem_email
         menuitem_email.connect('activate', self.sig_email)
         menuitem_email.set_accel_path('<tryton>/Options/Email')
@@ -682,6 +640,7 @@ class Main(object):
         menu_options.add(gtk.SeparatorMenuItem())
 
         imagemenuitem_opt_save = gtk.ImageMenuItem(_('_Save Options'))
+        imagemenuitem_opt_save.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-save', gtk.ICON_SIZE_MENU)
         imagemenuitem_opt_save.set_image(image)
@@ -694,6 +653,7 @@ class Main(object):
         menu_help = gtk.Menu()
 
         imagemenuitem_tips = gtk.ImageMenuItem(_('_Tips...'))
+        imagemenuitem_tips.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-information', gtk.ICON_SIZE_MENU)
         imagemenuitem_tips.set_image(image)
@@ -703,6 +663,7 @@ class Main(object):
 
         imagemenuitem_shortcuts = gtk.ImageMenuItem(
             _('_Keyboard Shortcuts...'))
+        imagemenuitem_shortcuts.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('tryton-help', gtk.ICON_SIZE_MENU)
         imagemenuitem_shortcuts.set_image(image)
@@ -712,6 +673,7 @@ class Main(object):
         menu_help.add(imagemenuitem_shortcuts)
 
         imagemenuitem_about = gtk.ImageMenuItem(_('_About...'))
+        imagemenuitem_about.set_use_underline(True)
         image = gtk.Image()
         image.set_from_stock('gtk-about', gtk.ICON_SIZE_MENU)
         imagemenuitem_about.set_image(image)
@@ -733,15 +695,19 @@ class Main(object):
             return False
 
         def _action_favorite(widget, id_):
-            Action.exec_keyword('tree_open', {
-                'model': self.menu_screen.model_name,
-                'id': id_,
-                'ids': [id_],
+            event = gtk.get_current_event()
+            allow_similar = (event.state & gtk.gdk.MOD1_MASK or
+                             event.state & gtk.gdk.SHIFT_MASK)
+            with Window(allow_similar=allow_similar):
+                Action.exec_keyword('tree_open', {
+                    'model': self.menu_screen.model_name,
+                    'id': id_,
+                    'ids': [id_],
                 })
 
         def _manage_favorites(widget):
             Window.create(False, self.menu_screen.model_name + '.favorite',
-                False, mode=['tree', 'form'])
+                False, mode=['tree', 'form'], name=_('Manage Favorites'))
         try:
             favorites = RPCExecute('model',
                 self.menu_screen.model_name + '.favorite', 'get',
@@ -763,7 +729,8 @@ class Main(object):
             menuitem.connect('activate', _action_favorite, id_)
             menu.add(menuitem)
         menu.add(gtk.SeparatorMenuItem())
-        manage_favorites = gtk.MenuItem(_('Manage Favorites'))
+        manage_favorites = gtk.MenuItem(_('Manage Favorites'),
+            use_underline=True)
         manage_favorites.connect('activate', _manage_favorites)
         menu.add(manage_favorites)
         menu.show_all()
@@ -772,7 +739,7 @@ class Main(object):
 
     def favorite_unset(self):
         had_submenu = self.menuitem_favorite.get_submenu()
-        self.menuitem_favorite.remove_submenu()
+        self.menuitem_favorite.set_submenu(None)
         # Set a submenu to get keyboard shortcut working
         self.menuitem_favorite.set_submenu(gtk.Menu())
 
@@ -885,32 +852,30 @@ class Main(object):
         self._sig_remove_book(widget,
             self.notebook.get_nth_page(self.notebook.get_current_page()))
 
-    def sig_login(self, widget=None, res=None):
+    def sig_login(self, widget=None):
         if not self.sig_logout(widget, disconnect=False):
             return
-        if not res:
-            try:
-                res = DBLogin().run()
-            except TrytonError, exception:
-                if exception.faultCode == 'QueryCanceled':
-                    return False
-            except TrytonServerError, exception:
-                common.process_exception(exception)
-                return
+        language = CONFIG['client.lang']
         try:
-            log_response = rpc.login(*res, set_date=True)
-        except TrytonServerError, exception:
+            host, port, database, username, date = DBLogin().run()
+        except TrytonError, exception:
+            if exception.faultCode == 'QueryCanceled':
+                return
+            raise
+        func = lambda parameters: rpc.login(
+            host, port, database, username, parameters, language, date, True)
+        try:
+            common.Login(func)
+        except Exception, exception:
+            if (isinstance(exception, TrytonError)
+                    and exception.faultCode == 'QueryCanceled'):
+                return
+            if (isinstance(exception, TrytonServerError)
+                    and exception.faultCode.startswith('404')):
+                return self.sig_login()
             common.process_exception(exception)
             return
-        if log_response > 0:
-            self.get_preferences(date=res[-1])
-        elif log_response == -1:
-            common.message(_('Connection error!\n'
-                    'Unable to connect to the server!'))
-        elif log_response == -2:
-            common.message(_('Connection error!\n'
-                    'Bad username or password!'))
-            return self.sig_login()
+        self.get_preferences()
         self.favorite_unset()
         self.menuitem_favorite.set_sensitive(True)
         self.menuitem_user.set_sensitive(True)
@@ -986,7 +951,6 @@ class Main(object):
             self.notebook.grab_focus()
 
     def menu_expander_clear(self):
-        self.menu_expander.hide()
         if self.menu_expander.get_child():
             self.menu_expander.remove(self.menu_expander.get_child())
             expanded = self.menu_expander.get_expanded()
@@ -1011,6 +975,8 @@ class Main(object):
                 return False
 
         vbox = gtk.VBox()
+        if hasattr(vbox, 'set_vexpand'):
+            vbox.set_vexpand(True)
 
         self.set_global_search()
         vbox.pack_start(self.global_search_entry, False, False)
@@ -1029,6 +995,7 @@ class Main(object):
         ctx = rpc.CONTEXT.copy()
         decoder = PYSONDecoder(ctx)
         action_ctx = decoder.decode(action.get('pyson_context') or '{}')
+        # Postpone domain eval
         domain = action['pyson_domain']
         screen = Screen(action['res_model'], mode=['tree'], view_ids=view_ids,
             domain=domain, context=action_ctx, readonly=True)
@@ -1041,7 +1008,6 @@ class Main(object):
         treeview.set_headers_visible(False)
 
         self.menu_expander.add(vbox)
-        self.menu_expander.show()
 
         # Favorite column
         column = gtk.TreeViewColumn()
@@ -1096,7 +1062,7 @@ class Main(object):
         except RPCException:
             return
         menu.value['favorite'] = value
-        store.emit('row-changed', path, iter_)
+        store.row_changed(path, iter_)
         self.favorite_unset()
 
     @classmethod
@@ -1152,7 +1118,7 @@ class Main(object):
         self.previous_pages[page] = previous_widget
         self.pages.append(page)
         hbox = gtk.HBox(spacing=3)
-        icon_w, icon_h = gtk.icon_size_lookup(gtk.ICON_SIZE_SMALL_TOOLBAR)
+        icon_w, icon_h = gtk.icon_size_lookup(gtk.ICON_SIZE_SMALL_TOOLBAR)[-2:]
         if page.icon is not None:
             common.ICONFACTORY.register_icon(page.icon)
             image = gtk.Image()
@@ -1179,13 +1145,13 @@ class Main(object):
         img.set_from_stock('tryton-close', gtk.ICON_SIZE_MENU)
         width, height = img.size_request()
         button.set_relief(gtk.RELIEF_NONE)
-        button.unset_flags(gtk.CAN_FOCUS)
+        button.set_can_focus(False)
         button.add(img)
         self.tooltips.set_tip(button, _('Close Tab'))
         button.connect('clicked', self._sig_remove_book, page.widget)
         hbox.pack_start(button, expand=False, fill=False)
         x, y = gtk.icon_size_lookup_for_settings(button.get_settings(),
-                gtk.ICON_SIZE_MENU)
+            gtk.ICON_SIZE_MENU)[-2:]
         button.set_size_request(x, y)
 
         hbox.show_all()
@@ -1283,130 +1249,6 @@ class Main(object):
         for dialog in current_form.dialogs:
             dialog.show()
 
-    def sig_db_new(self, widget):
-        if not self.sig_logout(widget):
-            return False
-        dia = DBCreate(CONFIG['login.server'], int(CONFIG['login.port']),
-            sig_login=self.sig_login)
-        res = dia.run()
-        if res:
-            CONFIG.save()
-        return res
-
-    def sig_db_drop(self, widget=None):
-        if not self.sig_logout(widget):
-            return False
-        url, dbname, passwd = DBBackupDrop(function='drop').run()
-        if not dbname:
-            rpc.logout()
-            return
-
-        host, port = url.rsplit(':', 1)
-        sure = common.sur_3b(_("You are going to delete a Tryton "
-                "database.\nAre you really sure to proceed?"))
-        if sure == "ko" or sure == "cancel":
-            return
-        rpcprogress = common.RPCProgress('db_exec', (host, int(port), 'drop',
-            dbname, passwd))
-        try:
-            rpcprogress.run(False)
-        except TrytonServerError, exception:
-            if exception.faultCode == "AccessDenied":
-                common.warning(_("Wrong Tryton Server Password\n"
-                        "Please try again."),
-                        _('Access denied!'))
-                self.sig_db_drop()
-            else:
-                common.warning(_('Database drop failed with error message:\n')
-                    + str(exception.faultCode), _('Database drop failed!'))
-            return
-        common.message(_("Database dropped successfully!"))
-
-    def sig_db_restore(self, widget=None):
-        if not self.sig_logout(widget):
-            return False
-        filename = common.file_selection(_('Open Backup File to Restore...'),
-            preview=False)
-        if not filename:
-            return
-        dialog = DBRestore(filename=filename)
-        url, dbname, passwd, update = dialog.run()
-        if dbname:
-            with open(filename, 'rb') as file_p:
-                data = file_p.read()
-            host, port = url.rsplit(':', 1)
-            cast = bytearray if bytes == str else bytes
-            rpcprogress = common.RPCProgress('db_exec', (host, int(port),
-                'restore', dbname, passwd, cast(data), update))
-            try:
-                res = rpcprogress.run(False)
-            except TrytonServerError, exception:
-                if exception.faultCode == \
-                        "Couldn't restore database with password":
-                    common.warning(_("It is not possible to restore a "
-                            "password protected database.\n"
-                            "Backup and restore needed to be proceed "
-                            "manual."),
-                            _('Database is password protected!'))
-                elif exception.faultCode == "AccessDenied":
-                    common.warning(_("Wrong Tryton Server Password.\n"
-                            "Please try again."),
-                            _('Access denied!'))
-                    self.sig_db_restore()
-                else:
-                    common.warning(_('Database restore failed with '
-                            'error message:\n') + str(exception.faultCode),
-                        _('Database restore failed!'))
-                return
-            if res:
-                common.message(_("Database restored successfully!"))
-            else:
-                common.message(_('Database restore failed!'))
-
-    def sig_db_dump(self, widget=None):
-        if not self.sig_logout(widget):
-            return False
-        dialog = DBBackupDrop(function='backup')
-        url, dbname, passwd = dialog.run()
-
-        if not (dbname and url and passwd):
-            rpc.logout()
-            return
-
-        host, port = url.rsplit(':', 1)
-        rpcprogress = common.RPCProgress('db_exec', (host, int(port), 'dump',
-            dbname, passwd))
-        try:
-            dump = rpcprogress.run(False)
-        except TrytonServerError, exception:
-            if exception.faultCode == "Couldn't dump database with password":
-                common.warning(_("It is not possible to dump a password "
-                        "protected Database.\nBackup and restore "
-                        "needed to be proceed manual."),
-                    _('Database is password protected!'))
-            elif exception.faultCode == "AccessDenied":
-                common.warning(_("Wrong Tryton Server Password.\n"
-                        "Please try again."),
-                    _('Access denied!'))
-                self.sig_db_dump()
-            else:
-                common.warning(_('Database dump failed with '
-                        'error message:\n') + str(exception.faultCode),
-                    _('Database dump failed!'))
-            rpc.logout()
-            return
-
-        filename = common.file_selection(_('Save As...'),
-            action=gtk.FILE_CHOOSER_ACTION_SAVE, preview=False,
-            filename=dbname + '-' + time.strftime('%Y%m%d%H%M') + '.dump')
-
-        if filename:
-            with open(filename, 'wb') as file_:
-                file_.write(dump)
-            common.message(_("Database backuped successfully!"))
-        else:
-            rpc.logout()
-
     def _open_url(self, url):
         urlp = urlparse(url)
         if not urlp.scheme == 'tryton':
@@ -1439,7 +1281,7 @@ class Main(object):
             try:
                 view_ids = json.loads(params.get('views', 'false'))
                 limit = json.loads(params.get('limit', 'null'))
-                name = json.loads(params.get('window_name', 'false'))
+                name = json.loads(params.get('name', '""'))
                 search_value = json.loads(params.get('search_value', '{}'),
                     object_hook=object_hook)
                 domain = json.loads(params.get('domain', '[]'),
@@ -1471,7 +1313,7 @@ class Main(object):
                 direct_print = json.loads(params.get('direct_print', 'false'))
                 email_print = json.loads(params.get('email_print', 'false'))
                 email = json.loads(params.get('email', 'null'))
-                name = json.loads(params.get('name', 'false'))
+                name = json.loads(params.get('name', '""'))
                 window = json.loads(params.get('window', 'false'))
                 context = json.loads(params.get('context', '{}'),
                     object_hook=object_hook)

@@ -10,7 +10,7 @@
 !include "MUI.nsh"
 
 ;General
-Name "coog ${VERSION}"
+Name "Coog ${VERSION}"
 OutFile "coog-setup-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
@@ -59,10 +59,6 @@ Var STARTMENU_FOLDER
 !include "english.nsh"
 !insertmacro MUI_LANGUAGE "French"
 !include "french.nsh"
-!insertmacro MUI_LANGUAGE "German"
-!include "german.nsh"
-!insertmacro MUI_LANGUAGE "Spanish"
-!include "spanish.nsh"
 
 ;Reserve Files
 
@@ -81,7 +77,7 @@ Function .onInit
     DoInstall:
 FunctionEnd
 
-Section $(SecTrytonName) SecTryton
+Section $(SecCoogName) SecCoog
 SectionIn 1 2 RO
     ;Set output path to the installation directory
     SetOutPath "$INSTDIR"
@@ -98,10 +94,10 @@ SectionIn 1 2 RO
     File /r "doc\*"
 
     ;Register URL protocol
-    WriteRegStr HKCR "tryton" "" "URL:Tryton Protocol"
-    WriteRegStr HKCR "tryton" "URL Protocol" ""
-    WriteRegStr HKCR "tryton\DefaultIcon" "" "$INSTDIR\tryton.exe,1"
-    WriteRegStr HKCR "tryton\shell\open\command" "" '$INSTDIR\tryton.exe "%1"'
+    WriteRegStr HKCR "coog" "" "URL:Coog Protocol"
+    WriteRegStr HKCR "coog" "URL Protocol" ""
+    WriteRegStr HKCR "coog\DefaultIcon" "" "$INSTDIR\coog.exe,1"
+    WriteRegStr HKCR "coog\shell\open\command" "" '$INSTDIR\coog.exe "%1"'
 
     ;Write the installation path into the registry
     WriteRegStr HKCU "Software\coog-${VERSION}" "" $INSTDIR
@@ -123,8 +119,8 @@ SectionIn 1 2
 
         CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
         CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\coog-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
-        CreateShortCut "$DESKTOP\coog-${VERSION}.lnk" "$INSTDIR\tryton.exe" "" "$INSTDIR\tryton.exe" 0
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Coog-${VERSION}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
+        CreateShortCut "$DESKTOP\Coog-${VERSION}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
 
     !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -132,7 +128,7 @@ SectionEnd
 
 ;Descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTryton} $(SecTrytonDesc)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecCoog} $(SecCoogDesc)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu} $(SecStartMenuDesc)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -146,13 +142,13 @@ Section "Uninstall"
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}"
 
     SetShellVarContext all
-    Delete "$DESKTOP\coog-${VERSION}.lnk"
+    Delete "$DESKTOP\Coog-${VERSION}.lnk"
 
     !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
 
     StrCmp $MUI_TEMP "" noshortcuts
         Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
-        Delete "$SMPROGRAMS\$MUI_TEMP\coog-${VERSION}.lnk"
+        Delete "$SMPROGRAMS\$MUI_TEMP\Coog-${VERSION}.lnk"
         RMDir "$SMPROGRAMS\$MUI_TEMP"
     noshortcuts:
 

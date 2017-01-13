@@ -62,7 +62,7 @@ class Times(Dates):
 
     def connect_activate(self, callback):
         for widget in self.from_.get_children() + self.to.get_children():
-            widget.child.connect('activate', callback)
+            widget.get_child().connect('activate', callback)
 
 
 class DateTimes(Dates):
@@ -85,7 +85,7 @@ class DateTimes(Dates):
             if isinstance(widget, Date):
                 widget.connect('activate', callback)
             elif isinstance(widget, Time):
-                widget.child.connect('activate', callback)
+                widget.get_child().connect('activate', callback)
 
 
 class Selection(gtk.ScrolledWindow):
@@ -133,6 +133,7 @@ class ScreenContainer(object):
         self.search_table = None
         self.last_search_text = ''
         self.tab_domain = tab_domain or []
+        self.tab_counter = []
 
         tooltips = common.Tooltips()
 
@@ -167,13 +168,13 @@ class ScreenContainer(object):
 
         def popup(widget):
             menu = widget._menu
-            for child in menu.children():
+            for child in menu.get_children():
                 menu.remove(child)
             if not widget.props.active:
                 menu.popdown()
                 return
 
-            def menu_position(menu):
+            def menu_position(menu, data=None):
                 x, y = widget.window.get_origin()
                 widget_allocation = widget.get_allocation()
                 return (
@@ -243,12 +244,22 @@ class ScreenContainer(object):
 
         if self.tab_domain:
             self.notebook = gtk.Notebook()
-            self.notebook.props.homogeneous = True
+            try:
+                self.notebook.props.homogeneous = True
+            except AttributeError:
+                # No more supported by GTK+3
+                pass
             self.notebook.set_scrollable(True)
-            for name, domain in self.tab_domain:
+            for name, domain, count in self.tab_domain:
+                hbox = gtk.HBox(spacing=3)
                 label = gtk.Label('_' + name)
                 label.set_use_underline(True)
-                self.notebook.append_page(gtk.VBox(), label)
+                hbox.pack_start(label, expand=True, fill=True)
+                counter = gtk.Label()
+                hbox.pack_start(counter, expand=False, fill=True)
+                hbox.show_all()
+                self.notebook.append_page(gtk.VBox(), hbox)
+                self.tab_counter.append(counter)
             self.filter_vbox.pack_start(self.notebook, expand=True, fill=True)
             self.notebook.show_all()
             # Set the current page before connecting to switch-page to not
@@ -302,19 +313,17 @@ class ScreenContainer(object):
                 self.vbox.pack_end(self.viewport)
 
     def set(self, widget):
+        viewport1 = self.viewport
+        viewport2 = self.alternate_viewport
         if self.alternate_view:
-            if self.alternate_viewport.get_child():
-                self.alternate_viewport.remove(
-                        self.alternate_viewport.get_child())
-            if widget == self.viewport.get_child():
-                self.viewport.remove(self.viewport.get_child())
-            self.alternate_viewport.add(widget)
-            self.alternate_viewport.show_all()
-            return
-        if self.viewport.get_child():
-            self.viewport.remove(self.viewport.get_child())
-        self.viewport.add(widget)
-        self.viewport.show_all()
+            viewport1, viewport2 = viewport2, viewport1
+
+        if viewport1.get_child():
+            viewport1.remove(viewport1.get_child())
+        if widget == viewport2.get_child():
+            viewport2.remove(widget)
+        viewport1.add(widget)
+        viewport1.show_all()
 
     def update(self):
         res = self.screen.search_complete(self.get_text())
@@ -340,31 +349,32 @@ class ScreenContainer(object):
         self.do_search()
 
     def bookmark_match(self):
-        current_text = self.get_text()
-        current_domain = self.screen.domain_parser.parse(current_text)
-        self.search_entry.set_icon_activatable(gtk.ENTRY_ICON_SECONDARY,
-            bool(current_text))
-        self.search_entry.set_icon_sensitive(gtk.ENTRY_ICON_SECONDARY,
-            bool(current_text))
         icon_stock = self.search_entry.get_icon_stock(gtk.ENTRY_ICON_SECONDARY)
-        for id_, name, domain in self.bookmarks():
-            text = self.screen.domain_parser.string(domain)
-            domain = self.screen.domain_parser.parse(text.decode('utf-8'))
-            if (text == current_text
-                    or domain == current_domain):
-                if icon_stock != 'tryton-star':
-                    self.search_entry.set_icon_from_stock(
-                        gtk.ENTRY_ICON_SECONDARY, 'tryton-star')
-                self.search_entry.set_icon_tooltip_text(
-                    gtk.ENTRY_ICON_SECONDARY, _('Remove this bookmark'))
-                return id_
+        current_text = self.get_text()
+        if current_text:
+            current_domain = self.screen.domain_parser.parse(current_text)
+            self.search_entry.set_icon_activatable(gtk.ENTRY_ICON_SECONDARY,
+                bool(current_text))
+            self.search_entry.set_icon_sensitive(gtk.ENTRY_ICON_SECONDARY,
+                bool(current_text))
+            for id_, name, domain in self.bookmarks():
+                text = self.screen.domain_parser.string(domain)
+                domain = self.screen.domain_parser.parse(text.decode('utf-8'))
+                if (text == current_text
+                        or domain == current_domain):
+                    if icon_stock != 'tryton-star':
+                        self.search_entry.set_icon_from_stock(
+                            gtk.ENTRY_ICON_SECONDARY, 'tryton-star')
+                    self.search_entry.set_icon_tooltip_text(
+                        gtk.ENTRY_ICON_SECONDARY, _('Remove this bookmark'))
+                    return id_
         if icon_stock != 'tryton-unstar':
             self.search_entry.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
                 'tryton-unstar')
         if current_text:
             self.search_entry.set_icon_tooltip_text(gtk.ENTRY_ICON_SECONDARY,
                 _('Bookmark this filter'))
-        else:
+        elif self.search_entry.get_icon_tooltip_text(gtk.ENTRY_ICON_SECONDARY):
             self.search_entry.set_icon_tooltip_text(gtk.ENTRY_ICON_SECONDARY,
                 None)
 
@@ -384,6 +394,7 @@ class ScreenContainer(object):
     def switch_page_after(self, notebook, page, page_num):
         self.do_search()
         notebook.grab_focus()
+        self.screen.count_tab_domain()
 
     def get_tab_domain(self):
         if not self.notebook:
@@ -394,6 +405,26 @@ class ScreenContainer(object):
         ctx, domain = self.tab_domain[idx][1]
         decoder = PYSONDecoder(ctx)
         return decoder.decode(domain)
+
+    def set_tab_counter(self, count, idx=None):
+        if not self.tab_counter or not self.notebook:
+            return
+        if idx is None:
+            idx = self.notebook.get_current_page()
+        if idx < 0:
+            return
+        label = self.tab_counter[idx]
+        tooltip = common.Tooltips()
+        if count is None:
+            label.set_label('')
+            tooltip.set_tip(label, '')
+        else:
+            tooltip.set_tip(label, '%d' % count)
+            fmt = '(%d)'
+            if count > 99:
+                fmt = '(%d+)'
+                count = 99
+            label.set_label(fmt % count)
 
     def match_selected(self, completion, model, iter):
         def callback():

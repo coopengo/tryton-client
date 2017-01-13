@@ -92,7 +92,7 @@ class Form(SignalEvent, TabContent):
     ]
 
     def __init__(self, model, res_id=False, domain=None, order=None, mode=None,
-            view_ids=None, context=None, name=False, limit=None,
+            view_ids=None, context=None, name='', limit=None,
             search_value=None, tab_domain=None, context_model=None):
         super(Form, self).__init__()
 
@@ -117,10 +117,7 @@ class Form(SignalEvent, TabContent):
             context_model=context_model)
         self.screen.widget.show()
 
-        if not name:
-            self.name = self.screen.current_view.title
-        else:
-            self.name = name
+        self.name = name
 
         if self.model not in common.MODELHISTORY:
             self.menu_def = self.menu_def[:]
@@ -133,9 +130,6 @@ class Form(SignalEvent, TabContent):
         self.url_entry = url_entry = gtk.Entry()
         url_entry.show()
         url_entry.set_editable(False)
-        style = url_entry.get_style()
-        url_entry.modify_bg(gtk.STATE_ACTIVE,
-            style.bg[gtk.STATE_INSENSITIVE])
         self.widget.pack_start(url_entry, False, False)
 
         self.set_buttons_sensitive()
@@ -351,6 +345,7 @@ class Form(SignalEvent, TabContent):
                 self.message_info(_('Records not removed.'), gtk.MESSAGE_ERROR)
             else:
                 self.message_info(_('Records removed.'), gtk.MESSAGE_INFO)
+                self.screen.count_tab_domain()
 
     def sig_import(self, widget=None):
         WinImport(self.model, self.screen.context)
@@ -380,6 +375,7 @@ class Form(SignalEvent, TabContent):
         if self.screen.copy():
             self.message_info(_('Working now on the duplicated record(s).'),
                 gtk.MESSAGE_INFO)
+            self.screen.count_tab_domain()
 
     def sig_save(self, widget=None):
         if widget:
@@ -390,6 +386,7 @@ class Form(SignalEvent, TabContent):
             return
         if self.screen.save_current():
             self.message_info(_('Record saved.'), gtk.MESSAGE_INFO)
+            self.screen.count_tab_domain()
             return True
         else:
             self.message_info(self.screen.invalid_message(), gtk.MESSAGE_ERROR)
@@ -429,6 +426,7 @@ class Form(SignalEvent, TabContent):
         self.screen.display(set_cursor=set_cursor)
         self.message_info()
         self.activate_save()
+        self.screen.count_tab_domain()
         return True
 
     def sig_action(self, widget):
@@ -464,17 +462,16 @@ class Form(SignalEvent, TabContent):
             menu.popdown()
             return
 
-        def menu_position(menu):
-            parent = widget.get_toplevel()
-            parent_x, parent_y = parent.window.get_origin()
+        def menu_position(menu, data):
+            x, y = widget.window.get_origin()
             widget_allocation = widget.get_allocation()
             return (
-                widget_allocation.x + parent_x,
-                widget_allocation.y + widget_allocation.height + parent_y,
-                False
-            )
+                x + widget_allocation.x,
+                y + widget_allocation.y + widget_allocation.height,
+                False)
         menu.show_all()
-        menu.popup(None, None, menu_position, 0, 0)
+        menu.popup(None, None, menu_position, 0, gtk.get_current_event_time(),
+            None)
 
     def _record_message(self, screen, signal_data):
         name = '_'
@@ -551,9 +548,10 @@ class Form(SignalEvent, TabContent):
         gtktoolbar = super(Form, self).create_toolbar(toolbars)
 
         attach_btn = self.buttons['attach']
+        target_entry = gtk.TargetEntry.new('text/uri-list', 0, 0)
         attach_btn.drag_dest_set(gtk.DEST_DEFAULT_ALL, [
-                ('text/uri-list', 0, 0),
-                ], gtk.gdk.ACTION_MOVE)
+                target_entry,
+                ], gtk.gdk.ACTION_MOVE | gtk.gdk.ACTION_COPY)
         attach_btn.connect('drag_data_received',
             self.attach_drag_data_received)
 
@@ -635,9 +633,13 @@ class Form(SignalEvent, TabContent):
         if buttons:
             menu.add(gtk.SeparatorMenuItem())
         for button in buttons:
-            menuitem = gtk.ImageMenuItem(button.attrs.get('icon'))
+            menuitem = gtk.ImageMenuItem()
             menuitem.set_label('_' + button.attrs.get('string', _('Unknown')))
             menuitem.set_use_underline(True)
+            if button.attrs.get('icon'):
+                icon = gtk.Image()
+                icon.set_from_stock(button.attrs['icon'], gtk.ICON_SIZE_MENU)
+                menuitem.set_image(icon)
             menuitem.connect('activate',
                 lambda m, attrs: self.screen.button(attrs), button.attrs)
             menuitem._update_action = True

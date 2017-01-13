@@ -13,6 +13,8 @@ from tryton.config import CONFIG
 
 class Record(SignalEvent):
 
+    # JCA : Make sure we cannot have id conflicts in case of bugs on temporary
+    # ids being inverted
     id = -100000000
 
     def __init__(self, model_name, obj_id, group=None):
@@ -33,6 +35,7 @@ class Record(SignalEvent):
         self._timestamp = None
         self.attachment_count = -1
         self.unread_note = -1
+        self.button_clicks = {}
         self.next = {}  # Used in Group list
         self.value = {}
         self.autocompletion = {}
@@ -206,6 +209,17 @@ class Record(SignalEvent):
         path.reverse()
         return tuple(path)
 
+    def get_index_path(self, group=None):
+        path = []
+        record = self
+        while record:
+            path.append(record.group.index(record))
+            if record.group is group:
+                break
+            record = record.parent
+        path.reverse()
+        return tuple(path)
+
     def get_removed(self):
         if self.group is not None:
             return self in self.group.record_removed
@@ -282,6 +296,7 @@ class Record(SignalEvent):
         self._loaded.clear()
         self.modified_fields.clear()
         self._timestamp = None
+        self.button_clicks.clear()
 
     def get_timestamp(self):
         result = {self.model_name + ',' + str(self.id): self._timestamp}
@@ -360,11 +375,13 @@ class Record(SignalEvent):
             root_group.reload(reload_ids)
         return True
 
-    def default_get(self):
+    def default_get(self, rec_name=None):
         if len(self.group.fields):
+            context = self.context_get()
+            context.setdefault('default_rec_name', rec_name)
             try:
                 vals = RPCExecute('model', self.model_name, 'default_get',
-                    self.group.fields.keys(), context=self.context_get())
+                    self.group.fields.keys(), context=context)
             except RPCException:
                 return
             if (self.parent
@@ -444,8 +461,9 @@ class Record(SignalEvent):
         if signal:
             self.signal('record-changed')
 
-    def set(self, val, signal=True):
+    def set(self, val, signal=True, validate=True):
         later = {}
+        fieldnames = []
         for fieldname, value in val.iteritems():
             if fieldname == '_timestamp':
                 # Always keep the older timestamp
@@ -468,9 +486,15 @@ class Record(SignalEvent):
                     del self.value[field_rec_name]
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
+            fieldnames.append(fieldname)
         for fieldname, value in later.iteritems():
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
+        for fieldname, fieldinfo in self.group.fields.iteritems():
+            if fieldinfo.attrs.get('autocomplete'):
+                self.do_autocomplete(fieldname)
+        if validate:
+            self.validate(fieldnames, softvalidation=True)
         if signal:
             self.signal('record-changed')
 
@@ -642,6 +666,20 @@ class Record(SignalEvent):
             except RPCException:
                 return 0
         return self.unread_note
+
+    def get_button_clicks(self, name):
+        if self.id < 0:
+            return
+        clicks = self.button_clicks.get(name)
+        if clicks is not None:
+            return clicks
+        try:
+            clicks = RPCExecute('model', 'ir.model.button.click',
+                'get_click', self.model_name, name, self.id)
+            self.button_clicks[name] = clicks
+        except RPCException:
+            return
+        return clicks
 
     def destroy(self):
         for v in self.value.itervalues():

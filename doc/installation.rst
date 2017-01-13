@@ -5,11 +5,11 @@ Prerequisites
 -------------
 
  * Python 2.7 or later (http://www.python.org/)
- * pygtk 2.22 or later (http://www.pygtk.org/)
+ * gtk+ 2.6 or later and pygtk 2.22 or later (http://www.pygtk.org/)
+ * gtk+ 3.20 or later and py-gobject3 (http://www.gtk.org/)
  * librsvg (http://librsvg.sourceforge.net/)
  * python-dateutil (http://labix.org/python-dateutil)
  * chardet (http://pypi.python.org/pypi/chardet)
- * Optional: simplejson (http://undefined.org/python/#simplejson)
  * Optional: cdecimal (http://www.bytereef.org/mpdecimal/index.html)
  * Optional: GooCalendar (http://code.google.com/p/goocalendar/)
 
@@ -28,7 +28,7 @@ site-packages directory on your system.
 For advanced options, please refer to the easy_install__ and/or the
 distutils__ documentation:
 
-__ http://peak.telecommunity.com/DevCenter/EasyInstall
+__ http://setuptools.readthedocs.io/en/latest/easy_install.html
 
 __ http://docs.python.org/inst/inst.html
 

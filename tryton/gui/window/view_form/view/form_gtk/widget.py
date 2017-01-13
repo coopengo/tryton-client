@@ -27,6 +27,7 @@ class Widget(object):
         self.colors = {}
         self.visible = True
         self.color_name = None
+        self._readonly = False
 
     @property
     def field_name(self):
@@ -53,6 +54,9 @@ class Widget(object):
         self._focus_out()
 
     def _readonly_set(self, readonly):
+        self._readonly = readonly
+
+    def _required_set(self, required):
         pass
 
     def _color_widget(self):
@@ -194,6 +198,7 @@ class Widget(object):
         if not field:
             self._readonly_set(self.attrs.get('readonly', True))
             self.invisible_set(self.attrs.get('invisible', False))
+            self._required_set(False)
             return
         readonly = self.attrs.get('readonly',
             field.get_state_attrs(record).get('readonly', False))
@@ -212,6 +217,8 @@ class Widget(object):
         self._format_set(record, field)
         self.invisible_set(self.attrs.get('invisible',
             field.get_state_attrs(record).get('invisible', False)))
+        self._required_set(
+            field.get_state_attrs(record).get('required', False))
 
     def set_value(self, record, field):
         pass
@@ -219,7 +226,7 @@ class Widget(object):
 
 class TranslateDialog(NoModal):
 
-    def __init__(self, widget, languages):
+    def __init__(self, widget, languages, readonly):
         NoModal.__init__(self)
         self.widget = widget
         self.win = gtk.Dialog(_('Translation'), self.parent,
@@ -282,6 +289,7 @@ class TranslateDialog(NoModal):
             table.attach(widget, 1, 2, i, i + 1, yoptions=yopt)
             editing = gtk.CheckButton()
             editing.connect('toggled', self.editing_toggled, widget)
+            editing.props.sensitive = not readonly
             tooltips.set_tip(editing, _('Edit'))
             table.attach(editing, 2, 3, i, i + 1, xoptions=gtk.FILL)
             fuzzy = gtk.CheckButton()
@@ -357,7 +365,7 @@ class TranslateMixin:
         self.view.set_value()
         if self.record.id < 0 or self.record.modified:
             common.message(
-                _('You need to save the record before adding translations!'))
+                _('You need to save the record before adding translations.'))
             return
 
         try:
@@ -368,7 +376,7 @@ class TranslateMixin:
             return
 
         if not lang_ids:
-            common.message(_('No other language available!'))
+            common.message(_('No other language available.'))
             return
         try:
             languages = RPCExecute('model', 'ir.lang', 'read', lang_ids,
@@ -376,7 +384,7 @@ class TranslateMixin:
         except RPCException:
             return
 
-        TranslateDialog(self, languages)
+        TranslateDialog(self, languages, self._readonly)
 
     def translate_widget(self):
         raise NotImplemented

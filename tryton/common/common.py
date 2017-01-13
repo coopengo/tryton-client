@@ -24,11 +24,8 @@ except ImportError:
     import md5
 import webbrowser
 import traceback
-import threading
 import tryton.rpc as rpc
-import locale
 import socket
-from tryton import __version__
 import thread
 import urllib
 from string import Template
@@ -227,46 +224,6 @@ def find_in_path(name):
     return name
 
 
-def test_server_version(host, port):
-    version = rpc.server_version(host, port)
-    if not version:
-        return False
-    return version.split('.')[:2] == __version__.split('.')[:2]
-
-
-def refresh_dblist(host, port):
-    '''
-    Return the number of database available
-        or None if it is impossible to connect
-        or -1 if the server version doesn't match the client version
-    '''
-    rpc.logout()
-    if not test_server_version(host, port):
-        return -1
-    return rpc.db_list(host, port)
-
-
-def refresh_langlist(lang_widget, host, port):
-    liststore = lang_widget.get_model()
-    liststore.clear()
-    try:
-        lang_list = rpc.db_exec(host, port, 'list_lang')
-    except socket.error:
-        return []
-    index = -1
-    i = 0
-    lang = locale.getdefaultlocale()[0]
-    for key, val in lang_list:
-        liststore.insert(i, (val, key))
-        if key == lang:
-            index = i
-        if key == 'en_US' and index < 0:
-            index = i
-        i += 1
-    lang_widget.set_active(index)
-    return lang_list
-
-
 def request_server(server_widget):
     result = False
     parent = get_toplevel_window()
@@ -276,7 +233,6 @@ def request_server(server_widget):
         flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT |
         gtk.WIN_POS_CENTER_ON_PARENT |
         gtk.gdk.WINDOW_TYPE_HINT_DIALOG,)
-    dialog.set_has_separator(True)
     vbox = gtk.VBox()
     table = gtk.Table(2, 2, False)
     table.set_border_width(12)
@@ -305,7 +261,7 @@ def request_server(server_widget):
     label_port.set_padding(3, 3)
     table.attach(label_port, 0, 1, 1, 2, yoptions=False,
         xoptions=False)
-    dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL | gtk.CAN_DEFAULT)
+    dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
     dialog.add_button("gtk-ok", gtk.RESPONSE_OK)
     dialog.vbox.pack_start(vbox)
     dialog.set_icon(TRYTON_ICON)
@@ -330,7 +286,7 @@ def request_server(server_widget):
 
 def get_toplevel_window():
     windows = [x for x in gtk.window_list_toplevels()
-        if x.window and x.props.visible
+        if x.get_window() and x.props.visible
         and x.props.type == gtk.WINDOW_TOPLEVEL]
     trans2windows = dict((x.get_transient_for(), x) for x in windows)
     for window in set(windows) - set(trans2windows.iterkeys()):
@@ -350,7 +306,7 @@ def get_sensible_widget(window):
 
 
 def center_window(window, parent, sensible):
-    parent_x, parent_y = parent.window.get_origin()
+    parent_x, parent_y = sensible.get_window().get_origin()
     window_allocation = window.get_allocation()
     sensible_allocation = sensible.get_allocation()
     x = (parent_x + sensible_allocation.x +
@@ -373,7 +329,6 @@ def selection(title, values, alwaysask=False):
             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                 gtk.STOCK_OK, gtk.RESPONSE_OK))
     dialog.set_icon(TRYTON_ICON)
-    dialog.set_has_separator(True)
     dialog.set_default_response(gtk.RESPONSE_OK)
     dialog.set_default_size(400, 400)
 
@@ -441,6 +396,8 @@ def file_selection(title, filename='',
             win.set_current_name(filename)
         else:
             win.set_filename(filename)
+    if hasattr(win, 'set_do_overwrite_confirmation'):
+        win.set_do_overwrite_confirmation(True)
     win.set_select_multiple(multi)
     win.set_default_response(gtk.RESPONSE_OK)
     if filters is not None:
@@ -673,7 +630,6 @@ class ConfirmationDialog(UniqueDialog):
         dialog = gtk.Dialog(_('Confirmation'), parent, gtk.DIALOG_MODAL
                 | gtk.DIALOG_DESTROY_WITH_PARENT | gtk.WIN_POS_CENTER_ON_PARENT
                 | gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
-        dialog.set_has_separator(True)
         hbox = gtk.HBox()
         image = gtk.Image()
         image.set_from_stock('tryton-dialog-information',
@@ -691,8 +647,7 @@ class SurDialog(ConfirmationDialog):
     def build_dialog(self, parent, message):
         dialog = super(SurDialog, self).build_dialog(parent, message)
         dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
-        dialog.add_button("gtk-ok", gtk.RESPONSE_OK | gtk.CAN_DEFAULT
-                | gtk.HAS_DEFAULT)
+        dialog.set_default(dialog.add_button("gtk-ok", gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
         return dialog
 
@@ -715,8 +670,7 @@ class Sur3BDialog(ConfirmationDialog):
         dialog = super(Sur3BDialog, self).build_dialog(parent, message)
         dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
         dialog.add_button("gtk-no", gtk.RESPONSE_NO)
-        dialog.add_button("gtk-yes", gtk.RESPONSE_YES | gtk.CAN_DEFAULT
-                | gtk.HAS_DEFAULT)
+        dialog.set_default(dialog.add_button("gtk-yes", gtk.RESPONSE_YES))
         dialog.set_default_response(gtk.RESPONSE_YES)
         return dialog
 
@@ -730,11 +684,10 @@ sur_3b = Sur3BDialog()
 class AskDialog(UniqueDialog):
 
     def build_dialog(self, parent, question, visibility):
-        win = gtk.Dialog('coog', parent,
+        win = gtk.Dialog(CONFIG['client.title'], parent,
                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                 (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                     gtk.STOCK_OK, gtk.RESPONSE_OK))
-        win.set_has_separator(True)
         win.set_default_response(gtk.RESPONSE_OK)
 
         hbox = gtk.HBox()
@@ -779,7 +732,6 @@ class ConcurrencyDialog(UniqueDialog):
         dialog = gtk.Dialog(_('Concurrency Exception'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT |
             gtk.WIN_POS_CENTER_ON_PARENT | gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
-        dialog.set_has_separator(True)
         dialog.set_default_response(gtk.RESPONSE_CANCEL)
         hbox = gtk.HBox()
         image = gtk.Image()
@@ -832,7 +784,6 @@ class ErrorDialog(UniqueDialog):
     def build_dialog(self, parent, title, details):
         dialog = gtk.Dialog(_('Error'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-        dialog.set_has_separator(True)
 
         but_send = gtk.Button(_('Report Bug'))
         dialog.add_action_widget(but_send, gtk.RESPONSE_OK)
@@ -841,7 +792,7 @@ class ErrorDialog(UniqueDialog):
 
         vbox = gtk.VBox()
         label_title = gtk.Label()
-        label_title.set_markup('<b>' + _('Application Error!') + '</b>')
+        label_title.set_markup('<b>' + _('Application Error.') + '</b>')
         label_title.set_padding(-1, 5)
         vbox.pack_start(label_title, False, False)
         vbox.pack_start(gtk.HSeparator(), False, False)
@@ -920,7 +871,6 @@ def send_bugtracker(title, msg):
                 gtk.STOCK_OK, gtk.RESPONSE_OK))
     win.set_icon(TRYTON_ICON)
     win.set_default_response(gtk.RESPONSE_OK)
-    win.set_has_separator(True)
 
     hbox = gtk.HBox()
     image = gtk.Image()
@@ -1014,7 +964,7 @@ def send_bugtracker(title, msg):
             if (isinstance(exception, xmlrpclib.Fault)
                     and 'roundup.cgi.exceptions.Unauthorised' in
                     exception.faultString):
-                message(_('Connection error!\nBad username or password!'))
+                message(_('Connection error.\nBad username or password.'))
                 return send_bugtracker(title, msg)
             tb_s = reduce(lambda x, y: x + y,
                     traceback.format_exception(sys.exc_type,
@@ -1068,28 +1018,21 @@ PLOCK = Lock()
 
 
 def process_exception(exception, *args, **kwargs):
-    try:
-        print "Exception Detected !"
-        print exception
-        print traceback.format_exc()
-        traceback.print_last()
-    except:
-        pass
 
     rpc_execute = kwargs.get('rpc_execute', rpc.execute)
 
     if isinstance(exception, TrytonError):
         if exception.faultCode == 'BadFingerprint':
             warning(
-                _('The server fingerprint has changed since last connection!\n'
+                _('The server fingerprint has changed since last connection.\n'
                 'The application will stop connecting to this server '
-                'until its fingerprint is fixed.'), _('Security risk!'))
+                'until its fingerprint is fixed.'), _('Security risk.'))
             from tryton.gui.main import Main
             Main.sig_quit()
         elif exception.faultCode.startswith('403'):
             if rpc.CONNECTION is None:
-                message(_('Connection error!\n'
-                        'Unable to connect to the server!'))
+                message(_('Connection error.\n'
+                        'Unable to connect to the server.'))
                 return False
     elif isinstance(exception, TrytonServerError):
         if exception.faultCode == 'UserWarning':
@@ -1135,37 +1078,31 @@ def process_exception(exception, *args, **kwargs):
             from tryton.gui.main import Main
             if not PLOCK.acquire(False):
                 return False
-            hostname = rpc._HOST
-            port = rpc._PORT
+            language = CONFIG['client.lang']
+            func = lambda parameters: rpc.login(
+                rpc._HOST, rpc._PORT, rpc._DATABASE, rpc._USERNAME, parameters,
+                language)
             try:
-                while True:
-                    password = ask(_('Password:'), visibility=False)
-                    if password is None:
-                        Main.get_main().sig_quit()
-                    res = rpc.login(rpc._USERNAME, password, hostname, port,
-                            rpc._DATABASE)
-                    if res == -1:
-                        message(_('Connection error!\n'
-                                'Unable to connect to the server!'))
-                        return False
-                    if res < 0:
-                        continue
-                    if args:
-                        try:
-                            return rpc_execute(*args)
-                        except TrytonServerError, exception:
-                            return process_exception(exception, *args,
-                                rpc_execute=rpc_execute)
-                    return True
+                Login(func)
+            except TrytonError, exception:
+                if exception.faultCode == 'QueryCanceled':
+                    Main.get_main().sig_quit()
+                raise
             finally:
                 PLOCK.release()
+            if args:
+                try:
+                    return rpc_execute(*args)
+                except TrytonServerError, exception:
+                    return process_exception(exception, *args,
+                        rpc_execute=rpc_execute)
     elif isinstance(exception, (socket.error, TrytonServerUnavailable)):
-        warning(str(exception), _('Network Error!'))
+        warning(str(exception), _('Network Error.'))
         return False
 
     if isinstance(exception, TrytonServerError):
         error_title, error_detail = exception.faultCode, exception.faultString
-    elif CONFIG['sentry.dsn'] and kwargs.get('sentry_id'):
+    elif kwargs.get('sentry_id'):
         sentry(kwargs.get('sentry_id'))
         return False
     else:
@@ -1173,6 +1110,36 @@ def process_exception(exception, *args, **kwargs):
         error_detail = traceback.format_exc()
     error(error_title, error_detail)
     return False
+
+
+class Login(object):
+    def __init__(self, func):
+        parameters = {}
+        while True:
+            try:
+                func(parameters)
+            except TrytonServerError, exception:
+                if exception.faultCode.startswith('403'):
+                    parameters.clear()
+                    continue
+                if exception.faultCode != 'LoginException':
+                    raise
+                name, message, type = exception.args
+                value = getattr(self, 'get_%s' % type)(message)
+                if value is None:
+                    raise TrytonError('QueryCanceled')
+                parameters[name] = value
+                continue
+            else:
+                return
+
+    @classmethod
+    def get_char(self, message):
+        return ask(message)
+
+    @classmethod
+    def get_password(self, message):
+        return ask(message, visibility=False)
 
 
 def node_attributes(node):
@@ -1223,54 +1190,6 @@ def generateColorscheme(masterColor, keys, light=0.1):
             s, (v + light * i) % 1) for i, key in enumerate(keys)}
 
 
-class DBProgress(object):
-
-    def __init__(self, host, port):
-        self.dbs = None, None
-        self.host, self.port = host, port
-        self.updated = threading.Event()
-
-    def start(self):
-        dbs = None
-        try:
-            dbs = refresh_dblist(self.host, self.port)
-        except Exception:
-            pass
-        finally:
-            self.dbs = dbs
-            self.updated.set()
-
-    def update(self, combo, progressbar, callback, dbname=''):
-        self.db_info = None
-        threading.Thread(target=self.start).start()
-        gobject.timeout_add(100, self.end, combo, progressbar, callback,
-            dbname)
-
-    def end(self, combo, progressbar, callback, dbname):
-        if not self.updated.isSet():
-            progressbar.show()
-            progressbar.pulse()
-            return True
-        progressbar.hide()
-        dbs = self.dbs
-
-        if dbs is not None and dbs not in (-1, -2):
-            liststore = combo.get_model()
-            liststore.clear()
-            index = -1
-            for db_num, db_name in enumerate(dbs):
-                liststore.append([db_name])
-                if db_name == dbname:
-                    index = db_num
-            if index == -1:
-                index = 0
-            combo.set_active(index)
-            dbs = len(dbs)
-
-        callback(dbs)
-        return False
-
-
 class RPCException(Exception):
 
     def __init__(self, exception):
@@ -1282,7 +1201,7 @@ class RPCProgress(object):
     def __init__(self, method, args):
         self.method = method
         self.args = args
-        self.parent = get_toplevel_window()
+        self.parent = None
         self.res = None
         self.error = False
         self.exception = None
@@ -1305,11 +1224,14 @@ class RPCProgress(object):
     def run(self, process_exception_p=True, callback=None):
         self.process_exception_p = process_exception_p
         self.callback = callback
-        if self.parent.window:
-            watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
-            self.parent.window.set_cursor(watch)
 
         if callback:
+            # Parent is only useful if it is asynchronous
+            # otherwise the cursor is not updated.
+            self.parent = get_toplevel_window()
+            if self.parent.get_window():
+                watch = gtk.gdk.Cursor(gtk.gdk.WATCH)
+                self.parent.get_window().set_cursor(watch)
             thread.start_new_thread(self.start, ())
             return
         else:
@@ -1317,8 +1239,8 @@ class RPCProgress(object):
             return self.process()
 
     def process(self):
-        if self.parent.window:
-            self.parent.window.set_cursor(None)
+        if self.parent and self.parent.get_window():
+            self.parent.get_window().set_cursor(None)
         if self.exception:
             if self.process_exception_p:
                 def rpc_execute(*args):
@@ -1499,7 +1421,7 @@ def resize_pixbuf(pixbuf, width, height):
 
 def _data2pixbuf(data):
     loader = gtk.gdk.PixbufLoader()
-    loader.write(bytes(data), len(data))
+    loader.write(bytes(data))
     loader.close()
     return loader.get_pixbuf()
 
@@ -1516,3 +1438,23 @@ def data2pixbuf(data):
         except glib.GError:
             pass
     return pixbuf
+
+
+def get_label_attributes(readonly, required):
+    "Return the pango attributes applied to a label according to its state"
+    if readonly:
+        style = pango.STYLE_NORMAL
+        weight = pango.WEIGHT_NORMAL
+    else:
+        style = pango.STYLE_ITALIC
+        if required:
+            weight = pango.WEIGHT_BOLD
+        else:
+            weight = pango.WEIGHT_NORMAL
+    attrlist = pango.AttrList()
+    if hasattr(pango, 'AttrWeight'):
+        # FIXME when Pango.attr_weight_new is introspectable
+        attrlist.change(pango.AttrWeight(weight, 0, -1))
+    if hasattr(pango, 'AttrStyle'):
+        attrlist.change(pango.AttrStyle(style, 0, -1))
+    return attrlist

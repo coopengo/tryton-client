@@ -82,6 +82,17 @@ class Action(object):
         if 'type' not in (action or {}):
             return
 
+        def add_name_suffix(name):
+            if not data.get('ids') or not data.get('model'):
+                return name
+            max_records = 5
+            rec_names = RPCExecute('model', data['model'],
+                'read', data['ids'][:max_records], ['rec_name'])
+            name_suffix = _(', ').join([x['rec_name'] for x in rec_names])
+            if len(data['ids']) > max_records:
+                name_suffix += _(u',\u2026')
+            return _('%s (%s)') % (name, name_suffix)
+
         data['action_id'] = action['id']
         if action['type'] == 'ir.action.act_window':
             view_ids = False
@@ -101,6 +112,7 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
+            # TODO: comment changes
             action_ctx = decoder.decode(action.get('pyson_context') or '{}')
             action_ctx.update(context)
             action_ctx.update(ctx)
@@ -111,11 +123,12 @@ class Action(object):
             domain = action['pyson_domain']
             order = decoder.decode(action['pyson_order'])
             search_value = decoder.decode(action['pyson_search_value'] or '[]')
-            tab_domain = [(n, (action_ctx, d)) for n, d in action['domains']]
+            tab_domain = [(n, (action_ctx, d), c)
+                for n, d, c in action['domains']]
 
-            name = False
-            if action.get('window_name', True):
-                name = action.get('name', False)
+            name = action.get('name', '')
+            if action.get('keyword', '') == 'form_relate':
+                name = add_name_suffix(name)
 
             res_model = action.get('res_model', data.get('res_model'))
             res_id = action.get('res_id', data.get('res_id'))
@@ -128,12 +141,15 @@ class Action(object):
                     tab_domain=tab_domain,
                     context_model=action['context_model'])
         elif action['type'] == 'ir.action.wizard':
+            name = action.get('name', '')
+            if action.get('keyword', 'form_action') == 'form_action':
+                name = add_name_suffix(name)
             context = copy.deepcopy(context)
             context.update(data.get('extra_context', {}))
             Window.create_wizard(action['wiz_name'], data,
                 direct_print=action.get('direct_print', False),
                 email_print=action.get('email_print', False),
-                email=action.get('email'), name=action.get('name', False),
+                email=action.get('email'), name=name,
                 context=context, icon=(action.get('icon.rec_name') or ''),
                 window=action.get('window', False))
 
@@ -168,7 +184,7 @@ class Action(object):
             Action._exec_action(action, data, context=context)
             return (name, action)
         elif not len(keyact) and warning:
-            message(_('No action defined!'))
+            message(_('No action defined.'))
         return False
 
     @staticmethod

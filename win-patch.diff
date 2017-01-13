@@ -1,0 +1,79 @@
+diff --git a/tryton/gui/window/view_form/view/form_gtk/sourceeditor.py b/tryton/gui/window/view_form/view/form_gtk/sourceeditor.py
+index a89436d..59b7555 100644
+--- a/tryton/gui/window/view_form/view/form_gtk/sourceeditor.py
++++ b/tryton/gui/window/view_form/view/form_gtk/sourceeditor.py
+@@ -7,7 +7,6 @@ import pyflakes.messages
+ import gobject
+ import gtk
+ import pango
+-import gtksourceview2 as gtksourceview
+ 
+ from .widget import Widget
+ 
+@@ -84,27 +83,17 @@ class SourceView(Widget):
+         sc_editor.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+         sc_editor.set_size_request(-1, 80)
+ 
+-        language_manager = gtksourceview.language_manager_get_default()
+-        python = language_manager.get_language('python')
+-        self.sourcebuffer = gtksourceview.Buffer(language=python)
++        self.sourcebuffer = gtk.TextBuffer()
+         self.sourcebuffer.connect('changed', self._clear_marks)
+ 
+-        self.sourceview = gtksourceview.View(self.sourcebuffer)
++        self.sourceview = gtk.TextView(self.sourcebuffer)
+         self.sourceview.connect('focus-out-event', lambda x, y:
+             self._focus_out())
+         self.sourceview.connect('key-press-event', self.send_modified)
+         self.sourceview.connect('key-press-event', self._test_check)
+-        self.sourceview.set_insert_spaces_instead_of_tabs(True)
+-        self.sourceview.set_tab_width(4)
+-        self.sourceview.set_auto_indent(True)
+-        self.sourceview.set_show_line_numbers(True)
+-        self.sourceview.set_show_line_marks(True)
+ 
+         tag_table = self.sourcebuffer.get_tag_table()
+         for mark_type, (priority, stock_id) in MARKS.items():
+-            self.sourceview.set_mark_category_icon_from_stock(mark_type,
+-                stock_id)
+-            self.sourceview.set_mark_category_priority(mark_type, priority)
+             tag = gtk.TextTag(name=mark_type)
+             if mark_type in (ERROR, SYNTAX):
+                 tag.props.underline = pango.UNDERLINE_ERROR
+@@ -236,11 +225,8 @@ class SourceView(Widget):
+             value = ''
+ 
+         if self.get_value() != value:
+-            self.sourcebuffer.begin_not_undoable_action()
+             self.sourcebuffer.set_text(value)
+-            self.sourcebuffer.end_not_undoable_action()
+             begin, end = self.sourcebuffer.get_bounds()
+-            self.sourcebuffer.remove_source_marks(begin, end)
+             self.error_store.clear()
+ 
+         if self.tree_data_field:
+@@ -316,7 +302,6 @@ class SourceView(Widget):
+         self.error_store.clear()
+         begin, end = self.sourcebuffer.get_bounds()
+         tag_table = self.sourcebuffer.get_tag_table()
+-        self.sourcebuffer.remove_source_marks(begin, end)
+         for tagname in ERROR2COLOR.values():
+             tag = tag_table.lookup(tagname)
+             self.sourcebuffer.remove_tag(tag, begin, end)
+@@ -339,8 +324,6 @@ class SourceView(Widget):
+                 line_nbr - 1, 0)
+             line_end = self.sourcebuffer.get_iter_at_line_offset(
+                 line_nbr - 1, len(line))
+-            self.sourcebuffer.create_source_mark(str(idx), error_type,
+-                line_start)
+             tag = tag_table.lookup(error_type)
+             self.sourcebuffer.apply_tag(tag, line_start, line_end)
+         self.error_tree.set_visible(has_errors)
+@@ -379,7 +362,6 @@ class SourceView(Widget):
+             start = sourcebuffer.get_iter_at_line_offset(line, 0)
+             end = sourcebuffer.get_iter_at_line_offset(line, chars)
+             for error_type in MARKS.keys():
+-                sourcebuffer.remove_source_marks(start, end, error_type)
+                 tag = tag_table.lookup(error_type)
+                 sourcebuffer.remove_tag(tag, start, end)
+ 

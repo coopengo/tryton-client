@@ -10,7 +10,8 @@ class Calendar_(goocalendar.Calendar):
     'Calendar'
 
     def __init__(self, attrs, screen, fields, event_store=None):
-        super(Calendar_, self).__init__(event_store)
+        super(Calendar_, self).__init__(
+            event_store, attrs.get('mode', 'month'))
         self.attrs = attrs
         self.screen = screen
         self.fields = fields
@@ -18,7 +19,7 @@ class Calendar_(goocalendar.Calendar):
         self.current_domain_period = self.get_displayed_period()
 
     def set_default_date(self, record, selected_date):
-        dtstart = self.attrs.get('dtstart')
+        dtstart = self.attrs['dtstart']
         record[dtstart].set(record, datetime.datetime.combine(selected_date,
             datetime.time(0)))
 
@@ -49,7 +50,7 @@ class Calendar_(goocalendar.Calendar):
     def current_domain(self):
         first_datetime, last_datetime = \
             self.current_domain_period.get_dates(True)
-        dtstart = self.attrs.get('dtstart')
+        dtstart = self.attrs['dtstart']
         dtend = self.attrs.get('dtend') or dtstart
         domain = ['OR',
             ['AND', (dtstart, '>=', first_datetime),
@@ -60,9 +61,19 @@ class Calendar_(goocalendar.Calendar):
                 (dtend, '>', last_datetime)]]
         return domain
 
+    def get_colors(self, record):
+        text_color = None
+        if self.attrs.get('color'):
+            text_color = record[self.attrs['color']].get(record)
+        bg_color = 'lightblue'
+        if self.attrs.get('background_color'):
+            bg_color = record[self.attrs['background_color']].get(
+                record)
+        return text_color, bg_color
+
     def display(self, group):
-        dtstart = self.attrs.get('dtstart')
-        dtend = self.attrs.get('dtend') or dtstart
+        dtstart = self.attrs['dtstart']
+        dtend = self.attrs.get('dtend')
         if self.screen.current_record:
             record = self.screen.current_record
             date = record[dtstart].get(record)
@@ -80,7 +91,10 @@ class Calendar_(goocalendar.Calendar):
                 continue
 
             start = record[dtstart].get_client(record)
-            end = record[dtend].get_client(record)
+            if dtend:
+                end = record[dtend].get_client(record)
+            else:
+                end = None
             midnight = datetime.time(0)
             all_day = False
             if not isinstance(start, datetime.datetime):
@@ -95,11 +109,11 @@ class Calendar_(goocalendar.Calendar):
             if end is not None and start > end:
                 continue
 
-            # TODO define color code
+            text_color, bg_color = self.get_colors(record)
             label = '\n'.join(record[attrs['name']].get_client(record)
                 for attrs in self.fields).rstrip()
-            event = goocalendar.Event(label, start, end,
-                bg_color='lightblue', all_day=all_day)
+            event = goocalendar.Event(label, start, end, text_color=text_color,
+                bg_color=bg_color, all_day=all_day)
             event.record = record
             self._event_store.add(event)
 

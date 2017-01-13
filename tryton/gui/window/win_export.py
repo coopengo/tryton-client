@@ -77,7 +77,10 @@ class WinExport(WinCSV):
     def add_chooser(self, box):
         hbox_csv_export = gtk.HBox()
         box.pack_start(hbox_csv_export, False, True, 0)
-        self.saveas = gtk.combo_box_new_text()
+        if hasattr(gtk, 'ComboBoxText'):
+            self.saveas = gtk.ComboBoxText()
+        else:
+            self.saveas = gtk.combo_box_new_text()
         hbox_csv_export.pack_start(self.saveas, True, True, 0)
         self.saveas.append_text(_("Open"))
         self.saveas.append_text(_("Save"))
@@ -181,7 +184,7 @@ class WinExport(WinCSV):
         self.pref_export.set_model(self.predef_model)
 
     def addreplace_predef(self, widget):
-        iter = self.model2.get_iter_root()
+        iter = self.model2.get_iter_first()
         fields = []
         while iter:
             field_name = self.model2.get_value(iter, 1)
@@ -275,7 +278,7 @@ class WinExport(WinCSV):
         if response == gtk.RESPONSE_OK:
             fields = []
             fields2 = []
-            iter = self.model2.get_iter_root()
+            iter = self.model2.get_iter_first()
             while iter:
                 fields.append(self.model2.get_value(iter, 1))
                 fields2.append(self.model2.get_value(iter, 0))
@@ -319,12 +322,12 @@ class WinExport(WinCSV):
                 writer.writerow(row)
             if popup:
                 if len(data) == 1:
-                    common.message(_('%d record saved!') % len(data))
+                    common.message(_('%d record saved.') % len(data))
                 else:
-                    common.message(_('%d records saved!') % len(data))
+                    common.message(_('%d records saved.') % len(data))
             return True
         except IOError, exception:
-            common.warning(_("Operation failed!\nError message:\n%s")
+            common.warning(_("Operation failed.\nError message:\n%s")
                 % exception, _('Error'))
             return False
 

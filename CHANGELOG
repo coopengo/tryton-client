@@ -1,23 +1,21 @@
-Version 4.0.7 - 2016-12-17
+Version 4.2.0 - 2016-11-28
 * Bug fixes (see mercurial logs for details)
-
-Version 4.0.6 - 2016-11-06
-* Bug fixes (see mercurial logs for details)
-
-Version 4.0.5 - 2016-10-02
-* Bug fixes (see mercurial logs for details)
-
-Version 4.0.4 - 2016-09-03
-* Bug fixes (see mercurial logs for details)
-
-Version 4.0.3 - 2016-08-02
-* Bug fixes (see mercurial logs for details)
-
-Version 4.0.2 - 2016-07-04
-* Bug fixes (see mercurial logs for details)
-
-Version 4.0.1 - 2016-05-11
-* Bug fixes (see mercurial logs for details)
+* Add support for GTK+ 3.0
+* Add PYSON Widget
+* Show records names in wizard title
+* Add support for datetime_field to Reference
+* Show non editable widget as insensitive
+* Move info-bar at the bottom
+* Manage readonly on fields translation dialog
+* Restore tab default order when no manual change
+* Call autocompletion when setting record value
+* Remove database management
+* Limit readonly state for xxx2Many
+* Show records names in relate window title
+* Add support for count on Action Window Domains
+* Manage custom login process
+* Add clear icon on Many2One
+* Re-position icons on Many2One widget
 
 Version 4.0.0 - 2016-05-02
 * Bug fixes (see mercurial logs for details)

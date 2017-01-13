@@ -579,7 +579,10 @@ class Binary(GenericText):
 
     def clear_binary(self, renderer, path):
         record, field = self._get_record_field(path)
-        field.set_client(record, False)
+        if self.filename:
+            filename_field = record.group.fields[self.filename]
+            filename_field.set_client(record, None)
+        field.set_client(record, None)
 
 
 class Image(GenericText):
@@ -675,9 +678,11 @@ class M2O(GenericText):
                 callback()
         if obj_id:
             screen.load([obj_id])
-            WinForm(screen, open_callback, save_current=True)
+            WinForm(screen, open_callback, save_current=True,
+                title=field.attrs.get('string'))
         else:
-            WinForm(screen, open_callback, new=True, save_current=True)
+            WinForm(screen, open_callback, new=True, save_current=True,
+                title=field.attrs.get('string'), rec_name=text)
 
     def search_remote(self, record, relation, text, domain=None,
             context=None, callback=None):
@@ -696,7 +701,7 @@ class M2O(GenericText):
         win = WinSearch(relation, search_callback, sel_multi=False,
             context=context, domain=domain,
             view_ids=self.attrs.get('view_ids', '').split(','),
-            new=create_access)
+            new=create_access, title=self.attrs.get('string'))
         win.screen.search_filter(quote(text.decode('utf-8')))
         return win
 
@@ -798,7 +803,8 @@ class O2M(GenericText):
         def open_callback(result):
             if callback:
                 callback()
-        WinForm(screen, open_callback, view_type='tree', context=context)
+        WinForm(screen, open_callback, view_type='tree', context=context,
+            title=field.attrs.get('string'))
 
 
 class M2M(O2M):
@@ -820,7 +826,7 @@ class M2M(O2M):
             if callback:
                 callback()
         WinForm(screen, open_callback, view_type='tree', domain=domain,
-            context=context)
+            context=context, title=field.attrs.get('string'))
 
 
 class Selection(GenericText, SelectionMixin, PopdownMixin):
@@ -830,8 +836,9 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
             kwargs['renderer'] = CellRendererCombo
         super(Selection, self).__init__(*args, **kwargs)
         self.init_selection()
-        self.renderer.set_property('model',
-            self.get_popdown_model(self.selection)[0])
+        # Use a variable let Python holding reference when calling set_property
+        model = self.get_popdown_model(self.selection)[0]
+        self.renderer.set_property('model', model)
         self.renderer.set_property('text-column', 0)
 
     def get_textual_value(self, record):
@@ -854,8 +861,8 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         field = record[self.attrs['name']]
 
         set_value = lambda *a: self.set_value(editable, record, field)
-        editable.child.connect('activate', set_value)
-        editable.child.connect('focus-out-event', set_value)
+        editable.get_child().connect('activate', set_value)
+        editable.get_child().connect('focus-out-event', set_value)
         editable.connect('changed', set_value)
 
         self.update_selection(record, field)
@@ -914,7 +921,10 @@ class ProgressBar(object):
         self.renderer = gtk.CellRendererProgress()
         orientation = self.orientations.get(self.attrs.get('orientation',
             'left_to_right'), gtk.PROGRESS_LEFT_TO_RIGHT)
-        self.renderer.set_property('orientation', orientation)
+        if hasattr(self.renderer, 'set_orientation'):
+            self.renderer.set_orientation(orientation)
+        else:
+            self.renderer.set_property('orientation', orientation)
         self.renderer.set_property('yalign', 0)
 
     @realized

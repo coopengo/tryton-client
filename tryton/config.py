@@ -44,6 +44,7 @@ class ConfigManager(object):
             'tip.autostart': False,
             'tip.position': 0,
             'form.toolbar': True,
+            'client.title': 'Tryton',
             'client.default_width': 900,
             'client.default_height': 750,
             'client.modepda': False,
@@ -62,7 +63,6 @@ class ConfigManager(object):
             'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
             'menu.pane': 200,
             'menu.expanded': True,
-            'sentry.dsn': None,
             'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
@@ -103,9 +103,7 @@ class ConfigManager(object):
         self.load()
 
         self.options['dev'] = opt.dev
-        format = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
-        datefmt = '%Y-%m-%d %H:%M:%S'
-        logging.basicConfig(format=format, datefmt=datefmt)
+        logging.basicConfig()
         loglevels = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,
@@ -137,7 +135,7 @@ class ConfigManager(object):
             configparser.write(open(self.rcfile, 'wb'))
         except IOError:
             logging.getLogger(__name__).warn(
-                _('Unable to write config file %s!')
+                _('Unable to write config file %s.')
                 % (self.rcfile,))
             return False
         return True
@@ -170,15 +168,9 @@ class ConfigManager(object):
 CONFIG = ConfigManager()
 CURRENT_DIR = unicode(os.path.dirname(__file__),
     sys.getfilesystemencoding())
-if (os.name == 'nt' and hasattr(sys, 'frozen')
-        and os.path.basename(sys.executable) == 'tryton.exe'):
+if hasattr(sys, 'frozen'):
     CURRENT_DIR = os.path.dirname(unicode(sys.executable,
         sys.getfilesystemencoding()))
-elif (os.name == 'mac'
-        or (hasattr(os, 'uname') and os.uname()[0] == 'Darwin')):
-    resources = os.path.join(os.path.dirname(sys.argv[0]), '..', 'Resources')
-    if os.path.isdir(resources):
-        CURRENT_DIR = resources
 
 PIXMAPS_DIR = os.path.join(CURRENT_DIR, 'data', 'pixmaps', 'tryton')
 if not os.path.isdir(PIXMAPS_DIR):

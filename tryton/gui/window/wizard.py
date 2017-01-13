@@ -19,7 +19,7 @@ _ = gettext.gettext
 
 class Wizard(InfoBar):
 
-    def __init__(self, name=False):
+    def __init__(self, name=''):
         super(Wizard, self).__init__()
         self.widget = gtk.VBox(spacing=3)
         self.toolbar_box = None
@@ -182,7 +182,7 @@ class Wizard(InfoBar):
 
         title = gtk.Label()
         title.modify_font(pango.FontDescription("bold 14"))
-        title.set_label(self.screen.current_view.title)
+        title.set_label(self.name)
         title.set_padding(20, 4)
         title.set_alignment(0.0, 0.5)
         title.set_size_request(0, -1)  # Allow overflow
@@ -205,9 +205,6 @@ class Wizard(InfoBar):
 
         self.widget.pack_start(eb, expand=False, fill=True, padding=3)
 
-        self.create_info_bar()
-        self.widget.pack_start(self.info_bar, False, True)
-
         if self.toolbar_box:
             self.widget.pack_start(self.toolbar_box, False, True)
 
@@ -222,7 +219,10 @@ class Wizard(InfoBar):
         self.scrolledwindow.add(viewport)
         self.scrolledwindow.show()
 
-        self.widget.pack_start(self.scrolledwindow)
+        self.widget.pack_start(self.scrolledwindow, expand=True, fill=True)
+
+        self.create_info_bar()
+        self.widget.pack_start(self.info_bar, False, True)
 
         self.screen.new(default=False)
         self.screen.current_record.set_default(defaults)
@@ -233,7 +233,7 @@ class Wizard(InfoBar):
 class WizardForm(Wizard, SignalEvent):
     "Wizard"
 
-    def __init__(self, name=False):
+    def __init__(self, name=''):
         super(WizardForm, self).__init__(name=name)
         self.toolbar_box = gtk.HBox()
         self.hbuttonbox = gtk.HButtonBox()
@@ -285,7 +285,7 @@ class WizardForm(Wizard, SignalEvent):
 
 class WizardDialog(Wizard, NoModal):
 
-    def __init__(self, name=False):
+    def __init__(self, name=''):
         if not name:
             name = _('Wizard')
         Wizard.__init__(self, name=name)
@@ -302,7 +302,7 @@ class WizardDialog(Wizard, NoModal):
         self.accel_group = gtk.AccelGroup()
         self.dia.add_accel_group(self.accel_group)
 
-        self.dia.vbox.add(self.widget)
+        self.dia.vbox.pack_start(self.widget, expand=True, fill=True)
 
         self.register()
 
@@ -317,10 +317,11 @@ class WizardDialog(Wizard, NoModal):
         response = len(self.states)
         self.dia.add_action_widget(button, response)
         if definition['default']:
-            button.set_flags(gtk.CAN_DEFAULT)
             button.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK,
                 gtk.ACCEL_VISIBLE)
+            button.set_can_default(True)
+            button.grab_default()
             self.dia.set_default_response(response)
         return button
 

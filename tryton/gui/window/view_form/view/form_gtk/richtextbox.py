@@ -12,6 +12,9 @@ from tryton.common.htmltextbuffer import (serialize, deserialize,
 from tryton.config import CONFIG
 
 SIZES = sorted(SIZE2SCALE.keys())
+# Disable serialize/deserialize registration function because it does not work
+# on GTK-3, the "guint8 *data" is converted into a Gtk.TextIter
+_use_serialize_func = False
 
 
 class RichTextBox(TextBox):
@@ -21,32 +24,38 @@ class RichTextBox(TextBox):
         self.text_buffer = gtk.TextBuffer()
         setup_tags(self.text_buffer)
         self.text_buffer.register_serialize_format(
-            MIME, serialize, None)
+            str(MIME), serialize, None)
         self.text_buffer.register_deserialize_format(
-            MIME, deserialize, None)
+            str(MIME), deserialize, None)
         self.text_buffer.connect_after('insert-text', self.insert_text_style)
         self.textview.set_buffer(self.text_buffer)
         self.textview.connect_after('move-cursor', self.detect_style)
         self.textview.connect('button-release-event', self.detect_style)
 
-        self.toolbar = gtk.Toolbar()
-        self.toolbar.set_style({
+        self.toolbar = None
+        self.tag_widgets = {}
+        self.tags = {}
+        self.colors = {}
+        if int(self.attrs.get('toolbar', 1)):
+            self.toolbar = self.get_toolbar()
+
+    def get_toolbar(self):
+        toolbar = gtk.Toolbar()
+        toolbar.set_style({
                 'default': False,
                 'both': gtk.TOOLBAR_BOTH,
                 'text': gtk.TOOLBAR_TEXT,
                 'icons': gtk.TOOLBAR_ICONS}[CONFIG['client.toolbar']])
 
-        self.widget.pack_start(self.toolbar, expand=False, fill=True)
-        self.tag_widgets = {}
-        self.tags = {}
+        self.widget.pack_start(toolbar, expand=False, fill=True)
 
         for icon in ['bold', 'italic', 'underline']:
             button = gtk.ToggleToolButton('gtk-%s' % icon)
             button.connect('toggled', self.toggle_props, icon)
-            self.toolbar.insert(button, -1)
+            toolbar.insert(button, -1)
             self.tag_widgets[icon] = button
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), -1)
+        toolbar.insert(gtk.SeparatorToolItem(), -1)
 
         for name, options, active in [
                 ('family', FAMILIES, FAMILIES.index('normal')),
@@ -63,25 +72,29 @@ class RichTextBox(TextBox):
             combobox.connect('changed', self.change_props, name)
             tool = gtk.ToolItem()
             tool.add(combobox)
-            self.toolbar.insert(tool, -1)
+            toolbar.insert(tool, -1)
             self.tag_widgets[name] = combobox
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), -1)
+        toolbar.insert(gtk.SeparatorToolItem(), -1)
 
         button = None
         for icon in ['left', 'center', 'right', 'fill']:
             name = icon
             if icon == 'fill':
                 name = 'justify'
-            button = gtk.RadioToolButton(button, 'gtk-justify-%s' % icon)
+            stock_id = 'gtk-justify-%s' % icon
+            if hasattr(gtk.RadioToolButton, 'new_with_stock_from_widget'):
+                button = gtk.RadioToolButton.new_with_stock_from_widget(
+                    button, stock_id)
+            else:
+                button = gtk.RadioToolButton(button, stock_id)
             button.set_active(icon == 'left')
             button.connect('toggled', self.toggle_justification, name)
-            self.toolbar.insert(button, -1)
+            toolbar.insert(button, -1)
             self.tag_widgets[name] = button
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), -1)
+        toolbar.insert(gtk.SeparatorToolItem(), -1)
 
-        self.colors = {}
         for icon, label in [
                 ('foreground', _('Foreground')),
                 # TODO ('background', _('Background')),
@@ -89,14 +102,21 @@ class RichTextBox(TextBox):
             button = gtk.ToolButton('tryton-text-%s' % icon)
             button.set_label(label)
             button.connect('clicked', self.toggle_color, icon)
-            self.toolbar.insert(button, -1)
+            toolbar.insert(button, -1)
             self.tag_widgets[icon] = button
+
+        return toolbar
 
     def get_value(self):
         start = self.text_buffer.get_start_iter()
         end = self.text_buffer.get_end_iter()
-        return self.text_buffer.serialize(
-            self.text_buffer, MIME, start, end).decode('utf-8')
+        if _use_serialize_func:
+            return self.text_buffer.serialize(
+                self.text_buffer, MIME, start, end).decode('utf-8')
+        else:
+            return serialize(
+                self.text_buffer, self.text_buffer, start, end,
+                None).decode('utf-8')
 
     @property
     def modified(self):
@@ -111,14 +131,19 @@ class RichTextBox(TextBox):
         start = self.text_buffer.get_start_iter()
         end = self.text_buffer.get_end_iter()
         self.text_buffer.delete(start, end)
-        self.text_buffer.deserialize(
-            self.text_buffer, MIME, start, value)
+        if _use_serialize_func:
+            self.text_buffer.deserialize(self.text_buffer, MIME, start, value)
+        else:
+            deserialize(
+                self.text_buffer, self.text_buffer, start, value,
+                self.text_buffer.deserialize_get_can_create_tags(MIME), None)
         self.text_buffer.handler_unblock_by_func(self.insert_text_style)
 
     def _readonly_set(self, value):
         super(RichTextBox, self)._readonly_set(value)
-        self.toolbar.set_sensitive(not value)
-        self.toolbar.set_visible(not value)
+        if self.toolbar:
+            self.toolbar.set_sensitive(not value)
+            self.toolbar.set_visible(not value)
 
     def detect_style(self, *args):
         try:

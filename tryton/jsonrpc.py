@@ -3,10 +3,7 @@
 import xmlrpclib
 import urllib
 from urlparse import urlparse
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
 import ssl
 import httplib
 from decimal import Decimal
@@ -70,11 +67,6 @@ def object_hook(dct):
 
 
 class JSONEncoder(json.JSONEncoder):
-
-    def __init__(self, *args, **kwargs):
-        super(JSONEncoder, self).__init__(*args, **kwargs)
-        # Force to use our custom decimal with simplejson
-        self.use_decimal = False
 
     def default(self, obj):
         if isinstance(obj, datetime.date):
@@ -214,7 +206,7 @@ class Transport(xmlrpclib.Transport, xmlrpclib.SafeTransport):
         return host, extra_headers, x509
 
     def send_content(self, connection, request_body):
-        connection.putheader("Content-Type", "text/json")
+        connection.putheader("Content-Type", "application/json")
         if (self.encode_threshold is not None and
                 self.encode_threshold < len(request_body) and
                 gzip):
@@ -353,6 +345,8 @@ class ServerProxy(xmlrpclib.ServerProxy):
                 request,
                 verbose=self.__verbose
                 )
+        except xmlrpclib.ProtocolError, e:
+            raise Fault(str(e.errcode), e.errmsg)
         except:
             self.__transport.close()
             raise
@@ -374,6 +368,7 @@ class ServerProxy(xmlrpclib.ServerProxy):
 
 
 class ServerPool(object):
+    keep_max = 4
 
     def __init__(self, *args, **kwargs):
         self.ServerProxy = partial(ServerProxy, *args, **kwargs)
@@ -396,10 +391,17 @@ class ServerPool(object):
             self._pool.append(conn)
             del self._used[id(conn)]
 
+            # Remove oldest connections
+            while len(self._pool) > self.keep_max:
+                conn = self._pool.pop()
+                conn.close()
+
     def close(self):
         with self._lock:
             for conn in self._pool + self._used.values():
                 conn.close()
+            self._pool = []
+            self._used.clear()
 
     @property
     def ssl(self):

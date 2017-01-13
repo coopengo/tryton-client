@@ -16,7 +16,6 @@ class ViewBoard(object):
 
     def __init__(self, arch, context=None):
         self.context = context
-        self.widgets = []
         self.actions = []
 
         xml_dom = xml.dom.minidom.parseString(arch)
@@ -116,7 +115,8 @@ class ViewBoard(object):
     def _parse_group(self, node, container, attributes):
         group = self.parse(node)
         group.table.set_homogeneous(attributes.get('homogeneous', False))
-        frame = gtk.Frame(attributes.get('string'))
+        frame = gtk.Frame()
+        frame.set_label(attributes.get('string'))
         if not attributes.get('string'):
             frame.set_shadow_type(gtk.SHADOW_NONE)
         frame.set_border_width(0)
@@ -153,10 +153,6 @@ class ViewBoard(object):
         action.signal_connect(self, 'active-changed', self._active_changed)
         self.actions.append(action)
         container.add(action.widget, attributes)
-
-    @property
-    def title(self):
-        self.attributes.get('string', '')
 
     def widget_get(self):
         return self.widget

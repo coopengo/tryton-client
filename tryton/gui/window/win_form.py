@@ -17,7 +17,7 @@ class WinForm(NoModal, InfoBar):
 
     def __init__(self, screen, callback, view_type='form',
             new=False, many=0, domain=None, context=None,
-            save_current=False):
+            save_current=False, title='', rec_name=None):
         NoModal.__init__(self)
         self.screen = screen
         self.callback = callback
@@ -25,6 +25,7 @@ class WinForm(NoModal, InfoBar):
         self.domain = domain
         self.context = context
         self.save_current = save_current
+        self.title = title
         self.prev_view = self.screen.current_view
         self.screen.screen_container.alternate_view = True
         if view_type not in (x.view_type for x in self.screen.views) and \
@@ -32,12 +33,11 @@ class WinForm(NoModal, InfoBar):
             self.screen.add_view_id(None, view_type)
         self.screen.switch_view(view_type=view_type)
         if new:
-            self.screen.new()
+            self.screen.new(rec_name=rec_name)
         self.win = gtk.Dialog(_('Link'), self.parent,
                 gtk.DIALOG_DESTROY_WITH_PARENT)
         self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.win.set_icon(TRYTON_ICON)
-        self.win.set_has_separator(False)
         # set_deletable is False on tryton master repo
         # But this is not working on each graphical environnement
         # Further more, setting theses windows deletable does not seems
@@ -87,11 +87,11 @@ class WinForm(NoModal, InfoBar):
             gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
         self.win.set_default_response(gtk.RESPONSE_OK)
 
-        self.win.set_title(self.screen.current_view.title)
+        self.win.set_title(self.title)
 
         title = gtk.Label()
         title.modify_font(pango.FontDescription("bold 12"))
-        title.set_label(self.screen.current_view.title)
+        title.set_label(self.title)
         title.set_padding(20, 3)
         title.set_alignment(0.0, 0.5)
         title.set_size_request(0, -1)  # Allow overflow
@@ -113,9 +113,6 @@ class WinForm(NoModal, InfoBar):
         eb.show()
 
         self.win.vbox.pack_start(eb, expand=False, fill=True, padding=3)
-
-        self.create_info_bar()
-        self.win.vbox.pack_start(self.info_bar, False, True)
 
         if view_type == 'tree':
             hbox = gtk.HBox(homogeneous=False, spacing=0)
@@ -254,6 +251,9 @@ class WinForm(NoModal, InfoBar):
         self.win.vbox.pack_start(scroll, expand=True, fill=True)
 
         scroll.add(self.screen.screen_container.alternate_viewport)
+
+        self.create_info_bar()
+        self.win.vbox.pack_start(self.info_bar, False, True)
 
         sensible_allocation = self.sensible_widget.get_allocation()
         self.win.set_default_size(int(sensible_allocation.width * 0.95),
@@ -423,6 +423,7 @@ class WinForm(NoModal, InfoBar):
                         or common.sur(
                             _('Are you sure you want to delete this record?')
                             )):
+                    self.screen.cancel_current()
                     self.screen.group.remove(self.screen.current_record,
                         remove=True)
                 elif not self.save_current:
@@ -449,8 +450,7 @@ class WinForm(NoModal, InfoBar):
     def destroy(self):
         self.screen.screen_container.alternate_view = False
         viewport = self.screen.screen_container.alternate_viewport
-        if viewport.get_child():
-            viewport.remove(viewport.get_child())
+        viewport.get_parent().remove(viewport)
         self.screen.switch_view(view_type=self.prev_view.view_type)
         self.screen.signal_unconnect(self)
         self.win.destroy()

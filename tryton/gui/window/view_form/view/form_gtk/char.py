@@ -8,6 +8,7 @@ from .widget import Widget, TranslateMixin
 from tryton.common import Tooltips
 from tryton.common.entry_position import reset_position
 from tryton.common.selection import PopdownMixin, selection_shortcuts
+from tryton.common.widget_style import set_widget_style
 from tryton.config import CONFIG
 
 _ = gettext.gettext
@@ -86,9 +87,8 @@ class Char(Widget, TranslateMixin, PopdownMixin):
     @property
     def modified(self):
         if self.record and self.field:
-            entry = self.entry.get_child() if self.autocomplete else self.entry
-            value = entry.get_text() or ''
-            return self.field.get_client(self.record) != value
+            value = self.get_client_value(self.record, self.field)
+            return value != self.get_value()
         return False
 
     def set_value(self, record, field):
@@ -99,6 +99,13 @@ class Char(Widget, TranslateMixin, PopdownMixin):
     def get_value(self):
         entry = self.entry.get_child() if self.autocomplete else self.entry
         return entry.get_text()
+
+    def get_client_value(self, record, field):
+        if not field:
+            value = ''
+        else:
+            value = field.get_client(record)
+        return value
 
     def display(self, record, field):
         super(Char, self).display(record, field)
@@ -122,11 +129,7 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             size_entry.set_width_chars(-1)
             size_entry.set_max_length(0)
 
-        if not field:
-            value = ''
-        else:
-            value = field.get_client(record)
-
+        value = self.get_client_value(record, field)
         if not self.autocomplete:
             self.entry.set_text(value)
             reset_position(self.entry)
@@ -146,6 +149,7 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             self.entry.set_button_sensitivity(sensitivity[value])
         else:
             self.entry.set_editable(not value)
+        set_widget_style(self.entry, not value)
         if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:

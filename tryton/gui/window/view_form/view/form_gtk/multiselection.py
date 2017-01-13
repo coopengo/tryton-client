@@ -6,6 +6,7 @@ import gobject
 from .widget import Widget
 from tryton.common.selection import SelectionMixin
 from tryton.common.treeviewcontrol import TreeViewControl
+from tryton.common.widget_style import set_widget_style
 
 
 class MultiSelection(Widget, SelectionMixin):
@@ -14,9 +15,12 @@ class MultiSelection(Widget, SelectionMixin):
     def __init__(self, view, attrs):
         super(MultiSelection, self).__init__(view, attrs)
 
-        self.widget = gtk.ScrolledWindow()
-        self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.widget.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+        if int(attrs.get('yexpand', self.expand)):
+            self.widget = gtk.ScrolledWindow()
+            self.widget.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+            self.widget.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+        else:
+            self.widget = gtk.VBox()
         self.widget.get_accessible().set_name(attrs.get('string', ''))
 
         self.model = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
@@ -44,8 +48,9 @@ class MultiSelection(Widget, SelectionMixin):
 
     def _readonly_set(self, readonly):
         super(MultiSelection, self)._readonly_set(readonly)
+        set_widget_style(self.tree, not readonly)
         selection = self.tree.get_selection()
-        selection.set_select_function(lambda info: not readonly)
+        selection.set_select_function(lambda *a: not readonly)
 
     @property
     def modified(self):
@@ -75,7 +80,7 @@ class MultiSelection(Widget, SelectionMixin):
         try:
             # Remove select_function to allow update,
             # it will be set back in the super call
-            selection.set_select_function(lambda info: True)
+            selection.set_select_function(lambda *a: True)
             self.update_selection(record, field)
             self.model.clear()
             if field is None:

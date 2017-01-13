@@ -6,6 +6,7 @@ import gtk
 import gobject
 import os
 import gettext
+import threading
 import datetime
 
 from tryton import __version__
@@ -13,7 +14,6 @@ import tryton.common as common
 from tryton.common.datetime_ import Date
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
 import tryton.rpc as rpc
-from tryton.gui.window.dbcreate import DBCreate
 from tryton.exceptions import TrytonError
 
 _ = gettext.gettext
@@ -35,7 +35,6 @@ class DBListEditor(object):
         self.ok_button = self.dialog.add_button(gtk.STOCK_OK,
             gtk.RESPONSE_ACCEPT)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-        self.dialog.set_has_separator(True)
         self.dialog.set_icon(TRYTON_ICON)
 
         hpaned = gtk.HPaned()
@@ -51,12 +50,12 @@ class DBListEditor(object):
         scroll = gtk.ScrolledWindow()
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.add(self.profile_tree)
-        self.add_button = gtk.Button(_(u'_Add'))
+        self.add_button = gtk.Button(_(u'_Add'), use_underline=True)
         self.add_button.connect('clicked', self.profile_create)
         add_image = gtk.Image()
         add_image.set_from_stock('gtk-add', gtk.ICON_SIZE_BUTTON)
         self.add_button.set_image(add_image)
-        self.remove_button = gtk.Button(_(u'_Remove'))
+        self.remove_button = gtk.Button(_(u'_Remove'), use_underline=True)
         self.remove_button.connect('clicked', self.profile_delete)
         remove_image = gtk.Image()
         remove_image.set_from_stock('gtk-remove', gtk.ICON_SIZE_BUTTON)
@@ -97,18 +96,14 @@ class DBListEditor(object):
         self.database_combo.add_attribute(cell, 'text', 0)
         self.database_combo.set_model(dbstore)
         self.database_combo.connect('changed', self.dbcombo_changed)
-        self.database_button = gtk.Button(_(u'Create'))
-        self.database_button.connect('clicked', self.db_create)
         self.database_progressbar = gtk.ProgressBar()
         self.database_progressbar.set_text(_(u'Fetching databases list'))
         image = gtk.Image()
         image.set_from_stock('tryton-new', gtk.ICON_SIZE_BUTTON)
-        self.database_button.set_image(image)
         db_box = gtk.VBox(homogeneous=True)
         db_box.pack_start(self.database_entry)
         db_box.pack_start(self.database_combo)
         db_box.pack_start(self.database_label)
-        db_box.pack_start(self.database_button)
         db_box.pack_start(self.database_progressbar)
         # Compute size_request of box in order to prevent "form jumping"
         width, height = 0, 0
@@ -179,7 +174,6 @@ class DBListEditor(object):
         self.database_entry.hide()
         self.database_combo.hide()
         self.database_label.hide()
-        self.database_button.hide()
         self.database_progressbar.hide()
 
     def profile_create(self, button):
@@ -221,7 +215,7 @@ class DBListEditor(object):
             if field == 'database':
                 self.current_database = entry_value
 
-        self.display_dbwidget(None, None, self.current_database)
+        self.display_dbwidget(None, None)
 
     def edit_started(self, renderer, editable, path):
         if isinstance(editable, gtk.Entry):
@@ -268,7 +262,75 @@ class DBListEditor(object):
             for option in ('host', 'database'))
         model[selection][1] = active
 
-    def display_dbwidget(self, entry, event, dbname=None):
+    @classmethod
+    def test_server_version(cls, host, port):
+        '''
+        Tests if the server version is compatible with the client version
+        It returns None if no information on server version is available.
+        '''
+        version = rpc.server_version(host, port)
+        if not version:
+            return None
+        return version.split('.')[:2] == __version__.split('.')[:2]
+
+    def refresh_databases(self, host, port):
+        self.dbs_updated = threading.Event()
+        threading.Thread(target=self.refresh_databases_start,
+            args=(host, port)).start()
+        gobject.timeout_add(100, self.refresh_databases_end, host, port)
+
+    def refresh_databases_start(self, host, port):
+        dbs = None
+        try:
+            dbs = rpc.db_list(host, port)
+        except Exception:
+            pass
+        finally:
+            self.dbs = dbs
+            self.dbs_updated.set()
+
+    def refresh_databases_end(self, host, port):
+        if not self.dbs_updated.isSet():
+            self.database_progressbar.show()
+            self.database_progressbar.pulse()
+            return True
+        self.database_progressbar.hide()
+        dbs = self.dbs
+
+        label = None
+        if self.test_server_version(host, port) is False:
+            label = _(u'Incompatible version of the server')
+        elif dbs is None:
+            label = _(u'Could not connect to the server')
+        if label:
+            self.database_label.set_label('<b>%s</b>' % label)
+            self.database_label.show()
+        else:
+            liststore = self.database_combo.get_model()
+            liststore.clear()
+            index = -1
+            for db_num, db_name in enumerate(dbs):
+                liststore.append([db_name])
+                if self.current_database and db_name == self.current_database:
+                    index = db_num
+            if index == -1:
+                index = 0
+            self.database_combo.set_active(index)
+            dbs = len(dbs)
+            self.database_entry.set_text(self.current_database
+                if self.current_database else '')
+            self.database_combo.show()
+        self.db_cache = (host, port, self.current_profile['name'])
+
+        self.add_button.set_sensitive(True)
+        self.remove_button.set_sensitive(True)
+        self.ok_button.set_sensitive(True)
+        self.cell.set_property('editable', True)
+        self.host_entry.set_sensitive(True)
+        self.updating_db = False
+        return False
+
+    def display_dbwidget(self, entry, event):
         netloc = self.host_entry.get_text()
         host = common.get_hostname(netloc)
         if not host:
@@ -278,10 +340,7 @@ class DBListEditor(object):
             return
         if self.updating_db:
             return
-        if dbname is None:
-            dbname = self.current_database
 
-        dbprogress = common.DBProgress(host, port)
         self.hide_database_info()
         self.add_button.set_sensitive(False)
         self.remove_button.set_sensitive(False)
@@ -289,46 +348,7 @@ class DBListEditor(object):
         self.cell.set_property('editable', False)
         self.host_entry.set_sensitive(False)
         self.updating_db = True
-
-        def callback(dbs):
-            self.updating_db = False
-            self.db_cache = (host, port, self.current_profile['name'])
-
-            if dbs is None or dbs == -1:
-                if dbs is None:
-                    label = _(u'Could not connect to the server')
-                else:
-                    label = _(u'Incompatible version of the server')
-                self.database_label.set_label('<b>%s</b>' % label)
-                self.database_label.show()
-            elif dbs == 0:
-                self.database_button.show()
-            elif dbs == -2:
-                self.database_entry.show()
-            else:
-                self.database_entry.set_text(dbname if dbname else '')
-                self.database_combo.show()
-
-            self.add_button.set_sensitive(True)
-            self.remove_button.set_sensitive(True)
-            self.ok_button.set_sensitive(True)
-            self.cell.set_property('editable', True)
-            self.host_entry.set_sensitive(True)
-
-        dbprogress.update(self.database_combo,
-            self.database_progressbar, callback, dbname)
-
-    def db_create(self, button):
-        if not self.current_profile['name']:
-            return
-        netloc = self.host_entry.get_text()
-        host = common.get_hostname(netloc)
-        port = common.get_port(netloc)
-        dia = DBCreate(host, port)
-        dbname = dia.run()
-        self.db_cache = None
-        self.username_entry.set_text('admin')
-        self.display_dbwidget(None, None, dbname)
+        self.refresh_databases(host, port)
 
     def dbcombo_changed(self, combobox):
         dbname = combobox.get_active_text()
@@ -361,22 +381,21 @@ class DBLogin(object):
         self.dialog = gtk.Dialog(title=_('Login'), parent=self.parent,
             flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-        self.dialog.set_has_separator(True)
         self.dialog.set_icon(TRYTON_ICON)
 
         tooltips = common.Tooltips()
-        button_cancel = gtk.Button(_('_Cancel'))
+        button_cancel = gtk.Button(_('_Cancel'), use_underline=True)
         img_cancel = gtk.Image()
         img_cancel.set_from_stock('gtk-cancel', gtk.ICON_SIZE_BUTTON)
         button_cancel.set_image(img_cancel)
         tooltips.set_tip(button_cancel,
             _('Cancel connection to the Tryton server'))
         self.dialog.add_action_widget(button_cancel, gtk.RESPONSE_CANCEL)
-        self.button_connect = gtk.Button(_('C_onnect'))
+        self.button_connect = gtk.Button(_('C_onnect'), use_underline=True)
         img_connect = gtk.Image()
         img_connect.set_from_stock('tryton-connect', gtk.ICON_SIZE_BUTTON)
         self.button_connect.set_image(img_connect)
-        self.button_connect.set_flags(gtk.CAN_DEFAULT)
+        self.button_connect.set_can_default(True)
         tooltips.set_tip(self.button_connect, _('Connect the Tryton server'))
         self.dialog.add_action_widget(self.button_connect, gtk.RESPONSE_OK)
         self.dialog.set_default_response(gtk.RESPONSE_OK)
@@ -409,7 +428,8 @@ class DBLogin(object):
         self.profile_label.set_justify(gtk.JUSTIFY_RIGHT)
         self.profile_label.set_alignment(1, 0.5)
         self.profile_label.set_padding(3, 3)
-        self.profile_button = gtk.Button(_('_Manage profiles'))
+        self.profile_button = gtk.Button(_('_Manage profiles'),
+            use_underline=True)
         self.profile_button.connect('clicked', self.profile_manage)
         self.table_main.attach(self.profile_label, 0, 1, 1, 2,
             xoptions=gtk.FILL)
@@ -419,7 +439,8 @@ class DBLogin(object):
         image = gtk.Image()
         image.set_from_stock('gtk-edit', gtk.ICON_SIZE_BUTTON)
         self.profile_button.set_image(image)
-        self.expander = gtk.Expander(_('Host / Database information'))
+        self.expander = gtk.Expander()
+        self.expander.set_label(_('Host / Database information'))
         self.expander.connect('notify::expanded', self.expand_hostspec)
         self.table_main.attach(self.expander, 0, 3, 3, 4)
         self.label_host = gtk.Label(_('Host:'))
@@ -445,20 +466,10 @@ class DBLogin(object):
         self.table_main.attach(self.label_database, 0, 1, 5, 6,
             xoptions=gtk.FILL)
         self.table_main.attach(self.entry_database, 1, 3, 5, 6)
-        self.entry_password = gtk.Entry()
-        self.entry_password.set_visibility(False)
-        self.entry_password.set_activates_default(True)
-        self.table_main.attach(self.entry_password, 1, 3, 7, 8)
         self.entry_login = gtk.Entry()
         self.entry_login.set_activates_default(True)
         self.table_main.attach(self.entry_login, 1, 3, 6, 7)
-        label_password = gtk.Label(str=_("Password:"))
-        label_password.set_justify(gtk.JUSTIFY_RIGHT)
-        label_password.set_alignment(1, 0.5)
-        label_password.set_padding(3, 3)
-        label_password.set_mnemonic_widget(self.entry_password)
-        self.table_main.attach(label_password, 0, 1, 7, 8, xoptions=gtk.FILL)
-        label_username = gtk.Label(str=_("User name:"))
+        label_username = gtk.Label(_("User name:"))
         label_username.set_alignment(1, 0.5)
         label_username.set_padding(3, 3)
         label_username.set_mnemonic_widget(self.entry_login)
@@ -472,23 +483,16 @@ class DBLogin(object):
             self.label_date.set_padding(3, 3)
             self.table_main.attach(self.label_date, 0, 1, 8, 9,
                 xoptions=gtk.FILL)
-            self.date_entry = Date()
-            self.date_entry.props.format = '%d/%m/%Y'
-            self.date_entry.props.value = datetime.date.today()
-            self.table_main.attach(self.date_entry, 1, 3, 8, 9)
+            self.entry_date = Date()
+            self.entry_date.props.format = '%d/%m/%Y'
+            self.entry_date.props.value = datetime.date.today()
+            self.table_main.attach(self.entry_date, 1, 3, 8, 9)
 
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
         self.profiles = ConfigParser.SafeConfigParser({'port': '8000'})
-        if not os.path.exists(self.profile_cfg) and False:
-            short_version = '.'.join(__version__.split('.', 2)[:2])
-            name = 'demo%s.tryton.org' % short_version
-            self.profiles.add_section(name)
-            self.profiles.set(name, 'host', name)
-            self.profiles.set(name, 'port', '8000')
-            self.profiles.set(name, 'database', 'demo%s' % short_version)
-            self.profiles.set(name, 'username', 'demo')
-        else:
+        # JCA : Deactivate demo tryton database
+        if os.path.exists(self.profile_cfg):
             self.profiles.read(self.profile_cfg)
         for section in self.profiles.sections():
             active = all(self.profiles.has_option(section, option)
@@ -587,10 +591,7 @@ class DBLogin(object):
             self.entry_login.set_text(CONFIG['login.login'])
         self.dialog.show_all()
 
-        if not self.entry_login.get_text():
-            self.entry_login.grab_focus()
-        else:
-            self.entry_password.grab_focus()
+        self.entry_login.grab_focus()
 
         # Reshow dialog for gtk-quarks
         self.dialog.reshow_with_initial_size()
@@ -598,10 +599,10 @@ class DBLogin(object):
         # The previous action did not called expand_hostspec
         self.expand_hostspec(self.expander)
 
-        res, result = None, ('', '', '', '', '', '')
+        response, result = None, ('', '', '', '')
         while not all(result):
-            res = self.dialog.run()
-            if res != gtk.RESPONSE_OK:
+            response = self.dialog.run()
+            if response != gtk.RESPONSE_OK:
                 break
             active_profile = self.combo_profile.get_active()
             if active_profile != -1:
@@ -611,9 +612,14 @@ class DBLogin(object):
             host = common.get_hostname(netloc)
             port = common.get_port(netloc)
             try:
-                if not common.test_server_version(host, port):
-                    common.warning('',
-                        _(u'Incompatible version of the server'))
+                test = DBListEditor.test_server_version(host, port)
+                if not test:
+                    if test is False:
+                        common.warning('',
+                            _(u'Incompatible version of the server'))
+                    else:
+                        common.warning('',
+                            _(u'Could not connect to the server'))
                     continue
             except Exception, exception:
                 common.process_exception(exception)
@@ -625,16 +631,16 @@ class DBLogin(object):
             CONFIG['login.db'] = database
             CONFIG['login.expanded'] = self.expander.props.expanded
             CONFIG['login.login'] = login
-            result = (self.entry_login.get_text(),
-                self.entry_password.get_text(), host, port, database)
+            result = (
+                host, port, database, self.entry_login.get_text())
 
         if CONFIG['login.date']:
-            date = self.date_entry.props.value
+            date = self.entry_date.props.value
         else:
             date = None
         self.parent.present()
         self.dialog.destroy()
-        if res != gtk.RESPONSE_OK:
+        if response != gtk.RESPONSE_OK:
             rpc.logout()
             raise TrytonError('QueryCanceled')
         return result + (date,)

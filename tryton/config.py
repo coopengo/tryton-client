@@ -44,7 +44,7 @@ class ConfigManager(object):
             'tip.autostart': False,
             'tip.position': 0,
             'form.toolbar': True,
-            'client.title': 'Tryton',
+            'client.title': 'Coog',
             'client.default_width': 900,
             'client.default_height': 750,
             'client.modepda': False,
@@ -72,7 +72,7 @@ class ConfigManager(object):
         self.arguments = []
 
     def parse(self):
-        parser = optparse.OptionParser(version=("Tryton %s" % __version__),
+        parser = optparse.OptionParser(version=("Coog %s" % __version__),
                 usage="Usage: %prog [options] [url]")
         parser.add_option("-c", "--config", dest="config",
                 help=_("specify alternate config file"))

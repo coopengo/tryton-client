@@ -5,7 +5,7 @@ version() {
   t=$(git describe --tags --exact-match 2> /dev/null | grep "^coog-" | head -1)
   if [ ! -z "$t" ]
   then
-    echo "${t//coog//}"
+    echo "${t//coog-/}"
   else
     local b; b=$(git rev-parse --abbrev-ref HEAD)
     local c; c=$(git rev-parse --short HEAD)

@@ -27,7 +27,8 @@ deps() {
   pip install \
     python-dateutil \
     chardet \
-    pyflakes
+    pyflakes \
+    awscli
 }
 
 clean() {
@@ -50,6 +51,13 @@ build() {
   makensis -DVERSION="$v" setup.nsi
   makensis -DVERSION="$v" setup-single.nsi
   unpatch
+}
+
+upload() {
+  for f in ./coog-*
+  do
+    aws --region "eu-central-1" s3 cp "$f" s3://coog-client/
+  done
 }
 
 main() {

@@ -47,14 +47,12 @@ build() {
   patch
   local v; v=$(version)
   python setup-freeze.py install_exe -d dist
-  cp -rv ./share/themes/Coog/gtk-2.0/ ./dist/share/themes/MS-Windows/
   makensis -DVERSION="$v" setup.nsi
   makensis -DVERSION="$v" setup-single.nsi
   unpatch
 }
 
 main() {
-  export PATH="$PATH:/mingw32/bin"
   [ -z "$1" ] && echo missing command && return 1
   "$1" "$@"
 }

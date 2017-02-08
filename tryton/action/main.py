@@ -43,6 +43,8 @@ class Action(object):
             print_p = True
         dtemp = tempfile.mkdtemp(prefix='tryton_')
 
+        # We now support list. Mainly for the multi-attachment feature:
+        # see #5658 for further informations.
         if type(names) is not list:
             names = [names]
         if type(datas) is not list:

@@ -1,5 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+from itertools import izip
 import copy
 import tryton.rpc as rpc
 from tryton.common import message, selection, file_open, mailto
@@ -36,21 +37,32 @@ class Action(object):
             return False
         if not res:
             return False
-        (type, data, print_p, name) = res
+        (types, datas, print_p, names) = res
+        fp_names = []
         if not print_p and direct_print:
             print_p = True
         dtemp = tempfile.mkdtemp(prefix='tryton_')
 
-        fp_name = os.path.join(dtemp,
-            slugify(name) + os.extsep + slugify(type))
-        with open(fp_name, 'wb') as file_d:
-            file_d.write(data)
+        # ABE : #5658 : Manage multiple attachments
+        if type(names) is not list:
+            names = [names]
+        if type(datas) is not list:
+            datas = [datas]
+        if type(types) is not list:
+            types = [types]
+        for data, name, type_ in izip(datas, names, types):
+            fp_name = os.path.join(dtemp,
+                slugify(name) + os.extsep + slugify(type_))
+            with open(fp_name, 'wb') as file_d:
+                file_d.write(data)
+            fp_names.append((fp_name, type_))
         if email_print:
             mailto(to=email.get('to'), cc=email.get('cc'),
                 subject=email.get('subject'), body=email.get('body'),
-                attachment=fp_name)
+                attachment=','.join([x[0] for x in fp_names]))
         else:
-            file_open(fp_name, type, print_p=print_p)
+            for fp_name, type_ in fp_names:
+                file_open(fp_name, type_, print_p=print_p)
         return True
 
     @staticmethod

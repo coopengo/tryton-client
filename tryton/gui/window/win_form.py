@@ -424,8 +424,6 @@ class WinForm(NoModal, InfoBar):
                             _('Are you sure you want to delete this record?')
                             )):
                     self.screen.cancel_current()
-                    self.screen.group.remove(self.screen.current_record,
-                        remove=True)
                 elif not self.save_current:
                     return
             elif self.screen.current_record.modified:

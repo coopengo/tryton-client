@@ -361,10 +361,7 @@ class Group(SignalEvent, list):
 
     def remove(self, record, remove=False, modified=True, signal=True,
             force_remove=False):
-        try:
-            idx = self.index(record)
-        except ValueError:
-            return
+        idx = self.index(record)
         if self[idx].id >= 0:
             if remove:
                 if self[idx] in self.record_deleted:

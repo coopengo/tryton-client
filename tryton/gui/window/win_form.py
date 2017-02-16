@@ -419,7 +419,13 @@ class WinForm(NoModal, InfoBar):
                 and response_id in cancel_responses):
             if (self.screen.current_record.id < 0
                     or self.save_current):
-                self.screen.cancel_current()
+                if (self.save_current
+                        or common.sur(
+                            _('Are you sure you want to delete this record?')
+                            )):
+                    self.screen.cancel_current()
+                elif not self.save_current:
+                    return
             elif self.screen.current_record.modified:
                 self.screen.current_record.cancel()
                 self.screen.current_record.reload()

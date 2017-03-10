@@ -35,6 +35,7 @@ from .form_gtk.multiselection import MultiSelection
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment)
 from .form_gtk.sourceeditor import SourceView
+from .form_gtk.icon import Icon as Icon  # Coopengo specific
 
 _ = gettext.gettext
 
@@ -375,10 +376,11 @@ class ViewForm(View):
         'image': Image2,
         'progressbar': ProgressBar,
         'one2one': One2One,
-        'source': SourceView,
+        'source': SourceView,  # Coopengo specific
         'richtext': RichTextBox,
         'dict': DictWidget,
         'multiselection': MultiSelection,
+        'icon': Icon,  # Coopengo specific
         }
 
     @classmethod

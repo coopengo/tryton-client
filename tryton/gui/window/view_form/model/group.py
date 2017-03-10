@@ -44,7 +44,8 @@ class Group(SignalEvent, list):
     def readonly(self):
         # Must skip res.user for Preference windows
         if (self._context.get('_datetime')
-                or (not MODELACCESS[self.model_name]['write']
+                or (not (MODELACCESS[self.model_name]['write']
+                        or MODELACCESS[self.model_name]['create'])
                     and not self.skip_model_access)):
             return True
         return self.__readonly
@@ -208,7 +209,7 @@ class Group(SignalEvent, list):
         if not ids:
             return True
 
-        if len(ids) > 1:
+        if len(ids) >= 1:
             self.lock_signal = True
 
         new_records = []

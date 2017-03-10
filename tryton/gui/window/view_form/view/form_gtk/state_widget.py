@@ -2,6 +2,9 @@
 # this repository contains the full copyright notices and license terms.
 import gtk
 import pango
+import logging
+
+from tryton.common import COLOR_RGB, FORMAT_ERROR
 
 
 class StateMixin(object):
@@ -53,7 +56,54 @@ class Label(StateMixin, gtk.Label):
         attrlist = pango.AttrList()
         attrlist.change(pango.AttrWeight(weight, 0, -1))
         attrlist.change(pango.AttrStyle(style, 0, -1))
+        if field is not None:
+            self._format_set(record, field, attrlist)
         self.set_attributes(attrlist)
+
+    def _set_background(self, value, attrlist):
+        if value not in COLOR_RGB:
+            logging.getLogger(__name__).info('This color is not supported' +
+                '=> %s' % value)
+        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        attrlist.change(pango.AttrBackground(color[0], color[1],
+                color[2], 0, -1))
+
+    def _set_foreground(self, value, attrlist):
+        if value not in COLOR_RGB:
+            logging.getLogger(__name__).info('This color is not supported' +
+                '=> %s' % value)
+        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        attrlist.change(pango.AttrForeground(color[0], color[1],
+                color[2], 0, -1))
+
+    def _set_font(self, value, attrlist):
+        attrlist.change(pango.AttrFontDesc(pango.FontDescription(value),
+                0, -1))
+
+    def _format_set(self, record, field, attrlist):
+        functions = {
+            'color': self._set_foreground,
+            'fg': self._set_foreground,
+            'bg': self._set_background,
+            'font': self._set_font
+            }
+        attrs = record.expr_eval(field.get_state_attrs(record).
+            get('states', {}))
+        states = record.expr_eval(self.attrs.get('states', {})).copy()
+        states.update(attrs)
+
+        for attr in states.keys():
+            if not states[attr]:
+                continue
+            key = attr.split('_')
+            if key[0] == 'field':
+                continue
+            if key[0] == 'label':
+                key = key[1:]
+            if key[0] in functions:
+                if len(key) != 2:
+                    raise ValueError(FORMAT_ERROR + attr)
+                functions[key[0]](key[1], attrlist)
 
 
 class VBox(StateMixin, gtk.VBox):

@@ -120,6 +120,7 @@ class Action(object):
             ctx.update(action_ctx)
             ctx.update(context)
             action_ctx.update(context)
+            action_ctx.update(data.get('extra_context', {}))
 
             ctx['context'] = ctx
             decoder = PYSONDecoder(ctx)

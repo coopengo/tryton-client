@@ -10,6 +10,8 @@ except ImportError:
     import json
 import locale
 import gettext
+import ast
+import logging
 from functools import wraps
 from collections import defaultdict
 
@@ -20,6 +22,7 @@ from tryton.gui.window import Window
 from tryton.common.popup_menu import populate
 from tryton.common import RPCExecute, RPCException, node_attributes, Tooltips
 from tryton.common import domain_inversion, simplify, unique_value
+from tryton.common import COLOR_RGB, FORMAT_ERROR
 import tryton.common as common
 from . import View
 from .list_gtk.editabletree import EditableTreeView, TreeView
@@ -471,20 +474,64 @@ class ViewTree(View):
     def get_widget(cls, name):
         return cls.WIDGETS[name]
 
+    def _set_background(self, value, attrlist):
+        if value not in COLOR_RGB:
+            logging.getLogger(__name__).info('This color is not supported' +
+                ' => %s' % value)
+        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        attrlist.change(pango.AttrBackground(color[0], color[1],
+                color[2], 0, -1))
+
+    def _set_foreground(self, value, attrlist):
+        if value not in COLOR_RGB:
+            logging.getLogger(__name__).info('This color is not supported' +
+                ' => %s' % value)
+        color = COLOR_RGB.get(value, COLOR_RGB['black'])
+        attrlist.change(pango.AttrForeground(color[0], color[1],
+                color[2], 0, -1))
+
+    def _set_font(self, value, attrlist):
+        attrlist.change(pango.AttrFontDesc(pango.FontDescription(value),
+                0, -1))
+
+    def _format_set(self, attrs, attrlist):
+        functions = {
+            'color': self._set_foreground,
+            'fg': self._set_foreground,
+            'bg': self._set_background,
+            'font': self._set_font
+            }
+        if not getattr(attrs, 'states', None):
+            return
+        states = ast.literal_eval(attrs['states'])
+        for attr in states.keys():
+            if not states[attr]:
+                continue
+            key = attr.split('_')
+            if key[0] == 'field':
+                continue
+            if key[0] == 'label':
+                key = key[1:]
+            if key[0] in functions:
+                if len(key) != 2:
+                    raise ValueError(FORMAT_ERROR + attr)
+                functions[key[0]](key[1], attrlist)
+
     def set_column_widget(self, column, field, attributes, arrow=True):
         tooltips = Tooltips()
         hbox = gtk.HBox(False, 2)
         label = gtk.Label(attributes['string'])
+        attrlist = pango.AttrList()
         if field and self.editable:
             required = field.attrs.get('required')
             readonly = field.attrs.get('readonly')
             if required or not readonly:
-                attrlist = pango.AttrList()
                 if required:
                     attrlist.insert(pango.AttrWeight(pango.WEIGHT_BOLD, 0, -1))
-                if not readonly:
-                    attrlist.change(pango.AttrStyle(pango.STYLE_ITALIC, 0, -1))
-                label.set_attributes(attrlist)
+                # We removed the check if not readonly (cf: issue #3751)
+        if field:
+            self._format_set(attributes, attrlist)
+        label.set_attributes(attrlist)
         label.show()
         help = attributes['string']
         if field and field.attrs.get('help'):

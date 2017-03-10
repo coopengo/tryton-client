@@ -41,8 +41,7 @@ class TreeView(gtk.TreeView):
             else:
                 readonly = False
             if not (invisible or readonly):
-                break
-        return column
+                return column
 
     def prev_column(self, path, column=None, editable=True):
         return self.next_column(path, column=column, editable=editable,
@@ -102,8 +101,10 @@ class EditableTreeView(TreeView):
 
     def set_cursor(self, path, focus_column=None, start_editing=False):
         self.grab_focus()
-        if focus_column and (focus_column._type in ('boolean')):
-            start_editing = False
+        if focus_column:
+            widget = self.view.get_column_widget(focus_column)
+            if isinstance(widget.renderer, gtk.CellRendererToggle):
+                start_editing = False
         self.scroll_to_cell(path, focus_column, use_align=False)
         super(EditableTreeView, self).set_cursor(path, focus_column,
                 start_editing)
@@ -120,7 +121,7 @@ class EditableTreeView(TreeView):
             if isinstance(entry, (Date, Time)):
                 entry.activate()
                 txt = entry.props.value
-            if isinstance(entry, gtk.Entry):
+            elif isinstance(entry, gtk.Entry):
                 txt = entry.get_text()
             else:
                 txt = entry.get_active_text()

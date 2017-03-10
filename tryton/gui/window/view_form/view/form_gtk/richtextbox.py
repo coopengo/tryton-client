@@ -96,12 +96,13 @@ class RichTextBox(TextBox):
         start = self.text_buffer.get_start_iter()
         end = self.text_buffer.get_end_iter()
         return self.text_buffer.serialize(
-            self.text_buffer, MIME, start, end)
+            self.text_buffer, MIME, start, end).decode('utf-8')
 
     @property
     def modified(self):
         if self.record and self.field:
             value = normalize_markup(self.field.get_client(self.record) or '')
+            value = value.decode('utf-8')
             return value != self.get_value()
         return False
 

@@ -1381,6 +1381,29 @@ class Tooltips(object):
         if self._tooltips:
             self._tooltips.disable()
 
+FORMAT_ERROR = "Wrong key format [type_]style_value: "
+
+# Color values: min = 0 max = 65535
+# You need to apply the percent to get the right color
+# http://www.december.com/html/spec/colorcodes.html
+
+COLOR_RGB = {
+    'red': [65535, 0, 0],
+    'green': [0, 65535, 0],
+    'blue': [0, 0, 65535],
+    'turquoise': [16383, 57670, 53738],
+    'gray': [49151, 49151, 49151],
+    'brown': [42597, 10485, 10485],
+    'maroon': [45219, 12451, 24903],
+    'violet': [60947, 33422, 60947],
+    'purple': [41287, 8519, 61602],
+    'yellow': [65535, 65535, 0],
+    'pink': [65535, 49151, 52428],
+    'beige': [62913, 62913, 56360],
+    'white': [65535, 65535, 65535],
+    'black': [0, 0, 0]
+}
+
 COLOR_SCHEMES = {
     'red': '#cf1d1d',
     'green': '#3fb41b',
@@ -1434,11 +1457,12 @@ def humanize(size):
 
 def get_hostname(netloc):
     if '[' in netloc and ']' in netloc:
-        return netloc.split(']')[0][1:]
+        hostname = netloc.split(']')[0][1:]
     elif ':' in netloc:
-        return netloc.split(':')[0]
+        hostname = netloc.split(':')[0]
     else:
-        return netloc
+        hostname = netloc
+    return hostname.strip()
 
 
 def get_port(netloc):

@@ -57,7 +57,8 @@ class Screen(SignalEvent):
         super(Screen, self).__init__()
 
         self.readonly = readonly
-        if not MODELACCESS[model_name]['write']:
+        if not (MODELACCESS[model_name]['write']
+                or MODELACCESS[model_name]['create']):
             self.readonly = True
         self.search_count = 0
         if not row_activate:
@@ -365,7 +366,7 @@ class Screen(SignalEvent):
 
     def default_row_activate(self):
         if (self.current_view.view_type == 'tree' and
-                self.current_view.attributes.get('keyword_open')):
+                int(self.current_view.attributes.get('keyword_open', 0))):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
                 'id': self.current_record.id if self.current_record else None,

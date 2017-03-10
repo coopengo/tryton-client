@@ -3,12 +3,14 @@
 import gtk
 import gobject
 import gettext
+import pango
 
 from tryton.common import COLORS
 import tryton.common as common
 from tryton.gui.window.nomodal import NoModal
 from tryton.common import TRYTON_ICON
 from tryton.common import RPCExecute, RPCException
+from tryton.common import FORMAT_ERROR
 
 _ = gettext.gettext
 
@@ -143,6 +145,49 @@ class Widget(object):
             return False
         self.set_value(self.record, self.field)
 
+    def _set_background(self, value):
+        widget = self._color_widget()
+        widget.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse(value))
+
+    def _set_foreground(self, value):
+        widget = self._color_widget()
+        widget.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse(value))
+
+    def _set_font(self, value):
+        widget = self._color_widget()
+        widget.modify_font(pango.FontDescription(value))
+
+    def _set_color(self, value):
+        widget = self._color_widget()
+        widget.modify_text(gtk.STATE_NORMAL,
+            gtk.gdk.color_parse(value))
+        widget.modify_text(gtk.STATE_INSENSITIVE,
+            gtk.gdk.color_parse(value))
+
+    def _format_set(self, record, field):
+        functions = {
+            'color': self._set_color,
+            'fg': self._set_foreground,
+            'bg': self._set_background,
+            'font': self._set_font
+            }
+        attrs = record.expr_eval(field.get_state_attrs(record).
+            get('states', {}))
+        states = record.expr_eval(self.attrs.get('states', {})).copy()
+        states.update(attrs)
+        for attr in states.keys():
+            if not states[attr]:
+                continue
+            key = attr.split('_')
+            if key[0] == 'field':
+                key = key[1:]
+            if key[0] == 'label':
+                continue
+            if key[0] in functions:
+                if len(key) != 2:
+                    raise ValueError(FORMAT_ERROR + attr)
+                functions[key[0]](key[1])
+
     def display(self, record, field):
         if not field:
             self._readonly_set(self.attrs.get('readonly', True))
@@ -162,6 +207,7 @@ class Widget(object):
             self.color_set('required')
         else:
             self.color_set('normal')
+        self._format_set(record, field)
         self.invisible_set(self.attrs.get('invisible',
             field.get_state_attrs(record).get('invisible', False)))
 

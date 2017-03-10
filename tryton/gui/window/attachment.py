@@ -23,7 +23,7 @@ class Attachment(WinForm):
             ], mode=['tree', 'form'], context=context,
             exclude_field='resource')
         screen.search_filter()
-        screen.parent = record
+        # screen.parent = record
         super(Attachment, self).__init__(screen, self.callback,
             view_type='tree')
 

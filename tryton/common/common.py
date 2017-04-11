@@ -593,11 +593,13 @@ def url_open(uri):
             raise
 
 
-def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
+def mailto(to=None, cc=None, bcc=None, subject=None, body=None,
+        attachment=None):
     if CONFIG['client.email']:
         cmd = Template(CONFIG['client.email']).substitute(
                 to=to or '',
                 cc=cc or '',
+                bcc=bcc or '',
                 subject=subject or '',
                 body=body or '',
                 attachment=attachment or '',
@@ -609,6 +611,8 @@ def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
         args = ['xdg-email', '--utf8']
         if cc:
             args.extend(['--cc', cc])
+        if bcc:
+            args.extend(['--bcc', bcc])
         if subject:
             args.extend(['--subject', subject])
         if body:
@@ -629,6 +633,8 @@ def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
     url += '?'
     if cc:
         url += "&cc=" + urllib.parse.quote(cc, "@,")
+    if bcc:
+        url += "&bcc=" + urllib.quote(bcc, "@,")
     if subject:
         url += "&subject=" + urllib.parse.quote(subject, "")
     if body:

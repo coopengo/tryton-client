@@ -58,7 +58,8 @@ class Action(object):
             fp_names.append((fp_name, type_))
         if email_print:
             mailto(to=email.get('to'), cc=email.get('cc'),
-                subject=email.get('subject'), body=email.get('body'),
+                bcc=email.get('bcc'), subject=email.get('subject'),
+                body=email.get('body'),
                 attachment=','.join([x[0] for x in fp_names]))
         else:
             for fp_name, type_ in fp_names:

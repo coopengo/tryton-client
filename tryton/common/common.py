@@ -488,11 +488,13 @@ def file_open(filename, type, print_p=False):
             save()
 
 
-def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
+def mailto(to=None, cc=None, bcc=None, subject=None, body=None,
+        attachment=None):
     if CONFIG['client.email']:
         cmd = Template(CONFIG['client.email']).substitute(
                 to=to or '',
                 cc=cc or '',
+                bcc=bcc or '',
                 subject=subject or '',
                 body=body or '',
                 attachment=attachment or '',
@@ -504,6 +506,8 @@ def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
         args = ['xdg-email', '--utf8']
         if cc:
             args.extend(['--cc', cc])
+        if bcc:
+            args.extend(['--bcc', bcc])
         if subject:
             args.extend(['--subject', subject])
         if body:
@@ -528,6 +532,10 @@ def mailto(to=None, cc=None, subject=None, body=None, attachment=None):
         if isinstance(cc, unicode):
             cc = cc.encode('utf-8')
         url += "&cc=" + urllib.quote(cc, "@,")
+    if bcc:
+        if isinstance(bcc, unicode):
+            bcc = bcc.encode('utf-8')
+        url += "&bcc=" + urllib.quote(bcc, "@,")
     if subject:
         if isinstance(subject, unicode):
             subject = subject.encode('utf-8')

@@ -59,10 +59,10 @@ class ConfigManager(object):
             'client.can_change_accelerators': False,
             'client.limit': 100,
             'roundup.url': 'https://support.coopengo.com/',
-            'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
+            'roundup.xmlrpc': '',
             'menu.pane': 200,
             'menu.expanded': True,
-            'sentry.homepage': '',
+            'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
         self.options = {

@@ -30,14 +30,13 @@ class ConfigManager(object):
     "Config manager"
 
     def __init__(self):
-        short_version = '.'.join(__version__.split('.', 2)[:2])
-        demo_server = 'demo%s.tryton.org' % short_version
-        demo_database = 'demo%s' % short_version
+        demo_server = 'coog'
+        demo_database = 'demo'
         self.defaults = {
             'login.profile': demo_server,
-            'login.login': 'demo',
+            'login.login': 'admin',
             'login.server': demo_server,
-            'login.port': '8000',
+            'login.port': '80',
             'login.db': demo_database,
             'login.expanded': False,
             'login.date': False,
@@ -51,16 +50,16 @@ class ConfigManager(object):
             'client.toolbar': 'default',
             'client.maximize': False,
             'client.save_width_height': True,
-            'client.save_tree_state': True,
+            'client.save_tree_state': False,
             'client.fast_tabbing': True,
             'client.spellcheck': False,
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
             'client.email': '',
             'client.can_change_accelerators': False,
-            'client.limit': 1000,
-            'roundup.url': 'http://bugs.tryton.org/',
-            'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
+            'client.limit': 100,
+            'roundup.url': 'https://support.coopengo.com/',
+            'roundup.xmlrpc': '',
             'menu.pane': 200,
             'menu.expanded': True,
             'sentry.homepage': 'http://app.getsentry.com',

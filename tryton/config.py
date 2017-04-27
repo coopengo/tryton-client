@@ -35,9 +35,8 @@ class ConfigManager(object):
     "Config manager"
 
     def __init__(self):
-        short_version = '.'.join(__version__.split('.', 2)[:2])
-        demo_server = 'demo%s.tryton.org' % short_version
-        demo_database = 'demo%s' % short_version
+        demo_server = 'coog'
+        demo_database = 'demo'
         self.defaults = {
             'login.profile': demo_server,
             'login.login': 'demo',
@@ -54,21 +53,21 @@ class ConfigManager(object):
             'client.modepda': False,
             'client.toolbar': 'default',
             'client.save_tree_width': True,
-            'client.save_tree_state': True,
+            'client.save_tree_state': False,
             'client.spellcheck': False,
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
             'client.email': '',
-            'client.limit': 1000,
-            'client.check_version': True,
+            'client.limit': 100,
+            'client.check_version': False,
             'client.bus_timeout': 10 * 60,
-            'icon.colors': '#3465a4,#555753,#cc0000',
-            'tree.colors': '#777,#198754,#ffc107,#dc3545',
+            'icon.colors': '#0094d2,#57a639,#cc0000',
+            'tree.colors': '#777,#dff0d8,#fcf8e3,#f2dede',
             'calendar.colors': '#fff,#3465a4',
             'graph.color': '#3465a4',
             'image.max_size': 10 ** 6,
             'image.cache_size': 1024,
-            'bug.url': 'https://bugs.tryton.org/',
+            'bug.url': 'https://support.coopengo.com/',
             'download.url': 'https://downloads-cdn.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,

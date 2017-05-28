@@ -93,7 +93,7 @@ class Form(SignalEvent, TabContent):
 
     def __init__(self, model, res_id=False, domain=None, order=None, mode=None,
             view_ids=None, context=None, name='', limit=None,
-            search_value=None, tab_domain=None, context_model=None):
+            search_value=None, tab_domain=None, context_model=None, title=None):
         super(Form, self).__init__()
 
         if not mode:
@@ -117,7 +117,10 @@ class Form(SignalEvent, TabContent):
             context_model=context_model)
         self.screen.widget.show()
 
-        self.name = name
+        if title:
+            self.name = title
+        else:
+            self.name = name
 
         if self.model not in common.MODELHISTORY:
             self.menu_def = self.menu_def[:]

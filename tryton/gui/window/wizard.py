@@ -162,7 +162,7 @@ class Wizard(InfoBar):
         button.show()
         return button
 
-    def _record_modified(self, screen, record):
+    def _record_changed(self, screen, record):
         self.update_buttons(record)
 
     def update_buttons(self, record):
@@ -177,8 +177,8 @@ class Wizard(InfoBar):
         self.screen.add_view(view)
         self.screen.switch_view()
         self.screen.widget.show()
-        self.screen.signal_connect(self, 'record-modified',
-            self._record_modified)
+        self.screen.signal_connect(self, 'group-changed',
+            self._record_changed)
 
         title = gtk.Label()
         title.modify_font(pango.FontDescription("bold 14"))

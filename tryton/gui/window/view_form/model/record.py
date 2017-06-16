@@ -41,6 +41,7 @@ class Record(SignalEvent):
         self.autocompletion = {}
         self.exception = False
         self.destroyed = False
+        self.fields_to_load = []
 
     def __getitem__(self, name):
         if name not in self._loaded and self.id >= 0:
@@ -67,6 +68,12 @@ class Record(SignalEvent):
                     if field.attrs.get('loading', 'eager') == 'eager']
             else:
                 fnames = self.group.fields.keys()
+
+            if self.fields_to_load:
+                fnames = [fname for fname in fnames
+                    if fname in self.fields_to_load]
+                self.fields_to_load = []
+
             fnames = [fname for fname in fnames if fname not in self._loaded]
             fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
                     if self.group.fields[fname].attrs['type']

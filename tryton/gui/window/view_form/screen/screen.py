@@ -467,7 +467,7 @@ class Screen(SignalEvent):
     def number_of_views(self):
         return len(self.views) + len(self.view_to_load)
 
-    def switch_view(self, view_type=None):
+    def switch_view(self, view_type=None, view_id=None):
         if self.current_view:
             self.current_view.set_value()
             if (self.current_record and
@@ -488,7 +488,10 @@ class Screen(SignalEvent):
                 else:
                     self.__current_view = ((self.__current_view + 1)
                             % len(self.views))
-                if not view_type:
+                if view_id:
+                    if self.current_view.view_id == int(view_id):
+                        break
+                elif not view_type:
                     break
                 elif self.current_view.view_type == view_type:
                     break
@@ -531,20 +534,21 @@ class Screen(SignalEvent):
 
         # Ensure that loading is always lazy for fields on form view
         # and always eager for fields on tree or graph view
-        if root.tagName == 'form':
-            loading = 'lazy'
-        else:
-            loading = 'eager'
+        old_group = self.group.fields
+        self.group.fields = {}
         for field in fields:
-            if field not in self.group.fields or loading == 'eager':
-                fields[field]['loading'] = loading
+            if root.tagName != 'form':
+                fields[field]['loading'] = 'lazy'
             else:
-                fields[field]['loading'] = \
-                    self.group.fields[field].attrs['loading']
+                fields[field]['loading'] = 'eager'
         self.group.add_fields(fields)
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
         view.view_id = view_id
+        view._fields = self.group.fields
+        view._field_keys = view._fields.keys()
+        self.group.fields = old_group
+        self.group.add_fields(fields)
         self.views.append(view)
 
         return view
@@ -863,8 +867,9 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-            for view in self.views:
-                view.display()
+            self.current_view.display()
+            #  for view in self.views:
+            #      view.display()
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1105,9 +1110,12 @@ class Screen(SignalEvent):
                 ids, context=context)
         except RPCException:
             action = None
-        self.reload(ids, written=True)
+        if action and not action.startswith('toggle'):
+            self.reload(ids, written=True)
         if isinstance(action, basestring):
             self.client_action(action)
+            if action.startswith('toggle'):
+                self.reload(ids, written=True)
         elif action:
             Action.execute(action, {
                     'model': self.model_name,
@@ -1145,6 +1153,10 @@ class Screen(SignalEvent):
         elif action.startswith('switch'):
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
+        elif action.startswith('toggle'):
+            #  import rpdb; rpdb.set_trace()
+            _, view_id = action.split(':')
+            self.switch_view(None, view_id)
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']
                     and not self.parent):

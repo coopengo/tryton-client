@@ -489,7 +489,7 @@ class Screen(SignalEvent):
                     self.__current_view = ((self.__current_view + 1)
                             % len(self.views))
                 if view_id:
-                    if self.current_view.view_id == int(view_id):
+                    if self.current_view.view_id == view_id:
                         break
                 elif not view_type:
                     break
@@ -534,6 +534,8 @@ class Screen(SignalEvent):
 
         # Ensure that loading is always lazy for fields on form view
         # and always eager for fields on tree or graph view
+
+        # PJA: backup && clear the fields so not all fields are loaded
         old_group = self.group.fields
         self.group.fields = {}
         for field in fields:
@@ -545,6 +547,7 @@ class Screen(SignalEvent):
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
         view.view_id = view_id
+        # PJA: set only the fields that need to be loaded
         view._fields = self.group.fields
         view._field_keys = view._fields.keys()
         self.group.fields = old_group
@@ -868,6 +871,7 @@ class Screen(SignalEvent):
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
             self.current_view.display()
+            # PJA: there is no reason to loop over each view and display
             #  for view in self.views:
             #      view.display()
             self.current_view.widget.set_sensitive(
@@ -1155,9 +1159,9 @@ class Screen(SignalEvent):
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
         elif action.startswith('toggle'):
-            #  import rpdb; rpdb.set_trace()
+            # PJA: handle a custom action to toggle views
             _, view_id = action.split(':')
-            self.switch_view(None, view_id)
+            self.switch_view(view_id=int(view_id))
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']
                     and not self.parent):

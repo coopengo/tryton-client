@@ -459,6 +459,7 @@ class ViewForm(View):
         if record:
             # Force to set fields in record
             # Get first the lazy one to reduce number of requests
+            # PJA: iter only over the fields that need to be loaded
             fields = [(name, field.attrs.get('loading', 'eager'))
                     for name, field in self._fields.iteritems()]
             fields.sort(key=operator.itemgetter(1), reverse=True)

@@ -9,6 +9,7 @@ from tryton.pyson import PYSONDecoder
 import gettext
 import tempfile
 import os
+import re
 import webbrowser
 from tryton.common import RPCProgress, RPCExecute, RPCException, slugify
 
@@ -146,12 +147,20 @@ class Action(object):
             res_model = action.get('res_model', data.get('res_model'))
             res_id = action.get('res_id', data.get('res_id'))
 
+            title = None
+            if action.get('title', None):
+                title = action.get('title', False)
+
+            title = Action.update_title(title, rpc.CONTEXT, ctx['active_model'],
+                    ctx['active_id'], ctx['active_ids'])
+
             Window.create(view_ids, res_model, res_id, domain,
                     action_ctx, order, view_mode, name=name,
                     limit=action.get('limit'),
                     search_value=search_value,
                     icon=(action.get('icon.rec_name') or ''),
                     tab_domain=tab_domain,
+                    title=title,
                     context_model=action['context_model'])
         elif action['type'] == 'ir.action.wizard':
             name = action.get('name', '')
@@ -175,6 +184,32 @@ class Action(object):
         elif action['type'] == 'ir.action.url':
             if action['url']:
                 webbrowser.open(action['url'], new=2)
+
+    @staticmethod
+    def get_property(model, id_, prop, context):
+        try:
+            return RPCExecute('model', model, 'read', [id_],
+                [prop], context=context)[0]['rec_name']
+        except RPCException:
+            return ''
+
+    @staticmethod
+    def update_title(title, context, model, id_, ids_):
+        if title and model and (id_ or ids_):
+            properties_keys = re.findall('\[([^\[\]]+)\]', title)
+            properties_keys = list(set(properties_keys))
+            if properties_keys:
+                ids = [id_]
+                if ids_:
+                    ids += ids_
+                    ids = list(set(ids))
+                properties = {p: ','.join([
+                                Action.get_property(model, i, p, context)
+                                for i in ids])
+                        for p in properties_keys}
+                for p, v in properties.items():
+                    title = title.replace('[' + p + ']', v)
+            return title
 
     @staticmethod
     def exec_keyword(keyword, data=None, context=None, warning=True,

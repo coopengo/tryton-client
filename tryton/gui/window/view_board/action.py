@@ -80,6 +80,8 @@ class Action(SignalEvent):
 
         if attrs.get('string'):
             self.title.set_text(attrs['string'])
+        elif self.action.get('title'):
+            self.title.set_text(self.action['title'])
         else:
             self.title.set_text(self.action['name'])
 

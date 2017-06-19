@@ -37,7 +37,7 @@ class Board(SignalEvent, TabContent):
             '<tryton>/Form/Close'),
     ]
 
-    def __init__(self, model, view_id, context=None, name=False):
+    def __init__(self, model, view_id, context=None, name=False, title=None):
         super(Board, self).__init__()
 
         try:
@@ -53,6 +53,8 @@ class Board(SignalEvent, TabContent):
         self.dialogs = []
         if not name:
             self.name = self.board.name
+        elif title:
+            self.name = title
         else:
             self.name = name
 

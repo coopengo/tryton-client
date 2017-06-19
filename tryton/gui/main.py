@@ -1282,6 +1282,7 @@ class Main(object):
                 view_ids = json.loads(params.get('views', 'false'))
                 limit = json.loads(params.get('limit', 'null'))
                 name = json.loads(params.get('name', '""'))
+                title = json.loads(params.get('title', 'null'))
                 search_value = json.loads(params.get('search_value', '{}'),
                     object_hook=object_hook)
                 domain = json.loads(params.get('domain', '[]'),
@@ -1299,7 +1300,7 @@ class Main(object):
             try:
                 Window.create(view_ids, model, res_id=res_id, domain=domain,
                     context=context, mode=mode, name=name, limit=limit,
-                    search_value=search_value)
+                    search_value=search_value, title=title)
             except Exception:
                 # Prevent crashing the client
                 return

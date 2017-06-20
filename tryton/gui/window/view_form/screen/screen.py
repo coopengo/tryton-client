@@ -1114,8 +1114,9 @@ class Screen(SignalEvent):
                 ids, context=context)
         except RPCException:
             action = None
-        if (action and isinstance(action, int) or
-                not action.startswith('toggle')):
+        if action and action.startswith('toggle'):
+            pass
+        else:
             self.reload(ids, written=True)
         if isinstance(action, basestring):
             self.client_action(action)

@@ -539,7 +539,7 @@ class Screen(SignalEvent):
         old_group = self.group.fields
         self.group.fields = {}
         for field in fields:
-            if root.tagName != 'form':
+            if root.tagName == 'form':
                 fields[field]['loading'] = 'lazy'
             else:
                 fields[field]['loading'] = 'eager'
@@ -870,8 +870,11 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-            for view in self.views:
-                view.display()
+
+            # if getattr(self, '__single_view', False) is True
+            self.current_view.display()
+            #  for view in self.views:
+            #      view.display()
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1112,6 +1115,14 @@ class Screen(SignalEvent):
                 ids, context=context)
         except RPCException:
             action = None
+        if isinstance(action, list):
+            action_id, action = action
+        elif isinstance(action, int):
+            action_id, action = action, None
+        else:
+            action_id, action = None, action
+
+        # TODO
         if (action and isinstance(action, basestring)
                 and action.startswith('toggle')):
             pass
@@ -1121,8 +1132,8 @@ class Screen(SignalEvent):
             self.client_action(action)
             if action.startswith('toggle'):
                 self.reload(ids, written=True)
-        elif action:
-            Action.execute(action, {
+        if action_id:
+            Action.execute(action_id, {
                     'model': self.model_name,
                     'id': self.current_record.id,
                     'ids': ids,
@@ -1160,7 +1171,6 @@ class Screen(SignalEvent):
             self.switch_view(view_type=view_type)
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
-            #  import rpdb; rpdb.set_trace()
             _, view_id = action.split(':')
             self.switch_view(view_id=int(view_id))
         elif action == 'reload':

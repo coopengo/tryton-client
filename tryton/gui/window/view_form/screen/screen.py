@@ -870,10 +870,8 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-            self.current_view.display()
-            # PJA: there is no reason to loop over each view and display
-            #  for view in self.views:
-            #      view.display()
+            for view in self.views:
+                view.display()
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1162,6 +1160,7 @@ class Screen(SignalEvent):
             self.switch_view(view_type=view_type)
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
+            #  import rpdb; rpdb.set_trace()
             _, view_id = action.split(':')
             self.switch_view(view_id=int(view_id))
         elif action == 'reload':

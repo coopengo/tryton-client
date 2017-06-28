@@ -114,7 +114,7 @@ class WinSearch(NoModal):
                 context=self.context, mode=['form'])
 
             def callback(result):
-                # MERGENOTE : see if that diff from tryton is needed
+                # JMO : TODO : see if that diff from tryton is needed
                 if result and screen.save_current():
                     record = screen.current_record
                     res = [(record.id, record.value.get('rec_name', ''))]

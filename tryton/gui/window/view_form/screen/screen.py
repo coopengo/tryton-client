@@ -28,6 +28,7 @@ from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
+from tryton.pyson import PYSONDecoder
 import tryton.rpc as rpc
 
 _ = gettext.gettext
@@ -40,41 +41,31 @@ class Screen(SignalEvent):
     # It is shared with all connection but it is the price for speed.
     tree_column_width = collections.defaultdict(lambda: {})
 
-    def __init__(self, model_name, view_ids=None, mode=None, context=None,
-            views_preload=None, domain=None, row_activate=None, limit=None,
-            readonly=False, exclude_field=None, order=None, search_value=None,
-            tab_domain=None, context_model=None, alternate_view=False):
-        if view_ids is None:
-            view_ids = []
-        if mode is None:
-            mode = ['tree', 'form']
-        if views_preload is None:
-            views_preload = {}
-        if domain is None:
-            domain = []
-
-        self.limit = limit or CONFIG['client.limit']
+    def __init__(self, model_name, **attributes):
+        context = attributes.get('context', {})
+        self.limit = attributes.get('limit', CONFIG['client.limit'])
         self.offset = 0
         super(Screen, self).__init__()
 
-        self.readonly = readonly
+        self.readonly = attributes.get('readonly', False)
         if not (MODELACCESS[model_name]['write']
                 or MODELACCESS[model_name]['create']):
             self.readonly = True
         self.search_count = 0
-        if not row_activate:
+        if not attributes.get('row_activate'):
             self.row_activate = self.default_row_activate
         else:
-            self.row_activate = row_activate
-        self.domain = domain
+            self.row_activate = attributes['row_activate']
+        self.domain = attributes.get('domain', [])
+        self.context_domain = attributes.get('context_domain')
         self.size_limit = None
-        self.views_preload = views_preload
+        self.views_preload = attributes.get('views_preload', {})
         self.model_name = model_name
         self.views = []
-        self.view_ids = view_ids[:]
+        self.view_ids = attributes.get('view_ids', [])[:]
         self.parent = None
         self.parent_name = None
-        self.exclude_field = exclude_field
+        self.exclude_field = attributes.get('exclude_field')
         self.filter_widget = None
         self.tree_states = collections.defaultdict(
             lambda: collections.defaultdict(lambda: None))
@@ -83,14 +74,15 @@ class Screen(SignalEvent):
         self.__group = None
         self.new_group(context or {})
         self.current_record = None
-        self.screen_container = ScreenContainer(tab_domain)
-        self.screen_container.alternate_view = alternate_view
+        self.screen_container = ScreenContainer(attributes.get('tab_domain'))
+        self.screen_container.alternate_view = attributes.get(
+            'alternate_view', False)
         self.widget = self.screen_container.widget_get()
 
         self.context_screen = None
-        if context_model:
+        if attributes.get('context_model'):
             self.context_screen = Screen(
-                context_model, mode=['form'], context=context)
+                attributes['context_model'], mode=['form'], context=context)
             self.context_screen.new()
             context_widget = self.context_screen.widget
 
@@ -135,14 +127,19 @@ class Screen(SignalEvent):
             self.context_screen.widget.show()
 
         self.__current_view = 0
-        self.search_value = search_value
+        self.search_value = attributes.get('search_value')
         self.fields_view_tree = {}
-        self.order = self.default_order = order
+        self.order = self.default_order = attributes.get('order')
+        self.__date_format = self.context.get(
+            'date_format', rpc.CONTEXT.get('locale', {}).get('date', '%x'))
         self.view_to_load = []
         self._domain_parser = {}
         self.pre_validate = False
+        mode = attributes.get('mode')
+        if mode is None:
+            mode = ['tree', 'form']
         self.view_to_load = mode[:]
-        if view_ids or mode:
+        if self.view_ids or self.view_to_load:
             self.switch_view()
         self.count_tab_domain()
 
@@ -231,11 +228,13 @@ class Screen(SignalEvent):
         return selection
 
     def search_prev(self, search_string):
-        self.offset -= self.limit
+        if self.limit:
+            self.offset -= self.limit
         self.search_filter(search_string=search_string)
 
     def search_next(self, search_string):
-        self.offset += self.limit
+        if self.limit:
+            self.offset += self.limit
         self.search_filter(search_string=search_string)
 
     def search_complete(self, search_string):
@@ -253,6 +252,9 @@ class Screen(SignalEvent):
             self.new_group(context)
 
         domain = self.search_domain(search_string, True)
+        if self.context_domain:
+            decoder = PYSONDecoder(self.context)
+            domain = ['AND', domain, decoder.decode(self.context_domain)]
         tab_domain = self.screen_container.get_tab_domain()
         if tab_domain:
             domain = ['AND', domain, tab_domain]
@@ -263,7 +265,7 @@ class Screen(SignalEvent):
         except RPCException:
             ids = []
         if not only_ids:
-            if len(ids) == self.limit:
+            if self.limit is not None and len(ids) == self.limit:
                 try:
                     self.search_count = RPCExecute('model', self.model_name,
                         'search_count', domain, context=self.context)
@@ -272,7 +274,8 @@ class Screen(SignalEvent):
             else:
                 self.search_count = len(ids)
         self.screen_container.but_prev.set_sensitive(bool(self.offset))
-        if (len(ids) == self.limit
+        if (self.limit is not None
+                and len(ids) == self.limit
                 and self.search_count > self.limit + self.offset):
             self.screen_container.but_next.set_sensitive(True)
         else:
@@ -320,7 +323,11 @@ class Screen(SignalEvent):
 
     def count_tab_domain(self):
         def set_tab_counter(count, idx):
-            self.screen_container.set_tab_counter(count(), idx)
+            try:
+                count = count()
+            except RPCException:
+                count = None
+            self.screen_container.set_tab_counter(count, idx)
         screen_domain = self.search_domain(self.screen_container.get_text())
         for idx, (name, (ctx, domain), count) in enumerate(
                 self.screen_container.tab_domain):
@@ -336,6 +343,10 @@ class Screen(SignalEvent):
     @property
     def context(self):
         return self.group.context
+
+    @property
+    def date_format(self):
+        return self.__date_format
 
     def __get_group(self):
         return self.__group
@@ -443,6 +454,7 @@ class Screen(SignalEvent):
         return False
 
     def destroy(self):
+        self.screen_container.destroy()
         for view in self.views:
             view.destroy()
         del self.views[:]
@@ -607,7 +619,7 @@ class Screen(SignalEvent):
         path = self.current_record.get_path(self.group)
         if self.current_view.view_type == 'tree':
             saved = all(self.group.save())
-            record_id = self.current_record.id
+            record_id = self.current_record.id if self.current_record else None
         elif self.current_record.validate(fields):
             record_id = self.current_record.save(force_reload=True)
             saved = bool(record_id)
@@ -817,8 +829,9 @@ class Screen(SignalEvent):
                     timestamp, paths, selected_paths)
                 if store and view.attributes.get('tree_state', False):
                     json_domain = self.get_tree_domain(parent)
-                    json_paths = json.dumps(paths)
-                    json_selected_path = json.dumps(selected_paths)
+                    json_paths = json.dumps(paths, separators=(',', ':'))
+                    json_selected_path = json.dumps(
+                        selected_paths, separators=(',', ':'))
                     try:
                         RPCExecute('model', 'ir.ui.view_tree_state', 'set',
                             self.model_name, json_domain, view.children_field,
@@ -833,7 +846,8 @@ class Screen(SignalEvent):
             domain = (self.domain + [(self.exclude_field, '=', parent)])
         else:
             domain = self.domain
-        json_domain = json.dumps(domain, cls=JSONEncoder)
+        json_domain = json.dumps(
+            domain, cls=JSONEncoder, separators=(',', ':'))
         return json_domain
 
     def load(self, ids, set_cursor=True, modified=False):
@@ -1113,7 +1127,7 @@ class Screen(SignalEvent):
                     'model': self.model_name,
                     'id': self.current_record.id,
                     'ids': ids,
-                    }, context=self.context)
+                    }, context=self.context, keyword=True)
 
     def client_action(self, action):
         access = MODELACCESS[self.model_name]
@@ -1155,28 +1169,33 @@ class Screen(SignalEvent):
         elif action == 'reload context':
             RPCContextReload()
 
-    def get_url(self):
+    def get_url(self, name=''):
         query_string = []
         if self.domain:
-            query_string.append(('domain', json.dumps(self.domain,
-                        cls=JSONEncoder)))
+            query_string.append(('domain', json.dumps(
+                        self.domain, cls=JSONEncoder, separators=(',', ':'))))
         if self.context:
-            query_string.append(('context', json.dumps(self.context,
-                        cls=JSONEncoder)))
+            query_string.append(('context', json.dumps(
+                        self.context, cls=JSONEncoder, separators=(',', ':'))))
+        if name:
+            query_string.append(
+                ('name', json.dumps(name, separators=(',', ':'))))
         path = [rpc._DATABASE, 'model', self.model_name]
         view_ids = [v.view_id for v in self.views] + self.view_ids
         if self.current_view.view_type != 'form':
             search_string = self.screen_container.get_text()
             search_value = self.domain_parser.parse(search_string)
             if search_value:
-                query_string.append(('search_value', json.dumps(search_value,
-                            cls=JSONEncoder)))
+                query_string.append(('search_value', json.dumps(
+                            search_value, cls=JSONEncoder,
+                            separators=(',', ':'))))
         elif self.current_record and self.current_record.id > -1:
             path.append(str(self.current_record.id))
             i = view_ids.index(self.current_view.view_id)
             view_ids = view_ids[i:] + view_ids[:i]
         if view_ids:
-            query_string.append(('views', json.dumps(view_ids)))
+            query_string.append(('views', json.dumps(
+                        view_ids, separators=(',', ':'))))
         query_string = urllib.urlencode(query_string)
         return urlparse.urlunparse(('tryton',
                 '%s:%s' % (rpc._HOST, rpc._PORT),

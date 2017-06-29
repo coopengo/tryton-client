@@ -1062,7 +1062,7 @@ def process_exception(exception, *args, **kwargs):
                     process_exception(exception, *args2)
                 if args:
                     try:
-                        return rpc_execute(*args)
+                        return rpc_execute(*args, callback=kwargs.get('callback', None))
                     except TrytonServerError, exception:
                         return process_exception(exception, *args,
                             rpc_execute=rpc_execute)
@@ -1255,11 +1255,12 @@ class RPCProgress(object):
             self.parent.get_window().set_cursor(None)
         if self.exception:
             if self.process_exception_p:
-                def rpc_execute(*args):
+                def rpc_execute(*args, **kwargs):
                     return RPCProgress('execute',
-                        args).run(self.process_exception_p)
+                        args).run(self.process_exception_p,
+                                  kwargs.get('callback', None))
                 result = process_exception(self.exception, *self.args,
-                    rpc_execute=rpc_execute)
+                    rpc_execute=rpc_execute, callback=self.callback)
                 if result is False:
                     self.exception = RPCException(self.exception)
                 else:

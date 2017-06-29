@@ -98,6 +98,8 @@ class Wizard(InfoBar):
                     self.end()
                 self.__processing = False
                 return
+            if not result:
+                return
 
             if 'view' in result:
                 self.clean()

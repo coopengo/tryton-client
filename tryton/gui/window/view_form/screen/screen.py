@@ -870,11 +870,9 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-
-            # if getattr(self, '__single_view', False) is True
+            
             self.current_view.display()
-            #  for view in self.views:
-            #      view.display()
+
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1122,12 +1120,10 @@ class Screen(SignalEvent):
         else:
             action_id, action = None, action
 
-        # TODO
-        if (action and isinstance(action, basestring)
-                and action.startswith('toggle')):
-            pass
-        else:
+        if (not action or not isinstance(action, basestring) or
+                not action.startswith('toggle')):
             self.reload(ids, written=True)
+
         if isinstance(action, basestring):
             self.client_action(action)
             if action.startswith('toggle'):

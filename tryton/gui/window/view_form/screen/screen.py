@@ -1167,7 +1167,6 @@ class Screen(SignalEvent):
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
             _, view_id = action.split(':')
-            self.current_view._single_view = False
             self.switch_view(view_id=int(view_id))
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']

@@ -534,25 +534,24 @@ class Screen(SignalEvent):
 
         # Ensure that loading is always lazy for fields on form view
         # and always eager for fields on tree or graph view
+        if root.tagName == 'form':
+            loading = 'lazy'
+        else:
+            loading = 'eager'
 
-        # PJA: backup && clear the fields so not all fields are loaded
-        old_group = self.group.fields
-        self.group.fields = {}
         for field in fields:
-            if root.tagName == 'form':
-                fields[field]['loading'] = 'lazy'
+            if field not in self.group.fields or loading == 'eager':
+                fields[field]['loading'] = loading
             else:
-                fields[field]['loading'] = 'eager'
+                fields[field]['loading'] = \
+                    self.group.fields[field].attrs['loading']
+
         self.group.add_fields(fields)
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
         view.view_id = view_id
-        # PJA: set only the fields that need to be loaded
-        view._fields = self.group.fields
-        view._field_keys = view._fields.keys()
-        self.group.fields = old_group
-        self.group.add_fields(fields)
         self.views.append(view)
+        view._field_keys = fields.keys()
 
         return view
 
@@ -870,7 +869,7 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-            
+
             self.current_view.display()
 
             self.current_view.widget.set_sensitive(
@@ -1168,6 +1167,7 @@ class Screen(SignalEvent):
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
             _, view_id = action.split(':')
+            self.current_view._single_view = False
             self.switch_view(view_id=int(view_id))
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']

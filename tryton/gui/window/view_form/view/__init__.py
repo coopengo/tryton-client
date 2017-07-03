@@ -11,6 +11,7 @@ class View(object):
     editable = None
     children_field = None
     children_definitions = None
+    _single_view = True
 
     def __init__(self, screen, xml):
         self.screen = screen

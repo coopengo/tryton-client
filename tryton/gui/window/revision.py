@@ -32,6 +32,8 @@ class Revision(object):
         list_store = gtk.ListStore(str, str)
         combobox = gtk.ComboBoxEntry()
         combobox.set_model(list_store)
+        # JCA : Force set text colmn for gtk2
+        combobox.set_text_column(0)
         self.entry = combobox.get_child()
         self.entry.connect('focus-out-event', self.focus_out)
         self.entry.connect('activate', self.activate)

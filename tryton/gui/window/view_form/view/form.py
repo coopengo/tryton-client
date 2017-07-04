@@ -467,6 +467,7 @@ class ViewForm(View):
             record.fields_to_load = self._field_keys
             for field, _ in fields:
                 record[field].get(record)
+            record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)
         for name, widgets in self.widgets.iteritems():
             field = None

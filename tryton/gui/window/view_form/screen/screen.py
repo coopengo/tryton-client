@@ -538,14 +538,12 @@ class Screen(SignalEvent):
             loading = 'lazy'
         else:
             loading = 'eager'
-
         for field in fields:
             if field not in self.group.fields or loading == 'eager':
                 fields[field]['loading'] = loading
             else:
                 fields[field]['loading'] = \
                     self.group.fields[field].attrs['loading']
-
         self.group.add_fields(fields)
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
@@ -870,6 +868,9 @@ class Screen(SignalEvent):
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
 
+            # PJA: we are greedy people
+            #  for view in self.views:
+            #      view.display()
             self.current_view.display()
 
             self.current_view.widget.set_sensitive(
@@ -1122,7 +1123,6 @@ class Screen(SignalEvent):
         if (not action or not isinstance(action, basestring) or
                 not action.startswith('toggle')):
             self.reload(ids, written=True)
-
         if isinstance(action, basestring):
             self.client_action(action)
             if action.startswith('toggle'):

@@ -72,8 +72,6 @@ class Record(SignalEvent):
             if self.fields_to_load:
                 fnames = [fname for fname in fnames
                     if fname in self.fields_to_load]
-                self.fields_to_load = []
-
             fnames = [fname for fname in fnames if fname not in self._loaded]
             fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
                     if self.group.fields[fname].attrs['type']

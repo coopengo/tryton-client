@@ -69,6 +69,7 @@ class Record(SignalEvent):
             else:
                 fnames = self.group.fields.keys()
 
+            # PJA: load fields that are required
             if self.fields_to_load:
                 fnames = [fname for fname in fnames
                     if fname in self.fields_to_load]

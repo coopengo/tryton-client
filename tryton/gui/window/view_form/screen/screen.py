@@ -549,6 +549,7 @@ class Screen(SignalEvent):
             view.get('children_definitions'))
         view.view_id = view_id
         self.views.append(view)
+        # PJA: set list of fields to use on the view
         view._field_keys = fields.keys()
 
         return view
@@ -1113,6 +1114,8 @@ class Screen(SignalEvent):
                 ids, context=context)
         except RPCException:
             action = None
+
+        # PJA: handle different returns values from button
         if isinstance(action, list):
             action_id, action = action
         elif isinstance(action, int):

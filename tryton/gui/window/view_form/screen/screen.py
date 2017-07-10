@@ -467,7 +467,7 @@ class Screen(SignalEvent):
     def number_of_views(self):
         return len(self.views) + len(self.view_to_load)
 
-    def switch_view(self, view_type=None):
+    def switch_view(self, view_type=None, view_id=None):
         if self.current_view:
             self.current_view.set_value()
             if (self.current_record and
@@ -488,7 +488,10 @@ class Screen(SignalEvent):
                 else:
                     self.__current_view = ((self.__current_view + 1)
                             % len(self.views))
-                if not view_type:
+                if view_id:
+                    if self.current_view.view_id == view_id:
+                        break
+                elif not view_type:
                     break
                 elif self.current_view.view_type == view_type:
                     break
@@ -546,6 +549,8 @@ class Screen(SignalEvent):
             view.get('children_definitions'))
         view.view_id = view_id
         self.views.append(view)
+        # PJA: set list of fields to use on the view
+        view._field_keys = fields.keys()
 
         return view
 
@@ -863,8 +868,12 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-            for view in self.views:
-                view.display()
+
+            # PJA: we are greedy people
+            #  for view in self.views:
+            #      view.display()
+            self.current_view.display()
+
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1105,11 +1114,24 @@ class Screen(SignalEvent):
                 ids, context=context)
         except RPCException:
             action = None
-        self.reload(ids, written=True)
+
+        # PJA: handle different returns values from button
+        if isinstance(action, list):
+            action_id, action = action
+        elif isinstance(action, int):
+            action_id, action = action, None
+        else:
+            action_id, action = None, action
+
+        if (not action or not isinstance(action, basestring) or
+                not action.startswith('toggle')):
+            self.reload(ids, written=True)
         if isinstance(action, basestring):
             self.client_action(action)
-        elif action:
-            Action.execute(action, {
+            if action.startswith('toggle'):
+                self.reload(ids, written=True)
+        if action_id:
+            Action.execute(action_id, {
                     'model': self.model_name,
                     'id': self.current_record.id,
                     'ids': ids,
@@ -1145,6 +1167,10 @@ class Screen(SignalEvent):
         elif action.startswith('switch'):
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
+        elif action.startswith('toggle'):
+            # PJA: handle a custom action to toggle views
+            _, view_id = action.split(':')
+            self.switch_view(view_id=int(view_id))
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']
                     and not self.parent):

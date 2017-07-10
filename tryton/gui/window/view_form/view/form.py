@@ -459,11 +459,15 @@ class ViewForm(View):
         if record:
             # Force to set fields in record
             # Get first the lazy one to reduce number of requests
-            fields = [(name, field.attrs.get('loading', 'eager'))
-                    for name, field in record.group.fields.iteritems()]
+            # PJA: iter only over the fields that need to be loaded
+            fields = [(name, record.group.fields.get(name).attrs.get(
+                        'loading', 'eager'))
+                for name in self._field_keys]
             fields.sort(key=operator.itemgetter(1), reverse=True)
+            record.fields_to_load = self._field_keys
             for field, _ in fields:
                 record[field].get(record)
+            record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)
         for name, widgets in self.widgets.iteritems():
             field = None

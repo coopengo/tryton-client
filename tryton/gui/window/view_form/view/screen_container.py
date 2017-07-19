@@ -515,7 +515,6 @@ class ScreenContainer(object):
                 gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
             self.search_window.set_destroy_with_parent(True)
             self.search_window.set_title('coog')
-            self.search_window.set_icon(TRYTON_ICON)
             self.search_window.set_decorated(False)
             # set_deletable is False on tryton master repo
             # But this is not working on each graphical environnement

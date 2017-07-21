@@ -26,7 +26,6 @@ from tryton.gui.window.preference import Preference
 from tryton.gui.window import Limit
 from tryton.gui.window import Email
 from tryton.gui.window.dblogin import DBLogin
-from tryton.gui.window.tips import Tips
 from tryton.gui.window.about import About
 from tryton.gui.window.shortcuts import Shortcuts
 from tryton.common.cellrendererclickablepixbuf import \
@@ -34,7 +33,6 @@ from tryton.common.cellrendererclickablepixbuf import \
 import tryton.translate as translate
 import tryton.plugins
 from tryton.common.placeholder_entry import PlaceholderEntry
-import pango
 if os.environ.get('GTKOSXAPPLICATION'):
     import gtkosx_application
 else:
@@ -48,7 +46,6 @@ _ = gettext.gettext
 
 
 _MAIN = []
-TAB_SIZE = 120
 
 
 class Main(object):
@@ -301,8 +298,10 @@ class Main(object):
                         'ids': [record_id],
                         }, context=self.menu_screen.context.copy())
             else:
-                Window.create(False, model, res_id=record_id,
-                    mode=['form', 'tree'], name=model_name)
+                Window.create(model,
+                    res_id=record_id,
+                    mode=['form', 'tree'],
+                    name=model_name)
             self.global_search_entry.set_text('')
             return True
 
@@ -652,15 +651,6 @@ class Main(object):
     def _set_menu_help(self):
         menu_help = gtk.Menu()
 
-        imagemenuitem_tips = gtk.ImageMenuItem(_('_Tips...'))
-        imagemenuitem_tips.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-information', gtk.ICON_SIZE_MENU)
-        imagemenuitem_tips.set_image(image)
-        imagemenuitem_tips.connect('activate', self.sig_tips)
-        imagemenuitem_tips.set_accel_path('<tryton>/Help/Tips')
-        menu_help.add(imagemenuitem_tips)
-
         imagemenuitem_shortcuts = gtk.ImageMenuItem(
             _('_Keyboard Shortcuts...'))
         imagemenuitem_shortcuts.set_use_underline(True)
@@ -706,8 +696,9 @@ class Main(object):
                 })
 
         def _manage_favorites(widget):
-            Window.create(False, self.menu_screen.model_name + '.favorite',
-                False, mode=['tree', 'form'], name=_('Manage Favorites'))
+            Window.create(self.menu_screen.model_name + '.favorite',
+                mode=['tree', 'form'],
+                name=_('Manage Favorites'))
         try:
             favorites = RPCExecute('model',
                 self.menu_screen.model_name + '.favorite', 'get',
@@ -920,9 +911,6 @@ class Main(object):
             rpc.logout()
         return True
 
-    def sig_tips(self, *args):
-        Tips()
-
     def sig_about(self, widget):
         About()
 
@@ -998,7 +986,7 @@ class Main(object):
         # Postpone domain eval
         domain = action['pyson_domain']
         screen = Screen(action['res_model'], mode=['tree'], view_ids=view_ids,
-            domain=domain, context=action_ctx, readonly=True)
+            domain=domain, context=action_ctx, readonly=True, limit=None)
         # Use alternate view to not show search box
         screen.screen_container.alternate_view = True
         screen.switch_view(view_type=screen.current_view.view_type)
@@ -1108,10 +1096,6 @@ class Main(object):
         previous_page_id = self.notebook.get_current_page()
         previous_widget = self.notebook.get_nth_page(previous_page_id)
         if previous_widget and hide_current:
-            prev_tab_label = self.notebook.get_tab_label(previous_widget)
-            prev_tab_label.set_size_request(TAB_SIZE / 4, -1)
-            close_button = prev_tab_label.get_children()[-1]
-            close_button.hide()
             page_id = previous_page_id + 1
         else:
             page_id = -1
@@ -1124,21 +1108,12 @@ class Main(object):
             image = gtk.Image()
             image.set_from_stock(page.icon, gtk.ICON_SIZE_SMALL_TOOLBAR)
             hbox.pack_start(image, expand=False, fill=False)
-            noise_size = 2 * icon_w + 3
-        else:
-            noise_size = icon_w + 3
         name = page.name
-        label = gtk.Label(name)
+        label = gtk.Label(common.ellipsize(name, 20))
         self.tooltips.set_tip(label, page.name)
         self.tooltips.enable()
         label.set_alignment(0.0, 0.5)
         hbox.pack_start(label, expand=True, fill=True)
-        layout = label.get_layout()
-        w, h = layout.get_size()
-        if (w // pango.SCALE) > TAB_SIZE - noise_size:
-            label2 = gtk.Label('...')
-            self.tooltips.set_tip(label2, page.name)
-            hbox.pack_start(label2, expand=False, fill=False)
 
         button = gtk.Button()
         img = gtk.Image()
@@ -1155,7 +1130,6 @@ class Main(object):
         button.set_size_request(x, y)
 
         hbox.show_all()
-        hbox.set_size_request(TAB_SIZE, -1)
         label_menu = gtk.Label(page.name)
         label_menu.set_alignment(0.0, 0.5)
         self.notebook.insert_page_menu(page.widget, hbox, label_menu, page_id)
@@ -1229,10 +1203,6 @@ class Main(object):
     def _sig_page_changt(self, notebook, page, page_num):
         self.last_page = self.current_page
         last_form = self.get_page(self.current_page)
-        tab_label = notebook.get_tab_label(notebook.get_nth_page(page_num))
-        tab_label.set_size_request(TAB_SIZE, -1)
-        close_button = tab_label.get_children()[-1]
-        close_button.show()
         if last_form:
             for dialog in last_form.dialogs:
                 dialog.hide()
@@ -1276,13 +1246,13 @@ class Main(object):
             model, path = (path.split('/', 1) + [''])[:2]
             if not model:
                 return
-            res_id = False
+            res_id = None
             mode = None
             try:
                 view_ids = json.loads(params.get('views', 'false'))
                 limit = json.loads(params.get('limit', 'null'))
                 name = json.loads(params.get('name', '""'))
-                search_value = json.loads(params.get('search_value', '{}'),
+                search_value = json.loads(params.get('search_value', '[]'),
                     object_hook=object_hook)
                 domain = json.loads(params.get('domain', '[]'),
                     object_hook=object_hook)
@@ -1297,8 +1267,14 @@ class Main(object):
                     return
                 mode = ['form', 'tree']
             try:
-                Window.create(view_ids, model, res_id=res_id, domain=domain,
-                    context=context, mode=mode, name=name, limit=limit,
+                Window.create(model,
+                    view_ids=view_ids,
+                    res_id=res_id,
+                    domain=domain,
+                    context=context,
+                    mode=mode,
+                    name=name,
+                    limit=limit,
                     search_value=search_value)
             except Exception:
                 # Prevent crashing the client

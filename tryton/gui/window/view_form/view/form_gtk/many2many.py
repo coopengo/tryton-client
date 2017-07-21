@@ -98,7 +98,8 @@ class Many2Many(Widget):
         self.screen = Screen(attrs['relation'],
             view_ids=attrs.get('view_ids', '').split(','),
             mode=['tree'], views_preload=attrs.get('views', {}),
-            row_activate=self._on_activate)
+            row_activate=self._on_activate,
+            limit=None)
         self.screen.signal_connect(self, 'record-message', self._sig_label)
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True)
@@ -158,7 +159,7 @@ class Many2Many(Widget):
         add_remove = self.record.expr_eval(self.attrs.get('add_remove'))
         if add_remove:
             domain = [domain, add_remove]
-        context = self.field.context_get(self.record)
+        context = self.field.get_context(self.record)
         value = self.wid_text.get_text().decode('utf-8')
 
         self.focus_out = False
@@ -191,7 +192,7 @@ class Many2Many(Widget):
         add_remove = self.record.expr_eval(self.attrs.get('add_remove'))
         if add_remove:
             domain = [domain, add_remove]
-        context = self.field.context_get(self.record)
+        context = self.field.get_context(self.record)
         view_ids = self.attrs.get('view_ids', '').split(',')
         if view_ids:
             # Remove the first tree view as mode is form only

@@ -783,9 +783,11 @@ class ConcurrencyDialog(UniqueDialog):
             return True
         if res == gtk.RESPONSE_APPLY:
             from tryton.gui.window import Window
-            Window.create(False, resource, res_id=obj_id,
+            Window.create(resource,
+                res_id=obj_id,
                 domain=[('id', '=', obj_id)],
-                context=context, mode=['form', 'tree'])
+                context=context,
+                mode=['form', 'tree'])
         return False
 
 concurrency = ConcurrencyDialog()
@@ -1205,6 +1207,7 @@ def generateColorscheme(masterColor, keys, light=0.1):
 class RPCException(Exception):
 
     def __init__(self, exception):
+        super(RPCException, self).__init__(exception)
         self.exception = exception
 
 
@@ -1470,3 +1473,10 @@ def get_label_attributes(readonly, required):
     if hasattr(pango, 'AttrStyle'):
         attrlist.change(pango.AttrStyle(style, 0, -1))
     return attrlist
+
+
+def ellipsize(string, length):
+    if len(string) <= length:
+        return string
+    ellipsis = _('...')
+    return string[:length - len(ellipsis)] + ellipsis

@@ -192,7 +192,8 @@ class One2Many(Widget):
             view_ids=attrs.get('view_ids', '').split(','),
             views_preload=attrs.get('views', {}),
             row_activate=self._on_activate,
-            exclude_field=attrs.get('relation_field', None))
+            exclude_field=attrs.get('relation_field', None),
+            limit=None)
         self.screen.pre_validate = bool(int(attrs.get('pre_validate', 0)))
         self.screen.signal_connect(self, 'record-message', self._sig_label)
         if self.attrs.get('group'):
@@ -360,7 +361,7 @@ class One2Many(Widget):
             if view.view_type == 'tree':
                 sequence = view.attributes.get('sequence')
                 if sequence:
-                    return sequence        
+                    return sequence
 
     def _sig_new(self, *args):
         if not common.MODELACCESS[self.screen.model_name]['create']:
@@ -375,7 +376,7 @@ class One2Many(Widget):
 
     def _new_single(self):
         ctx = {}
-        ctx.update(self.field.context_get(self.record))
+        ctx.update(self.field.get_context(self.record))
         sequence = self._sequence()
 
         def update_sequence():
@@ -418,7 +419,7 @@ class One2Many(Widget):
                 search_set()
 
             domain = field.domain_get(first)
-            context = field.context_get(first)
+            context = field.get_context(first)
 
             def callback(result):
                 if result:
@@ -495,7 +496,7 @@ class One2Many(Widget):
         if not access['write'] or not access['read']:
             return
         domain = self.field.domain_get(self.record)
-        context = self.field.context_get(self.record)
+        context = self.field.get_context(self.record)
         domain = [domain, self.record.expr_eval(self.attrs.get('add_remove'))]
         removed_ids = self.field.get_removed_ids(self.record)
         domain = ['OR', domain, ('id', 'in', removed_ids)]
@@ -615,7 +616,7 @@ class One2Many(Widget):
                 size_limit = len(self.screen.group)
             else:
                 size_limit = min(size_limit, len(self.screen.group))
-        if self.screen.get_domain() != domain:
+        if self.screen.domain != domain:
             self.screen.domain = domain
         self.screen.size_limit = size_limit
         self.screen.display()

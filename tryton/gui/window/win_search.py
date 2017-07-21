@@ -82,8 +82,8 @@ class WinSearch(NoModal):
 
         self.register()
         sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.95),
-            int(sensible_allocation.height * 0.95))
+        self.win.set_default_size(int(sensible_allocation.width * 0.9),
+            int(sensible_allocation.height * 0.9))
 
     def sig_activate(self, *args):
         self.view.treeview.emit_stop_by_name('row_activated')
@@ -114,6 +114,7 @@ class WinSearch(NoModal):
                 context=self.context, mode=['form'])
 
             def callback(result):
+                # JMO : TODO : see if that diff from tryton is needed
                 if result and screen.save_current():
                     record = screen.current_record
                     res = [(record.id, record.value.get('rec_name', ''))]
@@ -121,7 +122,9 @@ class WinSearch(NoModal):
                 else:
                     self.callback(None)
             self.destroy()
-            WinForm(screen, callback, new=True, save_current=True, title=self.title)
+            WinForm(
+                screen, callback, new=True, save_current=True,
+                title=self.title)
             return
         if res:
             group = self.screen.group

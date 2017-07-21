@@ -517,7 +517,6 @@ class ViewTree(View):
                 functions[key[0]](key[1], attrlist)
 
     def set_column_widget(self, column, field, attributes, arrow=True):
-        tooltips = Tooltips()
         hbox = gtk.HBox(False, 2)
         label = gtk.Label(attributes['string'])
         attrlist = pango.AttrList()
@@ -534,13 +533,15 @@ class ViewTree(View):
             self._format_set(attributes, attrlist)
         label.set_attributes(attrlist)
         label.show()
-        help = attributes['string']
+        help = None
         if field and field.attrs.get('help'):
-            help += '\n' + field.attrs['help']
+            help = field.attrs['help']
         elif attributes.get('help'):
-            help += '\n' + attributes['help']
-        tooltips.set_tip(label, help)
-        tooltips.enable()
+            help = attributes['help']
+        if help:
+            tooltips = Tooltips()
+            tooltips.set_tip(label, help)
+            tooltips.enable()
         if arrow:
             arrow_widget = gtk.Arrow(gtk.ARROW_NONE, gtk.SHADOW_NONE)
             arrow_widget.show()
@@ -844,7 +845,8 @@ class ViewTree(View):
 
         def _func_sel_get(model, path, iter_, data):
             value = model.get_value(iter_, 0)
-            data.append(json.dumps(value.get_path(model.group)))
+            data.append(json.dumps(
+                    value.get_path(model.group), separators=(',', ':')))
         data = []
         treeselection = treeview.get_selection()
         treeselection.selected_foreach(_func_sel_get, data)
@@ -976,7 +978,10 @@ class ViewTree(View):
                     if not model:
                         continue
                     label = field.attrs['string']
-                    populate(menu, model, record_id, title=label, field=field)
+                    context = field.get_context(record)
+                    populate(
+                        menu, model, record_id, title=label, field=field,
+                        context=context)
                 menu.show_all()
 
             selection = treeview.get_selection()

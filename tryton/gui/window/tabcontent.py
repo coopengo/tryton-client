@@ -28,7 +28,7 @@ class TabContent(InfoBar):
 
         self.toolbar = self.create_toolbar(self.get_toolbars())
         # JCA : Allow to hide buttons through the context
-        if not self.context.get('disable_main_toolbar', None):
+        if not self.screen.context.get('disable_main_toolbar', None):
             self.toolbar.show_all()
             self.widget.pack_start(self.toolbar, False, True)
 
@@ -60,7 +60,7 @@ class TabContent(InfoBar):
 
         title_menu = gtk.MenuBar()
         # JCA : Allow to hide tab menu
-        if not self.context.get('disable_main_menu', None):
+        if not self.screen.context.get('disable_main_menu', None):
             title_item = gtk.MenuItem('')
             title_item.remove(title_item.get_children()[0])
             menu_image = gtk.Image()

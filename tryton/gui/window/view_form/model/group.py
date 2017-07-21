@@ -172,7 +172,11 @@ class Group(SignalEvent, list):
         for record in self:
             saved.append(record.save(force_reload=False))
         if self.record_deleted:
+            for record in self.record_deleted:
+                self._remove(record)
+                record.destroy()
             self.delete(self.record_deleted)
+            del self.record_deleted[:]
         return saved
 
     def delete(self, records):
@@ -259,10 +263,10 @@ class Group(SignalEvent, list):
     def context(self):
         ctx = self._context.copy()
         if self.parent:
-            ctx.update(self.parent.context_get())
+            ctx.update(self.parent.get_context())
             if self.child_name in self.parent.group.fields:
                 field = self.parent.group.fields[self.child_name]
-                ctx.update(field.context_get(self.parent))
+                ctx.update(field.get_context(self.parent))
         ctx.update(self._context)
         if self.parent_datetime_field:
             ctx['_datetime'] = self.parent.get_eval(

@@ -170,6 +170,9 @@ class Main(object):
         self.current_page = 0
         self.last_page = 0
         self.dialogs = []
+        self._global_run = False
+        self._global_check_timeout_id = None
+        self._global_update_timeout_id = None
 
         if CONFIG['client.modepda']:
             self.radiomenuitem_pda.set_active(True)
@@ -310,6 +313,8 @@ class Main(object):
 
         def update(widget, search_text, callback=None):
             def end():
+                self._global_update_timeout_id = None
+                self._global_run = False
                 if callback:
                     callback()
                 return False
@@ -329,6 +334,8 @@ class Main(object):
                 except RPCException:
                     result = []
                 if search_text != widget.get_text().decode('utf-8'):
+                    self._global_update_timeout_id = None
+                    self._global_run = False
                     if callback:
                         callback()
                     return False
@@ -351,14 +358,34 @@ class Main(object):
                 widget.emit('changed')
                 end()
 
+            self._global_run = True
             RPCExecute('model', 'ir.model', 'global_search', search_text,
                 CONFIG['client.limit'], self.menu_screen.model_name,
                 context=self.menu_screen.context, callback=set_result)
             return False
 
+        def check_timeout(widget, search_text):
+            # This method tries to avoid multiple global_search queries running
+            # concurrently on the server by waiting that one is complete before
+            # sending another. If a query is made while another is already
+            # waiting, it replaces it. Ideally there should be locks on _global
+            # attributes updates, but it does not seem mandatory so we will add
+            # them later if needed
+            if self._global_run:
+                if self._global_check_timeout_id:
+                    gobject.source_remove(self._global_check_timeout_id)
+                self._global_check_timeout_id = gobject.timeout_add(500,
+                    check_timeout, widget, search_text)
+                return True
+            else:
+                self._global_update_timeout_id = gobject.timeout_add(500,
+                    update, widget, search_text)
+                self._global_check_timeout_id = None
+                return False
+
         def changed(widget):
             search_text = widget.get_text().decode('utf-8')
-            gobject.timeout_add(300, update, widget, search_text)
+            check_timeout(widget, search_text)
 
         def activate(widget):
             def message():

@@ -1436,6 +1436,7 @@ def resize_pixbuf(pixbuf, width, height):
 
 def _data2pixbuf(data):
     loader = gtk.gdk.PixbufLoader()
+    loader.set_size(100, 100)
     loader.write(bytes(data))
     loader.close()
     return loader.get_pixbuf()

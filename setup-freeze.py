@@ -19,6 +19,7 @@ include_files = [
 if sys.platform == 'win32':
     include_files.extend([
         ('share/themes/Coog', 'share/themes/MS-Windows'),
+        (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)
     required_dlls = [

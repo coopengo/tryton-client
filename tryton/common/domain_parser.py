@@ -627,10 +627,10 @@ def test_format_datetime():
         'format': '"%H:%M:%S"',
         }
     for value, result in (
-            (datetime.date(2002, 12, 4), '12/04/02'),
-            (datetime.datetime(2002, 12, 4), '12/04/02'),
+            (datetime.date(2002, 12, 4), '12/04/2002'),
+            (datetime.datetime(2002, 12, 4), '12/04/2002'),
             (untimezoned_date(datetime.datetime(2002, 12, 4, 12, 30)),
-                '"12/04/02 12:30:00"'),
+                '"12/04/2002 12:30:00"'),
             (False, ''),
             (None, ''),
             ):
@@ -642,7 +642,7 @@ def test_format_date():
         'type': 'date',
         }
     for value, result in (
-            (datetime.date(2002, 12, 4), '12/04/02'),
+            (datetime.date(2002, 12, 4), '12/04/2002'),
             (False, ''),
             (None, ''),
             ):
@@ -687,7 +687,7 @@ def complete_value(field, value):
     def complete_selection():
         test_value = value if value is not None else ''
         if isinstance(value, list):
-            test_value = value[-1]
+            test_value = value[-1] or ''
         test_value = test_value.strip('%')
         for svalue, test in field['selection']:
             if test.lower().startswith(test_value.lower()):
@@ -743,6 +743,7 @@ def test_complete_selection():
             ('', ['male', 'female']),
             (None, ['male', 'female']),
             (['male', 'f'], [['male', 'female']]),
+            (['male', None], [['male', 'male'], ['male', 'female']]),
             ):
         assert list(complete_value(field, value)) == result
 
@@ -1283,7 +1284,7 @@ def test_string():
     assert dom.string([]) == ''
     assert dom.string([('surname', 'ilike', '%Doe%')]) == '"(Sur)Name": Doe'
     assert dom.string([('date', '>=', datetime.date(2012, 10, 24))]) == \
-        'Date: >=10/24/12'
+        'Date: >=10/24/2012'
     assert dom.string([('selection', '=', '')]) == 'Selection: '
     assert dom.string([('selection', '=', None)]) == 'Selection: '
     assert dom.string([('selection', '!=', '')]) == 'Selection: !""'

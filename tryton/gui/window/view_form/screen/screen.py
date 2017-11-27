@@ -1142,13 +1142,9 @@ class Screen(SignalEvent):
         else:
             action_id, action = None, action
 
-        if (not action or not isinstance(action, basestring) or
-                not action.startswith('toggle')):
-            self.reload(ids, written=True)
+        self.reload(ids, written=True)
         if isinstance(action, basestring):
             self.client_action(action)
-            if action.startswith('toggle'):
-                self.reload(ids, written=True)
         if action_id:
             Action.execute(action_id, {
                     'model': self.model_name,

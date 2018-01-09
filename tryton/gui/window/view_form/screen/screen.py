@@ -21,11 +21,7 @@ from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
-<<<<<<< HEAD
 from tryton.pyson import PYSONDecoder
-from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
-=======
->>>>>>> 4.6
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \

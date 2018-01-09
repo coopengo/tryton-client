@@ -492,21 +492,9 @@ class DBLogin(object):
 
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
-<<<<<<< HEAD
         self.profiles = ConfigParser.SafeConfigParser({'port': '8000'})
         # JCA : Deactivate demo tryton database
         if os.path.exists(self.profile_cfg):
-=======
-        self.profiles = ConfigParser.SafeConfigParser()
-        if not os.path.exists(self.profile_cfg):
-            short_version = '.'.join(__version__.split('.', 2)[:2])
-            name = 'demo%s.tryton.org' % short_version
-            self.profiles.add_section(name)
-            self.profiles.set(name, 'host', name)
-            self.profiles.set(name, 'database', 'demo%s' % short_version)
-            self.profiles.set(name, 'username', 'demo')
-        else:
->>>>>>> 4.6
             self.profiles.read(self.profile_cfg)
         for section in self.profiles.sections():
             active = all(self.profiles.has_option(section, option)

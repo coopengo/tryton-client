@@ -10,11 +10,8 @@ import tryton.common as common
 from tryton.gui.window.nomodal import NoModal
 from tryton.common import TRYTON_ICON
 from tryton.common import RPCExecute, RPCException
-<<<<<<< HEAD
 from tryton.common import FORMAT_ERROR
-=======
 from tryton.common.widget_style import widget_class
->>>>>>> 4.6
 
 _ = gettext.gettext
 
@@ -209,7 +206,8 @@ class Widget(object):
         if self.view.screen.readonly:
             readonly = True
         self._readonly_set(readonly)
-<<<<<<< HEAD
+
+        # ABD: Seems to be related to a color fix (c24c86dc)
         invalidity = field.get_state_attrs(record).get('invalid', False)
         if readonly:
             self.color_set('readonly')
@@ -219,12 +217,10 @@ class Widget(object):
             self.color_set('required')
         else:
             self.color_set('normal')
+
+        # ABD: See #3428
         self._format_set(record, field)
-        self.invisible_set(self.attrs.get('invisible',
-            field.get_state_attrs(record).get('invisible', False)))
-        self._required_set(
-            field.get_state_attrs(record).get('required', False))
-=======
+
         widget_class(self.widget, 'readonly', readonly)
         self._required_set(not readonly and states.get('required', False))
         widget_class(
@@ -234,7 +230,6 @@ class Widget(object):
         widget_class(self.widget, 'invalid', not readonly and invalid)
         self.invisible_set(self.attrs.get(
                 'invisible', states.get('invisible', False)))
->>>>>>> 4.6
 
     def set_value(self, record, field):
         pass

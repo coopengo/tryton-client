@@ -293,22 +293,18 @@ class ViewTree(View):
         self.sum_widgets = []
         self.sum_box = gtk.HBox()
         self.reload = False
-<<<<<<< HEAD
 
+        # ABD: Pass self.attributes.get('editable_open') to constructor
         if self.attributes.get('editable'):
             self.treeview = EditableTreeView(self.attributes['editable'], self,
                 self.attributes.get('editable_open'))
-        else:
-            self.treeview = TreeView(self)
-        self.always_expand = self.attributes.get('always_expand', False)
-=======
-        if self.attributes.get('editable') and not screen.readonly:
-            self.treeview = EditableTreeView(self.attributes['editable'], self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_BOTH
         else:
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
->>>>>>> 4.6
+
+        # ABD set alway expand through attributes
+        self.always_expand = self.attributes.get('always_expand', False)
 
         self.parse(xml)
 
@@ -480,7 +476,7 @@ class ViewTree(View):
     def get_widget(cls, name):
         return cls.WIDGETS[name]
 
-<<<<<<< HEAD
+    # ABD: See #3428
     def _set_background(self, value, attrlist):
         if value not in COLOR_RGB:
             logging.getLogger(__name__).info('This color is not supported' +
@@ -526,33 +522,17 @@ class ViewTree(View):
                     raise ValueError(FORMAT_ERROR + attr)
                 functions[key[0]](key[1], attrlist)
 
-    def set_column_widget(self, column, field, attributes, arrow=True):
-=======
     def set_column_widget(self, column, field, attributes,
             arrow=True, align=0.5):
->>>>>>> 4.6
         hbox = gtk.HBox(False, 2)
         label = gtk.Label(attributes['string'])
-        attrlist = pango.AttrList()
         if field and self.editable:
             required = field.attrs.get('required')
             readonly = field.attrs.get('readonly')
-<<<<<<< HEAD
-            if (required or not readonly) and hasattr(pango, 'AttrWeight'):
-                # FIXME when Pango.attr_weight_new is introspectable
-                attrlist = pango.AttrList()
-                if required:
-                    attrlist.insert(pango.AttrWeight(pango.WEIGHT_BOLD, 0, -1))
-                # We removed the check if not readonly (cf: issue #3751)
-        if field:
-            self._format_set(attributes, attrlist)
-        label.set_attributes(attrlist)
-=======
             attrlist = common.get_label_attributes(readonly, required)
             label.set_attributes(attrlist)
             widget_class(label, 'readonly', readonly)
             widget_class(label, 'required', required)
->>>>>>> 4.6
         label.show()
         help = None
         if field and field.attrs.get('help'):

@@ -37,14 +37,8 @@ class ConfigManager(object):
         demo_database = 'demo'
         self.defaults = {
             'login.profile': demo_server,
-<<<<<<< HEAD
             'login.login': 'admin',
-            'login.server': demo_server,
-            'login.port': '80',
-=======
-            'login.login': 'demo',
             'login.host': demo_server,
->>>>>>> 4.6
             'login.db': demo_database,
             'login.expanded': False,
             'login.date': False,

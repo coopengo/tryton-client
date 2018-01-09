@@ -409,16 +409,8 @@ class Main(object):
         self.pane.get_child1().set_expanded(True)
         self.global_search_entry.grab_focus()
 
-<<<<<<< HEAD
+    # Add possibility to choose the business date
     def set_title(self, value='', date=''):
-        title = CONFIG['client.title']
-        if value:
-            title += ' - ' + value
-        if date:
-            title += ' (' + date + ')'
-        self.window.set_title(title)
-=======
-    def set_title(self, value=''):
         if CONFIG['login.profile']:
             login_info = CONFIG['login.profile']
         else:
@@ -429,7 +421,8 @@ class Main(object):
         titles = [CONFIG['client.title'], login_info]
         if value:
             titles.append(value)
-        self.window.set_title(' - '.join(titles))
+        title = ' - '.join(titles) + ' (' + date + ')'
+        self.window.set_title(title)
         try:
             style_context = self.window.get_style_context()
         except AttributeError:
@@ -441,7 +434,6 @@ class Main(object):
             if CONFIG['login.profile']:
                 style_context.add_class(
                     'profile-%s' % CONFIG['login.profile'])
->>>>>>> 4.6
 
     def _set_menu_connection(self):
         menu_connection = gtk.Menu()
@@ -912,13 +904,10 @@ class Main(object):
             if exception.faultCode == 'QueryCanceled':
                 return
             raise
+        # ABD: Add date and set_date parameters to login function (ca093423)
         func = lambda parameters: rpc.login(
-<<<<<<< HEAD
             host, port, database, username, parameters, language, date, True)
-=======
-            host, port, database, username, parameters, language)
         self.set_title()  # Adds username/profile while password is asked
->>>>>>> 4.6
         try:
             common.Login(func)
         except TrytonError, exception:

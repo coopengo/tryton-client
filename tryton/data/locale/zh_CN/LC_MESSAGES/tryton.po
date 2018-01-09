@@ -538,69 +538,6 @@ msgstr "关闭标签"
 #, python-format, fuzzy, python-format
 msgid "Attachments (%s)"
 msgstr "附件文档(%s)"
-<<<<<<< HEAD
-
-#: tryton/gui/window/board.py:21 tryton/gui/window/form.py:34
-msgid "New"
-msgstr "新建"
-
-#: tryton/gui/window/board.py:21 tryton/gui/window/form.py:34
-msgid "Create a new record"
-msgstr "新建项目"
-
-#: tryton/gui/window/board.py:22 tryton/gui/window/form.py:36
-#: tryton/gui/window/win_export.py:86
-msgid "Save"
-msgstr "保存"
-
-#: tryton/gui/window/board.py:22 tryton/gui/window/form.py:36
-msgid "Save this record"
-msgstr "保存项目"
-
-#: tryton/gui/window/board.py:23 tryton/gui/window/form.py:38
-#: tryton/gui/window/view_form/view/form_gtk/one2many.py:163
-#: tryton/gui/window/win_form.py:221
-msgid "Switch"
-msgstr "切换"
-
-#: tryton/gui/window/board.py:23 tryton/gui/window/form.py:38
-msgid "Switch view"
-msgstr "切换视图"
-
-#: tryton/gui/window/board.py:25 tryton/gui/window/form.py:40
-msgid "_Reload"
-msgstr "重载(_R)"
-
-#: tryton/gui/window/board.py:25 tryton/gui/window/form.py:40
-msgid "Reload"
-msgstr "重载"
-
-#: tryton/gui/window/board.py:32 tryton/gui/window/form.py:57
-msgid "_New"
-msgstr "新建(_N)"
-
-#: tryton/gui/window/board.py:33 tryton/gui/window/form.py:58
-#: tryton/gui/window/win_form.py:68
-msgid "_Save"
-msgstr "保存(_S)"
-
-#: tryton/gui/window/board.py:34 tryton/gui/window/form.py:59
-msgid "_Switch View"
-msgstr "切换视图(_S)"
-
-#: tryton/gui/window/board.py:36 tryton/gui/window/form.py:61
-msgid "_Reload/Undo"
-msgstr "刷新/撤销(_R)"
-
-#: tryton/gui/window/board.py:38 tryton/gui/window/form.py:65
-msgid "_Delete..."
-msgstr "删除(_D)..."
-
-#: tryton/gui/window/board.py:40 tryton/gui/window/form.py:78
-msgid "_Close Tab"
-msgstr "关闭标签页(_C)"
-=======
->>>>>>> 4.6
 
 #: tryton/gui/window/dblogin.py:31
 msgid "Profile Editor"

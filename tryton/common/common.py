@@ -1101,20 +1101,8 @@ def process_exception(exception, *args, **kwargs):
                 except TrytonServerError, exception:
                     return process_exception(exception, *args,
                         rpc_execute=rpc_execute)
-<<<<<<< HEAD
-    elif isinstance(exception, (socket.error, TrytonServerUnavailable)):
-        warning(str(exception), _('Network Error.'))
-        return False
-
-    if isinstance(exception, TrytonServerError):
-        error_title, error_detail = exception.faultCode, exception.faultString
-    elif kwargs.get('sentry_id'):
-        sentry(kwargs.get('sentry_id'))
-        return False
-=======
         else:
             error(exception.faultCode, exception.faultString)
->>>>>>> 4.6
     else:
         error(str(exception), traceback.format_exc())
     raise RPCException(exception)

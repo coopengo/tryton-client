@@ -542,69 +542,6 @@ msgstr "Uždaryti kortelę"
 #, python-format, fuzzy, python-format
 msgid "Attachments (%s)"
 msgstr "Priedai(%s)"
-<<<<<<< HEAD
-
-#: tryton/gui/window/board.py:21 tryton/gui/window/form.py:34
-msgid "New"
-msgstr "Naujas"
-
-#: tryton/gui/window/board.py:21 tryton/gui/window/form.py:34
-msgid "Create a new record"
-msgstr "Sukurti naują įrašą"
-
-#: tryton/gui/window/board.py:22 tryton/gui/window/form.py:36
-#: tryton/gui/window/win_export.py:86
-msgid "Save"
-msgstr "Išsaugoti"
-
-#: tryton/gui/window/board.py:22 tryton/gui/window/form.py:36
-msgid "Save this record"
-msgstr "Išsaugoti šį įrašą"
-
-#: tryton/gui/window/board.py:23 tryton/gui/window/form.py:38
-#: tryton/gui/window/view_form/view/form_gtk/one2many.py:163
-#: tryton/gui/window/win_form.py:221
-msgid "Switch"
-msgstr "Perjungti"
-
-#: tryton/gui/window/board.py:23 tryton/gui/window/form.py:38
-msgid "Switch view"
-msgstr "Perjungti rodymą"
-
-#: tryton/gui/window/board.py:25 tryton/gui/window/form.py:40
-msgid "_Reload"
-msgstr "Pe_rkrauti"
-
-#: tryton/gui/window/board.py:25 tryton/gui/window/form.py:40
-msgid "Reload"
-msgstr "Perkrauti"
-
-#: tryton/gui/window/board.py:32 tryton/gui/window/form.py:57
-msgid "_New"
-msgstr "_Naujas"
-
-#: tryton/gui/window/board.py:33 tryton/gui/window/form.py:58
-#: tryton/gui/window/win_form.py:68
-msgid "_Save"
-msgstr "_Saugoti"
-
-#: tryton/gui/window/board.py:34 tryton/gui/window/form.py:59
-msgid "_Switch View"
-msgstr "_Perjungti rodymą"
-
-#: tryton/gui/window/board.py:36 tryton/gui/window/form.py:61
-msgid "_Reload/Undo"
-msgstr "Pe_rkrauti/atšaukti"
-
-#: tryton/gui/window/board.py:38 tryton/gui/window/form.py:65
-msgid "_Delete..."
-msgstr "_Ištrinti..."
-
-#: tryton/gui/window/board.py:40 tryton/gui/window/form.py:78
-msgid "_Close Tab"
-msgstr "Uždaryti _kortelę"
-=======
->>>>>>> 4.6
 
 #: tryton/gui/window/dblogin.py:31
 msgid "Profile Editor"

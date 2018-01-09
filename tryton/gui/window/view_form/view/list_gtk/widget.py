@@ -268,13 +268,9 @@ class GenericText(Cell):
         else:
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', False)
-<<<<<<< HEAD
+        # ABD See #3428
         self._format_set(record, field, cell)
-        cell.set_property('xalign', align)
-=======
-
         cell.set_property('xalign', self.align)
->>>>>>> 4.6
 
     def _set_foreground(self, value, cell):
         cell.set_property('foreground', value)

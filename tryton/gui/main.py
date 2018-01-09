@@ -409,7 +409,7 @@ class Main(object):
         self.pane.get_child1().set_expanded(True)
         self.global_search_entry.grab_focus()
 
-    # Add possibility to choose the business date
+    # ABD: Add possibility to choose the business date
     def set_title(self, value='', date=''):
         if CONFIG['login.profile']:
             login_info = CONFIG['login.profile']

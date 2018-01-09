@@ -37,9 +37,14 @@ class ConfigManager(object):
         demo_database = 'demo'
         self.defaults = {
             'login.profile': demo_server,
+<<<<<<< HEAD
             'login.login': 'admin',
             'login.server': demo_server,
             'login.port': '80',
+=======
+            'login.login': 'demo',
+            'login.host': demo_server,
+>>>>>>> 4.6
             'login.db': demo_database,
             'login.expanded': False,
             'login.date': False,
@@ -68,9 +73,7 @@ class ConfigManager(object):
             'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
-        self.options = {
-            'login.host': True
-        }
+        self.options = {}
         self.arguments = []
 
     def parse(self):
@@ -89,10 +92,8 @@ class ConfigManager(object):
                 "DEBUG, INFO, WARNING, ERROR, CRITICAL"))
         parser.add_option("-u", "--user", dest="login",
                 help=_("specify the login user"))
-        parser.add_option("-p", "--port", dest="port",
-                help=_("specify the server port"))
-        parser.add_option("-s", "--server", dest="server",
-                help=_("specify the server hostname"))
+        parser.add_option("-s", "--server", dest="host",
+                help=_("specify the server hostname:port"))
         opt, self.arguments = parser.parse_args()
 
         if len(self.arguments) > 1:
@@ -120,7 +121,7 @@ class ConfigManager(object):
                 opt.log_level = 'ERROR'
         logging.getLogger().setLevel(loglevels[opt.log_level.upper()])
 
-        for arg in ('login', 'port', 'server'):
+        for arg in ['login', 'host']:
             if getattr(opt, arg):
                 self.options['login.' + arg] = getattr(opt, arg)
 

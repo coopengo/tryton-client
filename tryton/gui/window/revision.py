@@ -32,8 +32,11 @@ class Revision(object):
         list_store = gtk.ListStore(str, str)
         # Set model on instantiation to get the default cellrenderer as text
         combobox = gtk.ComboBoxEntry(model=list_store)
+<<<<<<< HEAD
         # JCA : Force set text colmn for gtk2
         combobox.set_text_column(0)
+=======
+>>>>>>> 4.6
         self.entry = combobox.get_child()
         self.entry.connect('focus-out-event', self.focus_out)
         self.entry.connect('activate', self.activate)

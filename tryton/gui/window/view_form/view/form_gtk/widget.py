@@ -10,7 +10,11 @@ import tryton.common as common
 from tryton.gui.window.nomodal import NoModal
 from tryton.common import TRYTON_ICON
 from tryton.common import RPCExecute, RPCException
+<<<<<<< HEAD
 from tryton.common import FORMAT_ERROR
+=======
+from tryton.common.widget_style import widget_class
+>>>>>>> 4.6
 
 _ = gettext.gettext
 
@@ -200,11 +204,12 @@ class Widget(object):
             self.invisible_set(self.attrs.get('invisible', False))
             self._required_set(False)
             return
-        readonly = self.attrs.get('readonly',
-            field.get_state_attrs(record).get('readonly', False))
+        states = field.get_state_attrs(record)
+        readonly = self.attrs.get('readonly', states.get('readonly', False))
         if self.view.screen.readonly:
             readonly = True
         self._readonly_set(readonly)
+<<<<<<< HEAD
         invalidity = field.get_state_attrs(record).get('invalid', False)
         if readonly:
             self.color_set('readonly')
@@ -219,6 +224,17 @@ class Widget(object):
             field.get_state_attrs(record).get('invisible', False)))
         self._required_set(
             field.get_state_attrs(record).get('required', False))
+=======
+        widget_class(self.widget, 'readonly', readonly)
+        self._required_set(not readonly and states.get('required', False))
+        widget_class(
+            self.widget, 'required',
+            not readonly and states.get('required', False))
+        invalid = states.get('invalid', False)
+        widget_class(self.widget, 'invalid', not readonly and invalid)
+        self.invisible_set(self.attrs.get(
+                'invisible', states.get('invisible', False)))
+>>>>>>> 4.6
 
     def set_value(self, record, field):
         pass

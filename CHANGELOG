@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Version 4.4.5 - 2018-01-04
 * Bug fixes (see mercurial logs for details)
 
@@ -12,6 +13,24 @@ Version 4.4.2 - 2017-10-03
 
 Version 4.4.1 - 2017-08-08
 * Bug fixes (see mercurial logs for details)
+=======
+Version 4.6.2 - 2018-01-04
+* Bug fixes (see mercurial logs for details)
+
+Version 4.6.1 - 2017-12-04
+* Bug fixes (see mercurial logs for details)
+
+Version 4.6.0 - 2017-10-30
+* Bug fixes (see mercurial logs for details)
+* Allow to export model and record name of Reference fields
+* Re-position buttons on Binary/Image widget
+* Improve treeview headers
+* Update states of both toolbar and menu
+* Improve toolbar order
+* Make readonly, required and invalid widget themable
+* Load user CSS theme
+* Use profile name or login details in title
+>>>>>>> 4.6
 
 Version 4.4.0 - 2017-05-01
 * Bug fixes (see mercurial logs for details)

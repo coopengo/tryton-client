@@ -2,7 +2,6 @@
 # this repository contains the full copyright notices and license terms.
 import gobject
 import gtk
-import pango
 import sys
 import json
 import locale
@@ -14,11 +13,11 @@ from collections import defaultdict
 
 from tryton.config import CONFIG
 from tryton.common.cellrendererbutton import CellRendererButton
-from tryton.common.cellrenderertoggle import CellRendererToggle
 from tryton.gui.window import Window
 from tryton.common.popup_menu import populate
 from tryton.common import RPCExecute, RPCException, node_attributes, Tooltips
 from tryton.common import domain_inversion, simplify, unique_value
+from tryton.common.widget_style import widget_class
 from tryton.pyson import PYSONDecoder
 from tryton.common import COLOR_RGB, FORMAT_ERROR
 import tryton.common as common
@@ -294,6 +293,7 @@ class ViewTree(View):
         self.sum_widgets = []
         self.sum_box = gtk.HBox()
         self.reload = False
+<<<<<<< HEAD
 
         if self.attributes.get('editable'):
             self.treeview = EditableTreeView(self.attributes['editable'], self,
@@ -301,10 +301,19 @@ class ViewTree(View):
         else:
             self.treeview = TreeView(self)
         self.always_expand = self.attributes.get('always_expand', False)
+=======
+        if self.attributes.get('editable') and not screen.readonly:
+            self.treeview = EditableTreeView(self.attributes['editable'], self)
+            grid_lines = gtk.TREE_VIEW_GRID_LINES_BOTH
+        else:
+            self.treeview = TreeView(self)
+            grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
+>>>>>>> 4.6
 
         self.parse(xml)
 
         self.treeview.set_property('rules-hint', True)
+        self.treeview.set_property('enable-grid-lines', grid_lines)
         self.treeview.set_fixed_height_mode(
             all(c.get_sizing() == gtk.TREE_VIEW_COLUMN_FIXED
                 for c in self.treeview.get_columns()))
@@ -409,7 +418,7 @@ class ViewTree(View):
             column.set_cell_data_func(suffix.renderer,
                 suffix.setter)
 
-        self.set_column_widget(column, field, node_attrs)
+        self.set_column_widget(column, field, node_attrs, align=widget.align)
         self.set_column_width(column, field, node_attrs)
 
         if (not self.attributes.get('sequence')
@@ -471,6 +480,7 @@ class ViewTree(View):
     def get_widget(cls, name):
         return cls.WIDGETS[name]
 
+<<<<<<< HEAD
     def _set_background(self, value, attrlist):
         if value not in COLOR_RGB:
             logging.getLogger(__name__).info('This color is not supported' +
@@ -517,12 +527,17 @@ class ViewTree(View):
                 functions[key[0]](key[1], attrlist)
 
     def set_column_widget(self, column, field, attributes, arrow=True):
+=======
+    def set_column_widget(self, column, field, attributes,
+            arrow=True, align=0.5):
+>>>>>>> 4.6
         hbox = gtk.HBox(False, 2)
         label = gtk.Label(attributes['string'])
         attrlist = pango.AttrList()
         if field and self.editable:
             required = field.attrs.get('required')
             readonly = field.attrs.get('readonly')
+<<<<<<< HEAD
             if (required or not readonly) and hasattr(pango, 'AttrWeight'):
                 # FIXME when Pango.attr_weight_new is introspectable
                 attrlist = pango.AttrList()
@@ -532,6 +547,12 @@ class ViewTree(View):
         if field:
             self._format_set(attributes, attrlist)
         label.set_attributes(attrlist)
+=======
+            attrlist = common.get_label_attributes(readonly, required)
+            label.set_attributes(attrlist)
+            widget_class(label, 'readonly', readonly)
+            widget_class(label, 'required', required)
+>>>>>>> 4.6
         label.show()
         help = None
         if field and field.attrs.get('help'):
@@ -552,7 +573,7 @@ class ViewTree(View):
             column.set_clickable(True)
         hbox.show()
         column.set_widget(hbox)
-        column.set_alignment(0.5)
+        column.set_alignment(align)
 
     def set_column_width(self, column, field, attributes):
         default_width = {
@@ -589,7 +610,7 @@ class ViewTree(View):
         expand = attributes.get('expand', False)
         column.set_expand(expand)
         column.set_resizable(True)
-        if not field or field.attrs['type'] != 'text':
+        if attributes.get('widget') != 'text':
             column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 
     def get_column_widget(self, column):
@@ -698,7 +719,8 @@ class ViewTree(View):
 
     @property
     def editable(self):
-        return bool(getattr(self.treeview, 'editable', False))
+        return (bool(getattr(self.treeview, 'editable', False))
+            and not self.screen.readonly)
 
     def get_fields(self):
         return [col.name for col in self.treeview.get_columns() if col.name]
@@ -1259,19 +1281,6 @@ class ViewTree(View):
         sel = self.treeview.get_selection()
         sel.selected_foreach(_func_sel_get, records)
         return records
-
-    def unset_editable(self):
-        self.treeview.editable = False
-        for col in self.treeview.get_columns():
-            for renderer in col.get_cell_renderers():
-                if isinstance(renderer, CellRendererToggle):
-                    renderer.set_property('activatable', False)
-                elif isinstance(renderer,
-                        (gtk.CellRendererProgress, CellRendererButton,
-                            gtk.CellRendererPixbuf)):
-                    pass
-                else:
-                    renderer.set_property('editable', False)
 
     def get_selected_paths(self):
         selection = self.treeview.get_selection()

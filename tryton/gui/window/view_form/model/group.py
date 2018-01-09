@@ -135,10 +135,12 @@ class Group(SignalEvent, list):
         del self.__id2record[record.id]
 
     def clear(self):
-        for record in self[:]:
+        # Use reversed order to minimize the cursor reposition as the cursor
+        # has more chances to be on top of the list.
+        for record in reversed(self[:]):
             self.signal('group-list-changed', ('record-removed', record))
             record.destroy()
-            self.pop(0)
+            self.pop()
         self.__id2record = {}
         self.record_removed, self.record_deleted = [], []
 
@@ -253,6 +255,8 @@ class Group(SignalEvent, list):
             self.signal('group-cleared')
 
         if new_records and modified:
+            for record in new_records:
+                record.modified_fields.setdefault('id')
             new_records[0].signal('record-modified')
             new_records[0].signal('record-changed')
 

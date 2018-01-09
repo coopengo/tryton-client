@@ -19,7 +19,12 @@ include_files = [
 
 if sys.platform == 'win32':
     include_files.extend([
+<<<<<<< HEAD
         ('share/themes/Coog', 'share/themes/MS-Windows'),
+=======
+        (os.path.join(sys.prefix, 'share/themes/MS-Windows'),
+            'share/themes/MS-Windows'),
+>>>>>>> 4.6
         (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)
@@ -66,7 +71,10 @@ setup(name='tryton',
         },
     executables=[Executable(
             'bin/tryton',
+<<<<<<< HEAD
             targetName = 'coog.exe',
+=======
+>>>>>>> 4.6
             base='Win32GUI' if sys.platform == 'win32' else None,
             icon=os.path.join(
                 'tryton', 'data', 'pixmaps', 'tryton', 'tryton.ico'),

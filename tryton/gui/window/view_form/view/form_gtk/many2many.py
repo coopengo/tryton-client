@@ -11,6 +11,7 @@ import gettext
 from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.domain_parser import quote
+from tryton.common.widget_style import widget_class
 
 _ = gettext.gettext
 
@@ -193,10 +194,8 @@ class Many2Many(Widget):
         if add_remove:
             domain = [domain, add_remove]
         context = self.field.get_context(self.record)
-        view_ids = self.attrs.get('view_ids', '').split(',')
-        if view_ids:
-            # Remove the first tree view as mode is form only
-            view_ids.pop(0)
+        # Remove the first tree view as mode is form only
+        view_ids = self.attrs.get('view_ids', '').split(',')[1:]
         return Screen(self.attrs['relation'], domain=domain,
             view_ids=view_ids,
             mode=['form'], views_preload=self.attrs.get('views', {}),
@@ -247,6 +246,8 @@ class Many2Many(Widget):
     def _set_label_state(self):
         attrlist = common.get_label_attributes(self._readonly, self._required)
         self.title.set_attributes(attrlist)
+        widget_class(self.title, 'readonly', self._readonly)
+        widget_class(self.title, 'required', self._required)
 
     def _set_button_sensitive(self):
         if self.record and self.field:

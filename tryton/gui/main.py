@@ -110,11 +110,17 @@ class Main(object):
         gtk.accel_map_add_entry('<tryton>/Form/Close', gtk.keysyms.W,
                 gtk.gdk.CONTROL_MASK)
         gtk.accel_map_add_entry('<tryton>/Form/Previous Tab',
-            gtk.keysyms.Page_Up, gtk.gdk.CONTROL_MASK)
+            gtk.keysyms.Left, gtk.gdk.CONTROL_MASK)
         gtk.accel_map_add_entry('<tryton>/Form/Next Tab',
-            gtk.keysyms.Page_Down, gtk.gdk.CONTROL_MASK)
+            gtk.keysyms.Right, gtk.gdk.CONTROL_MASK)
         gtk.accel_map_add_entry('<tryton>/Form/Reload', gtk.keysyms.R,
                 gtk.gdk.CONTROL_MASK)
+        gtk.accel_map_add_entry('<tryton>/Form/Attachments', gtk.keysyms.T,
+            gtk.gdk.CONTROL_MASK | gtk.gdk.SHIFT_MASK)
+        gtk.accel_map_add_entry('<tryton>/Form/Notes', gtk.keysyms.O,
+            gtk.gdk.CONTROL_MASK | gtk.gdk.SHIFT_MASK)
+        gtk.accel_map_add_entry('<tryton>/Form/Relate', gtk.keysyms.R,
+            gtk.gdk.CONTROL_MASK | gtk.gdk.SHIFT_MASK)
         gtk.accel_map_add_entry('<tryton>/Form/Actions', gtk.keysyms.E,
                 gtk.gdk.CONTROL_MASK)
         gtk.accel_map_add_entry('<tryton>/Form/Report', gtk.keysyms.P,
@@ -403,6 +409,7 @@ class Main(object):
         self.pane.get_child1().set_expanded(True)
         self.global_search_entry.grab_focus()
 
+<<<<<<< HEAD
     def set_title(self, value='', date=''):
         title = CONFIG['client.title']
         if value:
@@ -410,6 +417,31 @@ class Main(object):
         if date:
             title += ' (' + date + ')'
         self.window.set_title(title)
+=======
+    def set_title(self, value=''):
+        if CONFIG['login.profile']:
+            login_info = CONFIG['login.profile']
+        else:
+            login_info = '%s@%s/%s' % (
+                CONFIG['login.login'],
+                CONFIG['login.host'],
+                CONFIG['login.db'])
+        titles = [CONFIG['client.title'], login_info]
+        if value:
+            titles.append(value)
+        self.window.set_title(' - '.join(titles))
+        try:
+            style_context = self.window.get_style_context()
+        except AttributeError:
+            pass
+        else:
+            for name in style_context.list_classes():
+                if name.startswith('profile-'):
+                    style_context.remove_class(name)
+            if CONFIG['login.profile']:
+                style_context.add_class(
+                    'profile-%s' % CONFIG['login.profile'])
+>>>>>>> 4.6
 
     def _set_menu_connection(self):
         menu_connection = gtk.Menu()
@@ -881,18 +913,22 @@ class Main(object):
                 return
             raise
         func = lambda parameters: rpc.login(
+<<<<<<< HEAD
             host, port, database, username, parameters, language, date, True)
+=======
+            host, port, database, username, parameters, language)
+        self.set_title()  # Adds username/profile while password is asked
+>>>>>>> 4.6
         try:
             common.Login(func)
-        except Exception, exception:
-            if (isinstance(exception, TrytonError)
-                    and exception.faultCode == 'QueryCanceled'):
+        except TrytonError, exception:
+            if exception.faultCode == 'QueryCanceled':
                 return
-            if (isinstance(exception, TrytonServerError)
-                    and exception.faultCode.startswith('404')):
+            raise
+        except TrytonServerError, exception:
+            if exception.faultCode.startswith('404'):
                 return self.sig_login()
-            common.process_exception(exception)
-            return
+            raise
         self.get_preferences()
         self.favorite_unset()
         self.menuitem_favorite.set_sensitive(True)
@@ -1052,6 +1088,8 @@ class Main(object):
             lambda *a: gobject.idle_add(toggle_favorite, *a), treeview)
         # Unset fixed height mode to add column
         treeview.set_fixed_height_mode(False)
+        treeview.set_property(
+            'enable-grid-lines', gtk.TREE_VIEW_GRID_LINES_NONE)
         treeview.append_column(column)
 
         screen.search_filter()
@@ -1251,8 +1289,8 @@ class Main(object):
         if not urlp.scheme == 'tryton':
             return
         urlp = urlparse('http' + url[6:])
-        hostname, port = map(urllib.unquote,
-            (urlp.netloc.split(':', 1) + [CONFIG.defaults['login.port']])[:2])
+        hostname = common.get_hostname(urlp.netloc)
+        port = common.get_port(urlp.netloc)
         database, path = map(urllib.unquote,
             (urlp.path[1:].split('/', 1) + [''])[:2])
         if (not path or
@@ -1285,6 +1323,7 @@ class Main(object):
                     object_hook=object_hook)
                 context = json.loads(params.get('context', '{}'),
                     object_hook=object_hook)
+                context_model = params.get('context_model')
             except ValueError:
                 return
             if path:
@@ -1299,6 +1338,7 @@ class Main(object):
                     res_id=res_id,
                     domain=domain,
                     context=context,
+                    context_model=context_model,
                     mode=mode,
                     name=name,
                     limit=limit,

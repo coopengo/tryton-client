@@ -182,6 +182,7 @@ class Affix(Cell):
 
 
 class GenericText(Cell):
+    align = 0
 
     def __init__(self, view, attrs, renderer=None):
         super(GenericText, self).__init__()
@@ -227,13 +228,6 @@ class GenericText(Cell):
 
         field = record[self.attrs['name']]
 
-        if self.attrs.get('type', field.attrs.get('type')) in \
-                ('float', 'integer', 'biginteger', 'boolean',
-                'numeric', 'timedelta'):
-            align = 1
-        else:
-            align = 0
-
         editable = getattr(self.view.treeview, 'editable', False)
         states = ('invisible',)
         if editable:
@@ -274,8 +268,9 @@ class GenericText(Cell):
         else:
             if isinstance(cell, CellRendererToggle):
                 cell.set_property('activatable', False)
+        # ABD See #3428
         self._format_set(record, field, cell)
-        cell.set_property('xalign', align)
+        cell.set_property('xalign', self.align)
 
     def _set_foreground(self, value, cell):
         cell.set_property('foreground', value)
@@ -356,6 +351,7 @@ class Text(GenericText):
 
 
 class Int(GenericText):
+    align = 1
 
     def __init__(self, view, attrs, renderer=None):
         if renderer is None:
@@ -377,6 +373,7 @@ class Int(GenericText):
 
 
 class Boolean(GenericText):
+    align = 0.5
 
     def __init__(self, view, attrs=None,
             renderer=None):
@@ -466,7 +463,7 @@ class Time(Date):
 
 
 class TimeDelta(GenericText):
-    pass
+    align = 1
 
 
 class Float(Int):
@@ -486,6 +483,7 @@ class Float(Int):
 
 
 class Binary(GenericText):
+    align = 0.5
 
     def __init__(self, view, attrs, renderer=None):
         self.filename = attrs.get('filename')
@@ -586,6 +584,7 @@ class Binary(GenericText):
 
 
 class Image(GenericText):
+    align = 0.5
 
     def __init__(self, view, attrs=None, renderer=None):
         if renderer is None:
@@ -769,11 +768,7 @@ class O2O(M2O):
 
 
 class O2M(GenericText):
-
-    @realized
-    def setter(self, column, cell, store, iter):
-        super(O2M, self).setter(column, cell, store, iter)
-        cell.set_property('xalign', 0.5)
+    align = 0.5
 
     def get_textual_value(self, record):
         return '( ' + str(len(record[self.attrs['name']]
@@ -907,6 +902,7 @@ class Reference(GenericText, SelectionMixin):
 
 
 class ProgressBar(object):
+    align = 0.5
     orientations = {
         'left_to_right': gtk.PROGRESS_LEFT_TO_RIGHT,
         'right_to_left': gtk.PROGRESS_RIGHT_TO_LEFT,

@@ -14,6 +14,8 @@ except ImportError:
     sys.modules['cdecimal'] = decimal
 import os
 
+Gdk = None
+Gtk = None
 if os.environ.get('GTK_VERSION', '2').startswith('3'):
     import pygtkcompat
     pygtkcompat.enable()
@@ -107,6 +109,63 @@ if os.environ.get('GTK_VERSION', '2').startswith('3'):
     Pango.SCALE_LARGE = 1.2
     Pango.SCALE_X_LARGE = 1.2 * 1.2
     Pango.SCALE_XX_LARGE = 1.2 * 1.2 * 1.2
+
+    def make_attr_constructor(method):
+        def constructor(value, start_index, end_index):
+            attr = getattr(Pango, method)(value)
+            attr.start_index = start_index
+            if end_index >= 0:
+                attr.end_index = end_index
+            return attr
+        return constructor
+
+    def make_attr_2_constructor(method):
+        def constructor(one, two, start_index, end_index):
+            attr = getattr(Pango, method)(one, two)
+            attr.start_index = start_index
+            if end_index >= 0:
+                attr.end_index = end_index
+            return attr
+        return constructor
+
+    def make_attr_3_constructor(method):
+        def constructor(one, two, three, start_index, end_index):
+            attr = getattr(Pango, method)(one, two, three)
+            attr.start_index = start_index
+            if end_index >= 0:
+                attr.end_index = end_index
+            return attr
+        return constructor
+
+    for method, name, constructor in [
+            ('attr_language_new', 'AttrLanguage', make_attr_constructor),
+            ('attr_family_new', 'AttrFamily', make_attr_constructor),
+            ('attr_foreground_new', 'AttrForeground', make_attr_3_constructor),
+            ('attr_background_new', 'AttrBackground', make_attr_3_constructor),
+            ('attr_size_new', 'AttrSize', make_attr_constructor),
+            ('attr_size_new_absolute', 'AttrSizeAbsolute',
+                make_attr_constructor),
+            ('attr_style_new', 'AttrStyle', make_attr_constructor),
+            ('attr_weight_new', 'AttrWeight', make_attr_constructor),
+            ('attr_variant_new', 'AttrVariant', make_attr_constructor),
+            ('attr_stretch_new', 'AttrStretch', make_attr_constructor),
+            ('attr_font_desc_new', 'AttrFontDesc', make_attr_constructor),
+            ('attr_underline_new', 'AttrUnderline', make_attr_constructor),
+            ('attr_underline_color_new', 'AttrUnderlineColor',
+                make_attr_3_constructor),
+            ('attr_strikethrough_new', 'AttrStrikethrough',
+                make_attr_constructor),
+            ('attr_strikethrough_color_new', 'AttrStrikethroughColor',
+                make_attr_3_constructor),
+            ('attr_rise_new', 'AttrRise', make_attr_constructor),
+            ('attr_scale_new', 'AttrScale', make_attr_constructor),
+            ('attr_fallback_new', 'AttrFallback', make_attr_constructor),
+            ('attr_letter_spacing_new', 'AttrLetterSpacing',
+                make_attr_constructor),
+            ('attr_shape_new', 'AttrShape', make_attr_2_constructor),
+            ]:
+        if hasattr(Pango, method):
+            setattr(Pango, name, constructor(method))
 else:
     import pygtk
     pygtk.require('2.0')
@@ -156,6 +215,32 @@ if sys.platform == 'win32':
                 return super(Dialog, self).run()
     gtk.Dialog = Dialog
 
+CSS = """
+.readonly entry {
+    background-color: @insensitive_bg_color;
+}
+.required entry {
+    border-color: darker(@unfocused_borders);
+}
+.invalid entry {
+    border-color: @error_color;
+}
+"""
+
+if Gdk and Gtk:
+    screen = Gdk.Screen.get_default()
+    style_context = Gtk.StyleContext()
+    provider = Gtk.CssProvider()
+    provider.load_from_data(CSS)
+    style_context.add_provider_for_screen(
+        screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    theme_path = os.path.join(get_config_dir(), 'theme.css')
+    if os.path.exists(theme_path):
+        provider = Gtk.CssProvider()
+        provider.load_from_path(theme_path)
+        style_context.add_provider_for_screen(
+            screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+
 
 class TrytonClient(object):
     "Tryton client"
@@ -167,13 +252,12 @@ class TrytonClient(object):
             urlp = urlparse(url)
             if urlp.scheme == 'tryton':
                 urlp = urlparse('http' + url[6:])
-                hostname, port = (urlp.netloc.split(':', 1)
-                        + [CONFIG.defaults['login.port']])[:2]
+                hostname = common.get_hostname(urlp.netloc)
+                port = common.get_port(urlp.netloc)
                 database, _ = (urlp.path[1:].split('/', 1) + [None])[:2]
                 if IPCClient(hostname, port, database).write(url):
                     sys.exit(0)
-                CONFIG['login.server'] = hostname
-                CONFIG['login.port'] = port
+                CONFIG['login.host'] = urlp.netloc
                 CONFIG['login.db'] = database
                 CONFIG['login.expanded'] = True
                 CONFIG['proxy.active'] = False

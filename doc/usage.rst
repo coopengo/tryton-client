@@ -43,9 +43,7 @@ Options
 
 -u LOGIN, --user=LOGIN               Specify the login user
 
--p PORT, --port=PORT                 Specify the server port
-
--s SERVER, --server=SERVER           Specify the server hostname
+-s SERVER, --server=SERVER           Specify the server hostname:port
 
 Environment
 ***********
@@ -726,6 +724,26 @@ formatted text. The tags are explain follows:
   * Foreground color: It is a attribute `foreground` for `span` tag, i.e.
     <span foreground='#00f'>text</span>
 
+CSS
+***
+
+The client can be styled using the file `theme.css`.
+
+Here are the list of custom selectors:
+
+    * `.readonly`: readonly widget or label
+
+    * `.required`: widget or label of required field
+
+    * `.invalid`: widget for which the field value is not valid
+
+    * `window.profile-<name>`: the name of the connection profile is set on the
+      main window
+
+For more information about style option see `GTK+ CSS`_
+
+.. GTK+ CSS:: https://developer.gnome.org/gtk3/stable/chap-css-overview.html
+
 Appendix
 ********
 
@@ -741,6 +759,7 @@ Configuration File
    ~/.config/tryton/x.y/ca_certs         # Certification Authority (http://docs.python.org/library/ssl.html#ssl-certificates)
    ~/.config/tryton/x.y/profiles.cfg     # Profile configuration
    ~/.config/tryton/x.y/plugins          # Local user plugins directory
+   ~/.config.tryton/x.y/theme.css        # Custom CSS theme
 
 .. note::
     `~` means the home directory of the user.

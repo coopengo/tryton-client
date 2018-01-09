@@ -22,7 +22,6 @@ from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
 from tryton.pyson import PYSONDecoder
-from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
@@ -32,6 +31,7 @@ from tryton.pyson import PYSONDecoder
 import tryton.rpc as rpc
 
 _ = gettext.gettext
+logger = logging.getLogger(__name__)
 
 
 class Screen(SignalEvent):
@@ -788,8 +788,9 @@ class Screen(SignalEvent):
                 expanded_nodes = json.loads(expanded_nodes)
                 selected_nodes = json.loads(selected_nodes)
             except RPCException:
-                logging.getLogger(__name__).warn(
-                    _('Unable to get view tree state'))
+                logger.warn(
+                    _('Unable to get view tree state for %s')
+                    % self.model_name)
             self.tree_states[parent][view.children_field] = (
                 timestamp, expanded_nodes, selected_nodes)
         if view.view_type == 'tree':
@@ -847,9 +848,9 @@ class Screen(SignalEvent):
                             self.model_name, json_domain, view.children_field,
                             json_paths, json_selected_path,
                             process_exception=False)
-                    except (TrytonServerError, TrytonServerUnavailable):
-                        logging.getLogger(__name__).warn(
-                            _('Unable to set view tree state'))
+                    except Exception:
+                        logger.warn(
+                            _('Unable to set view tree state'), exc_info=True)
 
     def get_tree_domain(self, parent):
         if parent:
@@ -1068,8 +1069,6 @@ class Screen(SignalEvent):
     def get_buttons(self):
         'Return active buttons for the current view'
         def is_active(record, button):
-            if record.group.readonly or record.readonly:
-                return False
             if button.attrs.get('type', 'class') == 'instance':
                 return False
             states = record.expr_eval(button.attrs.get('states', {}))
@@ -1204,6 +1203,9 @@ class Screen(SignalEvent):
         if self.context:
             query_string.append(('context', json.dumps(
                         self.context, cls=JSONEncoder, separators=(',', ':'))))
+        if self.context_screen:
+            query_string.append(
+                ('context_model', self.context_screen.model_name))
         if name:
             query_string.append(
                 ('name', json.dumps(name, separators=(',', ':'))))

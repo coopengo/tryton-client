@@ -13,6 +13,7 @@ import tryton.common as common
 from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.domain_parser import quote
+from tryton.common.widget_style import widget_class
 
 _ = gettext.gettext
 
@@ -43,6 +44,43 @@ class One2Many(Widget):
         hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
         tooltips = common.Tooltips()
+
+        but_switch = gtk.Button()
+        tooltips.set_tip(but_switch, _('Switch'))
+        but_switch.connect('clicked', self.switch_view)
+        img_switch = gtk.Image()
+        img_switch.set_from_stock('tryton-fullscreen',
+            gtk.ICON_SIZE_SMALL_TOOLBAR)
+        img_switch.set_alignment(0.5, 0.5)
+        but_switch.add(img_switch)
+        but_switch.set_relief(gtk.RELIEF_NONE)
+        hbox.pack_start(but_switch, expand=False, fill=False)
+
+        self.but_pre = gtk.Button()
+        tooltips.set_tip(self.but_pre, _('Previous'))
+        self.but_pre.connect('clicked', self._sig_previous)
+        img_pre = gtk.Image()
+        img_pre.set_from_stock('tryton-go-previous',
+            gtk.ICON_SIZE_SMALL_TOOLBAR)
+        img_pre.set_alignment(0.5, 0.5)
+        self.but_pre.add(img_pre)
+        self.but_pre.set_relief(gtk.RELIEF_NONE)
+        hbox.pack_start(self.but_pre, expand=False, fill=False)
+
+        self.label = gtk.Label('(0,0)')
+        hbox.pack_start(self.label, expand=False, fill=False)
+
+        self.but_next = gtk.Button()
+        tooltips.set_tip(self.but_next, _('Next'))
+        self.but_next.connect('clicked', self._sig_next)
+        img_next = gtk.Image()
+        img_next.set_from_stock('tryton-go-next', gtk.ICON_SIZE_SMALL_TOOLBAR)
+        img_next.set_alignment(0.5, 0.5)
+        self.but_next.add(img_next)
+        self.but_next.set_relief(gtk.RELIEF_NONE)
+        hbox.pack_start(self.but_next, expand=False, fill=False)
+
+        hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
         self.focus_out = True
         self.wid_completion = None
@@ -131,45 +169,6 @@ class One2Many(Widget):
         self.but_undel.add(img_undel)
         self.but_undel.set_relief(gtk.RELIEF_NONE)
         hbox.pack_start(self.but_undel, expand=False, fill=False)
-
-        hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
-
-        self.but_pre = gtk.Button()
-        tooltips.set_tip(self.but_pre, _('Previous'))
-        self.but_pre.connect('clicked', self._sig_previous)
-        img_pre = gtk.Image()
-        img_pre.set_from_stock('tryton-go-previous',
-            gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_pre.set_alignment(0.5, 0.5)
-        self.but_pre.add(img_pre)
-        self.but_pre.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_pre, expand=False, fill=False)
-
-        self.label = gtk.Label('(0,0)')
-        hbox.pack_start(self.label, expand=False, fill=False)
-
-        self.but_next = gtk.Button()
-        tooltips.set_tip(self.but_next, _('Next'))
-        self.but_next.connect('clicked', self._sig_next)
-        img_next = gtk.Image()
-        img_next.set_from_stock('tryton-go-next', gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_next.set_alignment(0.5, 0.5)
-        self.but_next.add(img_next)
-        self.but_next.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_next, expand=False, fill=False)
-
-        hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
-
-        but_switch = gtk.Button()
-        tooltips.set_tip(but_switch, _('Switch'))
-        but_switch.connect('clicked', self.switch_view)
-        img_switch = gtk.Image()
-        img_switch.set_from_stock('tryton-fullscreen',
-            gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_switch.set_alignment(0.5, 0.5)
-        but_switch.add(img_switch)
-        but_switch.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(but_switch, expand=False, fill=False)
 
         if attrs.get('add_remove'):
             hbox.set_focus_chain([self.wid_text])
@@ -281,6 +280,8 @@ class One2Many(Widget):
     def _set_label_state(self):
         attrlist = common.get_label_attributes(self._readonly, self._required)
         self.title.set_attributes(attrlist)
+        widget_class(self.title, 'readonly', self._readonly)
+        widget_class(self.title, 'required', self._required)
 
     def _set_button_sensitive(self):
         access = common.MODELACCESS[self.screen.model_name]

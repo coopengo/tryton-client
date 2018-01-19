@@ -5,6 +5,7 @@ import pango
 import logging
 
 import tryton.common as common
+from tryton.common.widget_style import widget_class
 
 
 class StateMixin(object):
@@ -50,6 +51,8 @@ class Label(StateMixin, gtk.Label):
         if field is not None:
             self._format_set(record, field, attrlist)
         self.set_attributes(attrlist)
+        widget_class(self, 'readonly', readonly)
+        widget_class(self, 'required', required)
 
     def _set_background(self, value, attrlist):
         if value not in common.COLOR_RGB:

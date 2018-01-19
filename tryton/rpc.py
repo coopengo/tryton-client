@@ -64,6 +64,7 @@ def server_version(host, port):
         return None
 
 
+# ABD: Add date and set_date parameters to login function (ca093423)
 def login(host, port, database, username, parameters, language=None, date=None,
         set_date=None):
     global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE

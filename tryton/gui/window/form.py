@@ -545,6 +545,8 @@ class Form(SignalEvent, TabContent):
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
                 lambda b: self._action(quick_action, 'quick_actions'))
+            self.tooltips.set_tip(
+                qbutton, _(quick_action['name']))
             gtktoolbar.insert(qbutton, -1)
 
         return gtktoolbar

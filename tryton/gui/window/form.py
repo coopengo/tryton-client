@@ -780,6 +780,20 @@ class Form(TabContent):
         url_button.connect('toggled', self.action_popup)
         self.buttons['copy_url'] = url_button
         gtktoolbar.insert(url_button, -1)
+
+        quick_actions = toolbars.get('quick_actions', [])
+        if quick_actions:
+            gtktoolbar.insert(gtk.SeparatorToolItem(), -1)
+        for quick_action in quick_actions:
+            icon = quick_action.get('icon.rec_name')
+            if not icon:
+                icon = 'tryton-executable'
+            qbutton = gtk.ToolButton(icon)
+            qbutton.set_label(quick_action['name'])
+            qbutton.connect('clicked',
+                lambda b: self._action(quick_action, 'quick_actions'))
+            gtktoolbar.insert(qbutton, -1)
+
         return gtktoolbar
 
     def _create_popup_menu(self, widget, keyword, actions, special_action):

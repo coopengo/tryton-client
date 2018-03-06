@@ -36,7 +36,6 @@ from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment)
 from .form_gtk.sourceeditor import SourceView
-from .form_gtk.icon import Icon as Icon  # Coopengo specific
 
 _ = gettext.gettext
 
@@ -398,7 +397,6 @@ class ViewForm(View):
         'richtext': RichTextBox,
         'dict': DictWidget,
         'multiselection': MultiSelection,
-        'icon': Icon,  # Coopengo specific
         'pyson': PYSON,
         }
 

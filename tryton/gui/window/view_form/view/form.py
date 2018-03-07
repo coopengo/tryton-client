@@ -36,7 +36,6 @@ from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment)
 from .form_gtk.sourceeditor import SourceView
-from .form_gtk.icon import Icon as Icon  # Coopengo specific
 
 _ = gettext.gettext
 
@@ -173,9 +172,7 @@ class ViewForm(View):
         return container
 
     def _parse_image(self, node, container, attributes):
-        ICONFACTORY.register_icon(attributes['name'])
         image = Image(attrs=attributes)
-        image.set_from_stock(attributes['name'], gtk.ICON_SIZE_DIALOG)
         self.state_widgets.append(image)
         container.add(image, attributes)
 
@@ -398,7 +395,6 @@ class ViewForm(View):
         'richtext': RichTextBox,
         'dict': DictWidget,
         'multiselection': MultiSelection,
-        'icon': Icon,  # Coopengo specific
         'pyson': PYSON,
         }
 

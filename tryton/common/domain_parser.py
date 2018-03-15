@@ -977,6 +977,9 @@ class DomainParser(object):
                     operator = '!'
                 else:
                     operator = ''
+            factor = self._get_widget_factor(field['name'])
+            if factor and field['type'] in ('integer', 'float', 'numeric'):
+                value = (value * factor) if value else value
             formatted_value = format_value(field, value, target, self.context)
             if (operator in OPERATORS and
                     field['type'] in ('char', 'text', 'selection')

@@ -209,6 +209,7 @@ class Screen(SignalEvent):
 
         context = rpc.CONTEXT.copy()
         context.update(self.context)
+        # ABD: Store the screen (self) and the view_id into the parse domain
         domain_parser = DomainParser(fields, context, self, view_id)
         self._domain_parser[view_id] = domain_parser
         return domain_parser

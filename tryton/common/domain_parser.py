@@ -882,6 +882,7 @@ def test_operatorize():
 class DomainParser(object):
     "A parser for domain"
 
+    # ABD: Add screen and view_id to Fix #8516
     def __init__(self, fields, context=None, screen=None, view_id=None):
         self.fields = OrderedDict((name, f)
             for name, f in fields.iteritems()
@@ -977,6 +978,8 @@ class DomainParser(object):
                     operator = '!'
                 else:
                     operator = ''
+            # ABD: Retrieve factor to restore the original typed value in the
+            # search bar
             factor = self._get_widget_factor(field['name'])
             if factor and field['type'] in ('integer', 'float', 'numeric'):
                 value = (value * factor) if value else value
@@ -1148,12 +1151,18 @@ class DomainParser(object):
                 yield group
 
     def _get_view(self):
+        '''
+        ABD: Return the view associated to the DomainParser
+        '''
         views = [x for x in self.screen.views if self.screen and self.view_id
             and x.view_id == self.view_id]
         if views:
             return views[0]
 
     def _get_widget_factor(self, field_name):
+        '''
+        ABD: Return the factor set in the view on a given field.
+        '''
         view = self._get_view()
         if view:
             for widget in view.widgets[field_name]:
@@ -1199,6 +1208,9 @@ class DomainParser(object):
                             lvalue, rvalue = value.split('..', 1)
                             lvalue = convert_value(field, lvalue, self.context)
                             rvalue = convert_value(field, rvalue, self.context)
+                            # ABD: Divide the value using the factor to search
+                            # properly according the value showed in the screen
+                            # see #8516
                             if factor and field['type'] in ('integer', 'float',
                                         'numeric'):
                                 lvalue = (lvalue / factor) if \
@@ -1218,6 +1230,7 @@ class DomainParser(object):
                             field_name += '.rec_name'
                     else:
                         value = convert_value(field, value, self.context)
+                        # ABD: See #8516
                         if factor and field['type'] in ('integer', 'float',
                                 'numeric'):
                             value = (value / factor) if value else value

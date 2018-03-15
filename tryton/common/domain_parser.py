@@ -882,7 +882,7 @@ def test_operatorize():
 class DomainParser(object):
     "A parser for domain"
 
-    def __init__(self, fields, context=None):
+    def __init__(self, fields, context=None, screen=None, view_id=None):
         self.fields = OrderedDict((name, f)
             for name, f in fields.iteritems()
             if f.get('searchable', True))
@@ -890,6 +890,8 @@ class DomainParser(object):
             for f in fields.itervalues()
             if f.get('searchable', True))
         self.context = context
+        self.screen = screen
+        self.view_id = view_id
 
     def parse(self, input_):
         "Return domain for the input string"
@@ -1142,9 +1144,25 @@ class DomainParser(object):
             if group != (None,):
                 yield group
 
+    def _get_view(self):
+        views = [x for x in self.screen.views if self.screen and self.view_id
+            and x.view_id == self.view_id]
+        if views:
+            return views[0]
+
+    def _get_widget_factor(self, field_name):
+        view = self._get_view()
+        if view:
+            for widget in view.widgets[field_name]:
+                factor = widget.attrs.get('factor')
+                if factor:
+                    return int(factor)
+        return 1
+
     def parse_clause(self, tokens):
         "Parse clause"
         for clause in tokens:
+            factor = None
             if isgenerator(clause):
                 yield self.parse_clause(clause)
             elif clause in ('OR', 'AND'):
@@ -1156,7 +1174,6 @@ class DomainParser(object):
                     name, operator, value = clause
                     field = self.strings[name.lower()]
                     field_name = field['name']
-
                     target = None
                     if field['type'] == 'reference':
                         target, value = split_target_value(field, value)
@@ -1174,10 +1191,15 @@ class DomainParser(object):
                         operator = negate_operator(default_operator(field))
                     if field['type'] in ('integer', 'float', 'numeric',
                             'datetime', 'date', 'time'):
+                        factor = self._get_widget_factor(field_name)
                         if value and '..' in value:
                             lvalue, rvalue = value.split('..', 1)
                             lvalue = convert_value(field, lvalue, self.context)
                             rvalue = convert_value(field, rvalue, self.context)
+                            if factor and field['type'] in ('integer', 'float',
+                                    'numeric'):
+                                lvalue /= factor
+                                rvalue /= factor
                             yield iter([
                                     (field_name, '>=', lvalue),
                                     (field_name, '<=', rvalue),
@@ -1191,6 +1213,10 @@ class DomainParser(object):
                             field_name += '.rec_name'
                     else:
                         value = convert_value(field, value, self.context)
+                        if factor and field['type'] in ('integer', 'float',
+                                'numeric'):
+                            value /= factor
+
                     if 'like' in operator:
                         value = likify(value)
                     if target:

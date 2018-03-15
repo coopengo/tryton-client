@@ -1197,9 +1197,11 @@ class DomainParser(object):
                             lvalue = convert_value(field, lvalue, self.context)
                             rvalue = convert_value(field, rvalue, self.context)
                             if factor and field['type'] in ('integer', 'float',
-                                    'numeric'):
-                                lvalue /= factor
-                                rvalue /= factor
+                                        'numeric'):
+                                lvalue = (lvalue / factor) if \
+                                    lvalue else lvalue
+                                rvalue = (rvalue / factor) if \
+                                    rvalue else rvalue
                             yield iter([
                                     (field_name, '>=', lvalue),
                                     (field_name, '<=', rvalue),
@@ -1215,7 +1217,7 @@ class DomainParser(object):
                         value = convert_value(field, value, self.context)
                         if factor and field['type'] in ('integer', 'float',
                                 'numeric'):
-                            value /= factor
+                            value = (value / factor) if value else value
 
                     if 'like' in operator:
                         value = likify(value)

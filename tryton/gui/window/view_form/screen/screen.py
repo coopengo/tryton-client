@@ -212,7 +212,8 @@ class Screen(SignalEvent):
 
         context = rpc.CONTEXT.copy()
         context.update(self.context)
-        domain_parser = DomainParser(fields, context)
+        # ABD: Store the screen (self) and the view_id into the parse domain
+        domain_parser = DomainParser(fields, context, self, view_id)
         self._domain_parser[view_id] = domain_parser
         return domain_parser
 
@@ -256,7 +257,6 @@ class Screen(SignalEvent):
         tab_domain = self.screen_container.get_tab_domain()
         if tab_domain:
             domain = ['AND', domain, tab_domain]
-
         try:
             ids = RPCExecute('model', self.model_name, 'search', domain,
                 self.offset, self.limit, self.order, context=self.context)

@@ -1232,7 +1232,7 @@ class ViewTree(View):
                 text = '%s / %s' % (selected_sum, sum_)
             else:
                 text = '-'
-            label.set_text(text)
+            label.set_markup('<b>' + text + '</b>')
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

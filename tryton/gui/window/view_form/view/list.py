@@ -1229,10 +1229,12 @@ class ViewTree(View):
                         '%s', selected_sum or 0, True)
                     sum_ = locale.format('%s', sum_ or 0, True)
 
-                text = '%s / %s' % (selected_sum, sum_)
+                text1 = '%s' % (selected_sum)
+                text2 = ' / %s' % (sum_)
+
             else:
-                text = '-'
-            label.set_markup('<b>' + text + '</b>')
+                text2 = '-'
+            label.set_markup('<b>' + text1 + '</b>' + text2)
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

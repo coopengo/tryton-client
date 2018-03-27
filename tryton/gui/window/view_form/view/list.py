@@ -1229,6 +1229,7 @@ class ViewTree(View):
                         '%s', selected_sum or 0, True)
                     sum_ = locale.format('%s', sum_ or 0, True)
 
+                # coog specific feature #8374
                 text1 = '%s' % (selected_sum)
                 text2 = ' / %s' % (sum_)
 

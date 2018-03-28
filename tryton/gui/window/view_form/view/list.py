@@ -602,6 +602,11 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
+        if 'high_light_sum' not in attributes:
+            high_light_sum_ = "0"
+        else:
+            high_light_sum_ = attributes['high_light_sum']
+
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']
         else:
@@ -614,7 +619,7 @@ class ViewTree(View):
         hbox.show_all()
         self.sum_box.pack_start(hbox, expand=False, fill=False)
 
-        self.sum_widgets.append((attributes['name'], sum_))
+        self.sum_widgets.append((attributes['name'], sum_, high_light_sum_))
 
     def sort_model(self, column):
         for col in self.treeview.get_columns():
@@ -1185,7 +1190,7 @@ class ViewTree(View):
     @delay
     def update_sum(self):
         selected_records = self.selected_records
-        for name, label in self.sum_widgets:
+        for name, label, high_light_sum_ in self.sum_widgets:
             sum_ = None
             selected_sum = None
             loaded = True
@@ -1234,8 +1239,12 @@ class ViewTree(View):
                 text2 = ' / %s' % (sum_)
 
             else:
+                text1 = ''
                 text2 = '-'
-            label.set_markup('<b>' + text1 + '</b>' + text2)
+            if high_light_sum_ == "1":
+                label.set_markup( text1 + '<b>' + text2 + '</b>' )
+            else:
+                label.set_markup( text1 + text2 )
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

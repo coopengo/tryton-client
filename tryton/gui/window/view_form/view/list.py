@@ -602,10 +602,7 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
-        if 'highlight_sum' not in attributes:
-            highlight_sum_ = "0"
-        else:
-            highlight_sum_ = attributes['highlight_sum']
+        highlight_sum_ = attributes.get('highlight_sum','0')
 
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']

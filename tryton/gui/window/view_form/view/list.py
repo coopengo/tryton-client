@@ -600,6 +600,8 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
+        highlight_sum_ = attributes.get('highlight_sum','0')
+
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']
         else:
@@ -612,7 +614,7 @@ class ViewTree(View):
         hbox.show_all()
         self.sum_box.pack_start(hbox, expand=False, fill=False)
 
-        self.sum_widgets.append((attributes['name'], sum_))
+        self.sum_widgets.append((attributes['name'], sum_, highlight_sum_))
 
     def sort_model(self, column):
         for col in self.treeview.get_columns():
@@ -1178,7 +1180,7 @@ class ViewTree(View):
     @delay
     def update_sum(self):
         selected_records = self.selected_records
-        for name, label in self.sum_widgets:
+        for name, label, highlight_sum_ in self.sum_widgets:
             sum_ = None
             selected_sum = None
             loaded = True
@@ -1222,10 +1224,17 @@ class ViewTree(View):
                         '%s', selected_sum or 0, True)
                     sum_ = locale.format('%s', sum_ or 0, True)
 
-                text = '%s / %s' % (selected_sum, sum_)
+                # coog specific feature #8374
+                text1 = '%s /' % (selected_sum)
+                text2 = ' %s' % (sum_)
+
             else:
-                text = '-'
-            label.set_text(text)
+                text1 = ''
+                text2 = '-'
+            if highlight_sum_ == "1":
+                label.set_markup( text1 + '<b>' + text2 + '</b>' )
+            else:
+                label.set_markup( text1 + text2 )
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

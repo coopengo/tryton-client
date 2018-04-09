@@ -1154,7 +1154,9 @@ class DomainParser(object):
         '''
         ABD: Return the view associated to the DomainParser
         '''
-        views = [x for x in self.screen.views if self.screen and self.view_id
+        if not self.screen or not self.screen.views:
+            return
+        views = [x for x in self.screen.views and self.view_id
             and x.view_id == self.view_id]
         if views:
             return views[0]

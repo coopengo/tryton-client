@@ -9,8 +9,8 @@ from tryton.common import get_toplevel_window
 from tryton import __version_coog__
 
 COPYRIGHT = '''\
-Copyright (C) 2012-2016 Coopengo.
-Copyright (C) 2010-2011 Nicolas Évrard.
+Copyright (C) 2012-2018 Coopengo.
+Copyright (C) 2010-2018 Nicolas Évrard.
 Copyright (C) 2007-2018 Cédric Krier.
 Copyright (C) 2007-2011 Bertrand Chenal.
 Copyright (C) 2008-2018 B2CK SPRL.

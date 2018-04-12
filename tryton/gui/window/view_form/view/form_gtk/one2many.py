@@ -89,8 +89,7 @@ class One2Many(Widget):
             self.wid_text = PlaceholderEntry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
-            self.wid_text.connect('focus-out-event',
-                lambda *a: self._focus_out())
+            self.wid_text.connect('focus-out-event', self._focus_out)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
             if int(self.attrs.get('completion', 1)):
@@ -244,6 +243,8 @@ class One2Many(Widget):
         return False
 
     def destroy(self):
+        if self.attrs.get('add_remove'):
+            self.wid_text.disconnect_by_func(self._focus_out)
         self.screen.destroy()
 
     def _on_activate(self):
@@ -334,6 +335,7 @@ class One2Many(Widget):
                     and access['write']
                     and access['read']))
             self.wid_text.set_sensitive(self.but_add.get_sensitive())
+            self.wid_text.set_editable(self.but_add.get_sensitive())
 
         # New button must be added to focus chain to allow keyboard only
         # creation when there is no existing record on form view.

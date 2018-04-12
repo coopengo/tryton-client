@@ -296,13 +296,11 @@ def request_server(server_widget):
 
 
 def get_toplevel_window():
-    windows = [x for x in gtk.window_list_toplevels()
-        if x.get_window() and x.props.visible
-        and x.props.type == gtk.WINDOW_TOPLEVEL]
-    trans2windows = dict((x.get_transient_for(), x) for x in windows)
-    for window in set(windows) - set(trans2windows.iterkeys()):
-        return window
-    return trans2windows[None]
+    for window in gtk.window_list_toplevels():
+        if window.is_active() and window.props.type == gtk.WINDOW_TOPLEVEL:
+            return window
+    from tryton.gui.main import Main
+    return Main.get_main().window
 
 
 def get_sensible_widget(window):
@@ -1072,22 +1070,21 @@ def process_exception(exception, *args, **kwargs):
         elif (exception.faultCode.startswith('403')
                 or exception.faultCode.startswith('401')):
             from tryton.gui.main import Main
-            if not PLOCK.acquire(False):
-                return
-            language = CONFIG['client.lang']
-            func = lambda parameters: rpc.login(
-                rpc._HOST, rpc._PORT, rpc._DATABASE, rpc._USERNAME, parameters,
-                language)
-            try:
-                Login(func)
-            except TrytonError, exception:
-                if exception.faultCode == 'QueryCanceled':
-                    Main.get_main().sig_quit()
-                raise
-            finally:
-                PLOCK.release()
-            if args:
-                return rpc_execute(*args)
+            if PLOCK.acquire(False):
+                language = CONFIG['client.lang']
+                func = lambda parameters: rpc.login(
+                    rpc._HOST, rpc._PORT, rpc._DATABASE, rpc._USERNAME,
+                    parameters, language)
+                try:
+                    Login(func)
+                except TrytonError, exception:
+                    if exception.faultCode == 'QueryCanceled':
+                        Main.get_main().sig_quit()
+                    raise
+                finally:
+                    PLOCK.release()
+                if args:
+                    return rpc_execute(*args)
         else:
             error(exception.faultCode, exception.faultString)
     else:

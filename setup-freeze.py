@@ -52,7 +52,7 @@ setup(name='tryton',
     version=version,
     options={
         'build_exe': {
-            'no_compress': True,
+            'no_compress': False,
             'include_files': include_files,
             'silent': True,
             'packages': ['gtk'],

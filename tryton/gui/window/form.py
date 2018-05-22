@@ -413,6 +413,13 @@ class Form(SignalEvent, TabContent):
                 'attach'):
             button = self.buttons[button_id]
             can_be_sensitive = getattr(button, '_can_be_sensitive', True)
+            if button_id in {'print', 'relate', 'email', 'open'}:
+                action_type = button_id
+                if button_id in {'email', 'open'}:
+                    action_type = 'print'
+                can_be_sensitive |= any(
+                    b.attrs.get('keyword', 'action') == action_type
+                    for b in screen.get_buttons())
             button.props.sensitive = (bool(signal_data[0])
                 and can_be_sensitive)
         button_switch = self.buttons['switch']
@@ -553,7 +560,7 @@ class Form(SignalEvent, TabContent):
     def _create_popup_menu(self, widget, keyword, actions, special_action):
         menu = gtk.Menu()
         menu.connect('deactivate', self._popup_menu_hide, widget)
-        widget.connect('toggled', self._update_popup, menu, special_action)
+        widget.connect('toggled', self._update_popup_menu, menu, keyword)
 
         for action in actions:
             new_action = action.copy()
@@ -584,16 +591,15 @@ class Form(SignalEvent, TabContent):
     def _popup_menu_hide(self, menuitem, togglebutton):
         togglebutton.props.active = False
 
-    def _update_popup(self, tbutton, menu, keyword):
-        assert keyword in ['print','action','relate','email','open']
+    def _update_popup_menu(self, tbutton, menu, keyword):
         for item in menu.get_children():
             if (getattr(item, '_update_action', False)
                     or isinstance(item, gtk.SeparatorMenuItem)):
                 menu.remove(item)
 
-        buttons = [button for button in self.screen.get_buttons()
-            if keyword in button.attrs.get('keywords', 'action').split(',')]
-        if buttons:
+        buttons = [b for b in self.screen.get_buttons()
+            if keyword == b.attrs.get('keyword', 'action')]
+        if buttons and menu.get_children():
             menu.add(gtk.SeparatorMenuItem())
         for button in buttons:
             menuitem = gtk.ImageMenuItem()
@@ -607,22 +613,34 @@ class Form(SignalEvent, TabContent):
                 lambda m, attrs: self.screen.button(attrs), button.attrs)
             menuitem._update_action = True
             menu.add(menuitem)
+        menu.add(gtk.SeparatorMenuItem())
+        kw_plugins = []
 
-        if keyword == 'action':
+        for plugin in plugins.MODULES:
+            for plugin_spec in plugin.get_plugins(self.model):
+                name, func = plugin_spec[:2]
+                try:
+                    plugin_keyword = plugin_spec[2]
+                except IndexError:
+                    plugin_keyword = 'action'
+                if keyword != plugin_keyword:
+                    continue
+                kw_plugins.append((name, func))
+
+        if kw_plugins:
             menu.add(gtk.SeparatorMenuItem())
-            for plugin in plugins.MODULES:
-                for name, func in plugin.get_plugins(self.model):
-                    menuitem = gtk.MenuItem('_' + name)
-                    menuitem.set_use_underline(True)
-                    menuitem.connect('activate', lambda m, func: func({
-                                'model': self.model,
-                                'ids': [r.id
-                                    for r in self.screen.selected_records],
-                                'id': (self.screen.current_record.id
-                                    if self.screen.current_record else None),
-                                }), func)
-                    menuitem._update_action = True
-                    menu.add(menuitem)
+        for name, func in kw_plugins:
+            menuitem = gtk.MenuItem('_' + name)
+            menuitem.set_use_underline(True)
+            menuitem.connect('activate', lambda m, func: func({
+                        'model': self.model,
+                        'ids': [r.id
+                            for r in self.screen.selected_records],
+                        'id': (self.screen.current_record.id
+                            if self.screen.current_record else None),
+                        }), func)
+            menuitem._update_action = True
+            menu.add(menuitem)
 
     def url_copy(self, menuitem):
         url = self.screen.get_url(self.name)

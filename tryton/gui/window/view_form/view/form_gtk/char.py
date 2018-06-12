@@ -8,7 +8,6 @@ from .widget import Widget, TranslateMixin
 from tryton.common import Tooltips
 from tryton.common.entry_position import reset_position
 from tryton.common.selection import PopdownMixin, selection_shortcuts
-from tryton.common.widget_style import set_widget_style
 from tryton.config import CONFIG
 
 _ = gettext.gettext
@@ -60,17 +59,14 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             entry.set_max_length(field_size or 0)
         return entry
 
-    @staticmethod
-    def translate_widget_set(widget, value):
+    def translate_widget_set(self, widget, value):
         widget.set_text(value or '')
         reset_position(widget)
 
-    @staticmethod
-    def translate_widget_get(widget):
+    def translate_widget_get(self, widget):
         return widget.get_text()
 
-    @staticmethod
-    def translate_widget_set_readonly(widget, value):
+    def translate_widget_set_readonly(self, widget, value):
         widget.set_editable(not value)
         widget.props.sensitive = not value
 
@@ -160,7 +156,6 @@ class Char(Widget, TranslateMixin, PopdownMixin):
         else:
             entry_editable = self.entry
         entry_editable.set_editable(not value)
-        set_widget_style(entry_editable, not value)
         if value and CONFIG['client.fast_tabbing']:
             self.widget.set_focus_chain([])
         else:

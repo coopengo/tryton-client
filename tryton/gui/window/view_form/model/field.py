@@ -15,7 +15,6 @@ import decimal
 from decimal import Decimal
 import math
 from tryton.common import RPCExecute, RPCException
-import tryton.rpc as rpc
 
 
 class Field(object):
@@ -60,11 +59,18 @@ class Field(object):
         return concat(*self.domains_get(record, pre_validate))
 
     def get_context(self, record):
-        context = record.get_context().copy()
-        if record.parent:
-            context.update(record.parent.get_context())
+        context = record.get_context()
         context.update(record.expr_eval(self.attrs.get('context', {})))
         return context
+
+    def get_search_context(self, record):
+        context = self.get_context(record)
+        context.update(record.expr_eval(self.attrs.get('search_context', {})))
+        return context
+
+    def get_search_order(self, record):
+        order = record.expr_eval(self.attrs.get('search_order', None))
+        return order
 
     def _is_empty(self, record):
         return not self.get_eval(record)
@@ -244,7 +250,7 @@ class DateTimeField(Field):
 
     def date_format(self, record):
         context = self.get_context(record)
-        return context.get('date_format', '%x')
+        return common.date_format(context.get('date_format'))
 
     def time_format(self, record):
         return record.expr_eval(self.attrs['format'])
@@ -263,7 +269,7 @@ class DateField(Field):
 
     def date_format(self, record):
         context = self.get_context(record)
-        return context.get('date_format', '%x')
+        return common.date_format(context.get('date_format'))
 
 
 class TimeField(Field):
@@ -290,19 +296,18 @@ class TimeDeltaField(Field):
     def _is_empty(self, record):
         return self.get(record) is None
 
-    def converter(self, record):
-        # TODO allow local context converter
-        return rpc.CONTEXT.get(self.attrs.get('converter'))
+    def converter(self, group):
+        return group.context.get(self.attrs.get('converter'))
 
     def set_client(self, record, value, force_change=False):
         if isinstance(value, basestring):
-            value = common.timedelta.parse(value, self.converter(record))
+            value = common.timedelta.parse(value, self.converter(record.group))
         super(TimeDeltaField, self).set_client(
             record, value, force_change=force_change)
 
     def get_client(self, record):
         value = super(TimeDeltaField, self).get_client(record)
-        return common.timedelta.format(value, self.converter(record))
+        return common.timedelta.format(value, self.converter(record.group))
 
 
 class FloatField(Field):
@@ -967,7 +972,7 @@ class DictField(Field):
 
     def date_format(self, record):
         context = self.get_context(record)
-        return context.get('date_format', '%x')
+        return common.date_format(context.get('date_format'))
 
     def time_format(self, record):
         return '%X'

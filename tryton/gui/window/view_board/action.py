@@ -57,7 +57,7 @@ class Action(SignalEvent):
         search_context['context'] = self.context
         search_context['_user'] = rpc._USER
         search_value = PYSONDecoder(search_context).decode(
-            self.action['pyson_search_value'] or '{}')
+            self.action['pyson_search_value'] or '[]')
 
         self.widget = gtk.Frame()
         self.widget.set_border_width(0)
@@ -100,7 +100,8 @@ class Action(SignalEvent):
                     'id': (self.screen.current_record.id
                         if self.screen.current_record else None),
                     'ids': [r.id for r in self.screen.selected_records],
-                    }, context=self.screen.context.copy(), warning=False)
+                    }, context=self.screen.group._context.copy(),
+                warning=False)
         else:
             def callback(result):
                 if result:

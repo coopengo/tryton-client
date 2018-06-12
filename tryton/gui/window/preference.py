@@ -30,7 +30,9 @@ class Preference(NoModal):
 
         self.but_cancel = self.win.add_button(gtk.STOCK_CANCEL,
                 gtk.RESPONSE_CANCEL)
+        self.but_cancel.set_always_show_image(True)
         self.but_ok = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
 
@@ -75,6 +77,7 @@ class Preference(NoModal):
         self.win.set_title(_('Preference'))
 
         width, height = self.parent.get_size()
+        # JCA: Lower New window size reduction to 5 percent
         self.win.set_default_size(int(width * 0.95), int(height * 0.95))
 
         self.register()
@@ -90,7 +93,7 @@ class Preference(NoModal):
                     context)
                 try:
                     Login(func)
-                except TrytonError, exception:
+                except TrytonError as exception:
                     if exception.faultCode == 'QueryCanceled':
                         return
                     raise

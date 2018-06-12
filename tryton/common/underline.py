@@ -1,4 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-__version__ = "4.8.3"
-__version_coog__ = "2.1"
+
+
+def set_underline(label):
+    "Set underscore for mnemonic accelerator"
+    return '_' + label.replace('_', '__')

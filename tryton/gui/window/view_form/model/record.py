@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import logging
-import tryton.rpc as rpc
 from tryton.signal_event import SignalEvent
 import tryton.common as common
 from tryton.pyson import PYSONDecoder
@@ -125,7 +124,7 @@ class Record(SignalEvent):
             try:
                 values = RPCExecute('model', self.model_name, 'read',
                     id2record.keys(), fnames, context=ctx)
-            except RPCException, exception:
+            except RPCException:
                 values = [{'id': x} for x in id2record]
                 default_values = dict((f, None) for f in fnames)
                 for value in values:
@@ -140,7 +139,7 @@ class Record(SignalEvent):
                     for key in record.modified_fields:
                         value.pop(key, None)
                     record.set(value, signal=False)
-        return self.group.fields.get(name, False)
+        return self.group.fields[name]
 
     def __repr__(self):
         return '<Record %s@%s at %s>' % (self.id, self.model_name, id(self))
@@ -524,16 +523,23 @@ class Record(SignalEvent):
                 self[field]
         self.validate(fields or [])
 
+    def reset(self, value):
+        self.cancel()
+        self.set(value, signal=False)
+
+        if self.parent:
+            self.parent.on_change([self.group.child_name])
+            self.parent.on_change_with([self.group.child_name])
+
+        self.signal('record-changed')
+
     def expr_eval(self, expr):
         if not isinstance(expr, basestring):
             return expr
-        ctx = rpc.CONTEXT.copy()
-        ctx['context'] = ctx.copy()
-        ctx['context'].update(self.get_context())
-        ctx.update(self.get_eval())
+        ctx = self.get_eval()
+        ctx['context'] = self.get_context()
         ctx['active_model'] = self.model_name
         ctx['active_id'] = self.id
-        ctx['_user'] = rpc._USER
         if self.parent and self.parent_name:
             ctx['_parent_' + self.parent_name] = \
                 common.EvalEnvironment(self.parent)

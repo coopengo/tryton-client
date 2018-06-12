@@ -14,6 +14,7 @@ from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.domain_parser import quote
 from tryton.common.widget_style import widget_class
+from tryton.common.underline import set_underline
 
 _ = gettext.gettext
 
@@ -37,7 +38,8 @@ class One2Many(Widget):
         self.title_box = hbox = gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
 
-        self.title = gtk.Label(attrs.get('string', ''))
+        self.title = gtk.Label(set_underline(attrs.get('string', '')))
+        self.title.set_use_underline(True)
         self.title.set_alignment(0.0, 0.5)
         hbox.pack_start(self.title, expand=True, fill=True)
 
@@ -89,8 +91,7 @@ class One2Many(Widget):
             self.wid_text = PlaceholderEntry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
-            self.wid_text.connect('focus-out-event',
-                lambda *a: self._focus_out())
+            self.wid_text.connect('focus-out-event', self._focus_out)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
             if int(self.attrs.get('completion', 1)):
@@ -202,6 +203,9 @@ class One2Many(Widget):
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True)
 
+        self.title.set_mnemonic_widget(
+            self.screen.current_view.mnemonic_widget)
+
         self.screen.widget.connect('key_press_event', self.on_keypress)
         if self.attrs.get('add_remove'):
             self.wid_text.connect('key_press_event', self.on_keypress)
@@ -244,6 +248,8 @@ class One2Many(Widget):
         return False
 
     def destroy(self):
+        if self.attrs.get('add_remove'):
+            self.wid_text.disconnect_by_func(self._focus_out)
         self.screen.destroy()
 
     def _on_activate(self):
@@ -251,7 +257,14 @@ class One2Many(Widget):
 
     def switch_view(self, widget):
         self.screen.switch_view()
+        # ABD: Specific, keep colors
         self.color_set(self.color_name)
+        mnemonic_widget = self.screen.current_view.mnemonic_widget
+        string = self.attrs.get('string', '')
+        if mnemonic_widget:
+            string = set_underline(string)
+        self.title.set_mnemonic_widget(mnemonic_widget)
+        self.title.set_label(string)
 
     @property
     def modified(self):
@@ -421,14 +434,16 @@ class One2Many(Widget):
                 search_set()
 
             domain = field.domain_get(first)
-            context = field.get_context(first)
+            context = field.get_search_context(first)
+            order = field.get_search_order(first)
 
             def callback(result):
                 if result:
                     product[field.name] = result
 
             win_search = WinSearch(relation, callback, sel_multi=True,
-                context=context, domain=domain, title=self.attrs.get('string'))
+                context=context, domain=domain, order=order,
+                title=self.attrs.get('string'))
             win_search.win.connect('destroy', search_set)
             win_search.screen.search_filter()
             win_search.show()
@@ -498,7 +513,7 @@ class One2Many(Widget):
         if not access['write'] or not access['read']:
             return
         domain = self.field.domain_get(self.record)
-        context = self.field.get_context(self.record)
+        context = self.field.get_search_context(self.record)
         domain = [domain, self.record.expr_eval(self.attrs.get('add_remove'))]
         removed_ids = self.field.get_removed_ids(self.record)
         domain = ['OR', domain, ('id', 'in', removed_ids)]
@@ -519,8 +534,9 @@ class One2Many(Widget):
             self.screen.set_cursor()
             self.wid_text.set_text('')
 
+        order = self.field.get_search_order(self.record)
         win = WinSearch(self.attrs['relation'], callback, sel_multi=True,
-            context=context, domain=domain,
+            context=context, domain=domain, order=order,
             view_ids=self.attrs.get('view_ids', '').split(','),
             views_preload=self.attrs.get('views', {}),
             new=self.but_new.get_property('sensitive'),

@@ -605,10 +605,10 @@ class Image(GenericText):
             else:
                 value = field.get_data(record)
         pixbuf = data2pixbuf(value)
-        if (self.attrs.get('width', -1) != -1 or
-                self.attrs.get('height', -1) != -1):
-            pixbuf = common.resize_pixbuf(pixbuf,
-                self.attrs['width'], self.attrs['height'])
+        width = self.attrs.get('width', -1)
+        height = self.attrs.get('height', -1)
+        if width != -1 or height != -1:
+            pixbuf = common.resize_pixbuf(pixbuf, width, height)
         cell.set_property('pixbuf', pixbuf)
 
     def get_textual_value(self, record):
@@ -632,15 +632,50 @@ class M2O(GenericText):
                 callback()
             return
 
-        relation = record[self.attrs['name']].attrs['relation']
-        domain = record[self.attrs['name']].domain_get(record)
-        context = record[self.attrs['name']].get_context(record)
-        win = self.search_remote(record, relation, text, domain=domain,
-            context=context, callback=callback)
+        field = record[self.attrs['name']]
+        win = self.search_remote(record, field, text, callback=callback)
         if len(win.screen.group) == 1:
             win.response(None, gtk.RESPONSE_OK)
         else:
             win.show()
+
+    def editing_started(self, cell, editable, path):
+        super(M2O, self).editing_started(cell, editable, path)
+        record, field = self._get_record_field(path)
+
+        def changed(editable):
+            text = editable.get_text()
+            if field.get_client(record) != text:
+                field.set_client(record, (None, ''))
+
+            if field.get(record):
+                stock1, tooltip1 = 'tryton-open', _("Open the record <F2>")
+                stock2, tooltip2 = 'tryton-clear', _("Clear the field <Del>")
+            else:
+                stock1, tooltip1 = None, ''
+                stock2, tooltip2 = 'tryton-find', _("Search a record <F2>")
+            for pos, stock, tooltip in [
+                    (gtk.ENTRY_ICON_PRIMARY, stock1, tooltip1),
+                    (gtk.ENTRY_ICON_SECONDARY, stock2, tooltip2)]:
+                editable.set_icon_from_stock(pos, stock)
+                editable.set_icon_tooltip_text(pos, tooltip)
+
+        def icon_press(editable, icon_pos, event):
+            value = field.get(record)
+            if icon_pos == gtk.ENTRY_ICON_SECONDARY and value:
+                field.set_client(record, (None, ''))
+                editable.set_text('')
+            elif value:
+                self.open_remote(record, create=False, changed=False)
+            else:
+                self.open_remote(
+                    record, create=False, changed=True,
+                    text=editable.get_text())
+
+        editable.connect('icon-press', icon_press)
+        editable.connect('changed', changed)
+        changed(editable)
+        return False
 
     def open_remote(self, record, create=True, changed=False, text=None,
             callback=None):
@@ -661,9 +696,9 @@ class M2O(GenericText):
         elif not changed:
             obj_id = field.get(record)
         else:
-            self.search_remote(record, relation, text, domain=domain,
-                context=context, callback=callback).show()
+            self.search_remote(record, field, text, callback=callback).show()
             return
+
         screen = Screen(relation, domain=domain, context=context,
             mode=['form'], view_ids=self.attrs.get('view_ids', '').split(','),
             exclude_field=field.attrs.get('relation_field'))
@@ -683,10 +718,11 @@ class M2O(GenericText):
             WinForm(screen, open_callback, new=True, save_current=True,
                 title=field.attrs.get('string'), rec_name=text)
 
-    def search_remote(self, record, relation, text, domain=None,
-            context=None, callback=None):
-        field = record.group.fields[self.attrs['name']]
+    def search_remote(self, record, field, text, callback=None):
         relation = field.attrs['relation']
+        domain = field.domain_get(record)
+        context = field.get_search_context(record)
+        order = field.get_search_order(record)
         access = common.MODELACCESS[relation]
         create_access = self.attrs.get('create', True) and access['create']
 
@@ -699,7 +735,7 @@ class M2O(GenericText):
                 callback()
         win = WinSearch(relation, search_callback, sel_multi=False,
             context=context, domain=domain,
-            view_ids=self.attrs.get('view_ids', '').split(','),
+            order=order, view_ids=self.attrs.get('view_ids', '').split(','),
             new=create_access, title=self.attrs.get('string'))
         win.screen.search_filter(quote(text.decode('utf-8')))
         return win

@@ -5,9 +5,16 @@ from pyflakes.checker import Checker
 import pyflakes.messages
 
 import gobject
-import gtk
+# import gtk
 import pango
-import gtksourceview2 as gtksourceview
+import gi
+from gi.repository import Gdk as gdk
+
+gi.require_version('GtkSource', '3.0')
+gi.require_version('Gtk', '3.0')
+
+from gi.repository import Gtk as gtk
+from gi.repository import GtkSource as gtksourceview
 
 from .widget import Widget
 
@@ -62,7 +69,7 @@ for name, type_ in (
 def check_code(code):
     try:
         tree = compile(code, 'test', 'exec', _ast.PyCF_ONLY_AST)
-    except SyntaxError, syn_error:
+    except SyntaxError as syn_error:
         error = pyflakes.messages.Message('test', syn_error)
         error.message = 'Syntax Error'
         return [error]
@@ -84,12 +91,12 @@ class SourceView(Widget):
         sc_editor.set_shadow_type(gtk.SHADOW_ETCHED_IN)
         sc_editor.set_size_request(-1, 80)
 
-        language_manager = gtksourceview.language_manager_get_default()
+        language_manager = gtksourceview.LanguageManager.get_default()
         python = language_manager.get_language('python')
         self.sourcebuffer = gtksourceview.Buffer(language=python)
         self.sourcebuffer.connect('changed', self._clear_marks)
 
-        self.sourceview = gtksourceview.View(self.sourcebuffer)
+        self.sourceview = gtksourceview.View.new_with_buffer(self.sourcebuffer)
         self.sourceview.connect('focus-out-event', lambda x, y:
             self._focus_out())
         self.sourceview.connect('key-press-event', self.send_modified)
@@ -102,9 +109,10 @@ class SourceView(Widget):
 
         tag_table = self.sourcebuffer.get_tag_table()
         for mark_type, (priority, stock_id) in MARKS.items():
-            self.sourceview.set_mark_category_icon_from_stock(mark_type,
-                stock_id)
-            self.sourceview.set_mark_category_priority(mark_type, priority)
+            mark_attrs = gtksourceview.MarkAttributes()
+            mark_attrs.set_icon_name(stock_id)
+            self.sourceview.set_mark_attributes(mark_type,
+                mark_attrs, priority)
             tag = gtk.TextTag(name=mark_type)
             if mark_type in (ERROR, SYNTAX):
                 tag.props.underline = pango.UNDERLINE_ERROR
@@ -183,16 +191,26 @@ class SourceView(Widget):
                 cell.set_property('text', record['description'])
             tree_col.set_cell_data_func(tree_cell, cell_setter)
             self.treeview.append_column(tree_col)
-            self.treeview.drag_source_set(gtk.gdk.BUTTON1_MASK,
-                [('TREE_ROW', gtk.TARGET_SAME_APP, 0)],
-                gtk.gdk.ACTION_COPY)
+
+            target_entry = gtk.TargetEntry('TREE_ROW', gtk.TARGET_SAME_APP, 0)
+
+            self.treeview.drag_source_set(gdk.ModifierType.BUTTON1_MASK,
+                [target_entry], gdk.DragAction.COPY)
             self.sourceview.drag_dest_set(gtk.DEST_DEFAULT_ALL,
-                [('TREE_ROW', gtk.TARGET_SAME_APP, 0)],
-                gtk.gdk.ACTION_COPY)
+                [target_entry],
+                gdk.DragAction.COPY)
             self.treeview.connect('drag-data-get', self.drag_data_get)
             self.sourceview.connect('drag-data-received',
                 self.drag_data_received_data)
+
             self.sourceview.connect('drag-drop', self.drag_drop)
+
+            self.sourceview.drag_dest_set_target_list(None)
+            self.treeview.drag_source_set_target_list(None)
+            self.sourceview.drag_dest_add_text_targets()
+            self.treeview.drag_source_add_text_targets()
+
+
             self.treeview.show_all()
             sc_tree.add(self.treeview)
 
@@ -285,14 +303,10 @@ class SourceView(Widget):
         model, iter = treeselection.get_selected()
         if iter:
             func_text = '{translated}({fct_args})'.format(**model[iter][0])
-            selection.set(selection.target, 8, func_text)
+            selection.set(selection.get_target(), 8, func_text)
 
     def drag_data_received_data(self, sourceview, context, x, y, selection,
             info, etime):
-        buff_x, buff_y = sourceview.window_to_buffer_coords(
-            gtk.TEXT_WINDOW_WIDGET, x, y)
-        iter = sourceview.get_iter_at_location(buff_x, buff_y)
-        self.sourcebuffer.insert(iter, selection.data)
         context.finish(True, True, etime)
         sourceview.grab_focus()
 
@@ -339,7 +353,7 @@ class SourceView(Widget):
                 line_nbr - 1, 0)
             line_end = self.sourcebuffer.get_iter_at_line_offset(
                 line_nbr - 1, len(line))
-            self.sourcebuffer.create_source_mark(str(idx), error_type,
+            self.sourcebuffer.create_source_mark(None, error_type,
                 line_start)
             tag = tag_table.lookup(error_type)
             self.sourcebuffer.apply_tag(tag, line_start, line_end)

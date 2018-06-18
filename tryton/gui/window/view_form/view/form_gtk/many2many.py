@@ -155,9 +155,9 @@ class Many2Many(Widget):
         widget = self._color_widget()
         # if the style to apply is different from readonly then insensitive
         # cellrenderers should use the default insensitive color
-        if name != 'readonly':
-            widget.modify_text(gtk.STATE_INSENSITIVE,
-                    self.colors['text_color_insensitive'])
+        # if name != 'readonly':
+        #         widget.modify_text(gtk.STATE_INSENSITIVE,
+        #                 self.colors['text_color_insensitive'])
 
     def _sig_add(self, *args):
         if not self.focus_out:

@@ -1330,7 +1330,7 @@ class ViewTree(View):
 
     def expand_nodes(self, nodes):
         model = self.treeview.get_model()
-        # JCA : Manage always_expand atrtibute to force tree expansion
+        # JCA : Manage always_expand attribute to force tree expansion
         if self.view_type == 'tree' and self.always_expand:
             group = model.group
 
@@ -1356,7 +1356,8 @@ class ViewTree(View):
             to_expand = []
             get_all_sub_records(group, None, cur_expand_path, to_expand)
             for path in to_expand:
-                self.treeview.expand_to_path(tuple(path))
+                tree_path = gtk.TreePath.new_from_indices(path)
+                self.treeview.expand_to_path(tree_path)
         else:
             for node in nodes:
                 expand_path = path_convert_id2pos(model, node)

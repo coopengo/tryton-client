@@ -87,52 +87,6 @@ class Widget(object):
 
     def color_set(self, name):
         self.color_name = name
-        widget = self._color_widget()
-
-        if not self.colors:
-            style = widget.get_style()
-            # self.colors = {
-            #     'bg_color_active': style.bg[gtk.STATE_ACTIVE],
-            #     'bg_color_insensitive': style.bg[gtk.STATE_INSENSITIVE],
-            #     'base_color_normal': style.base[gtk.STATE_NORMAL],
-            #     'base_color_insensitive': style.base[gtk.STATE_INSENSITIVE],
-            #     'fg_color_normal': style.fg[gtk.STATE_NORMAL],
-            #     'fg_color_insensitive': style.fg[gtk.STATE_INSENSITIVE],
-            #     'text_color_normal': style.text[gtk.STATE_NORMAL],
-            #     'text_color_insensitive': style.text[gtk.STATE_INSENSITIVE],
-            # }
-
-        # if COLORS.get(name):
-        #     colormap = widget.get_colormap()
-        #     bg_color = colormap.alloc_color(COLORS.get(name, 'white'))
-        #     fg_color = gtk.gdk.color_parse("black")
-        #     widget.modify_bg(gtk.STATE_ACTIVE, bg_color)
-        #     widget.modify_base(gtk.STATE_NORMAL, bg_color)
-        #     widget.modify_fg(gtk.STATE_NORMAL, fg_color)
-        #     widget.modify_text(gtk.STATE_NORMAL, fg_color)
-        #     widget.modify_text(gtk.STATE_INSENSITIVE, fg_color)
-        # elif name == 'readonly':
-        #     widget.modify_bg(gtk.STATE_ACTIVE,
-        #             self.colors['bg_color_insensitive'])
-        #     widget.modify_base(gtk.STATE_NORMAL,
-        #             self.colors['base_color_insensitive'])
-        #     widget.modify_fg(gtk.STATE_NORMAL,
-        #             self.colors['fg_color_insensitive'])
-        #     widget.modify_text(gtk.STATE_NORMAL,
-        #             self.colors['text_color_normal'])
-        #     widget.modify_text(gtk.STATE_INSENSITIVE,
-        #             self.colors['text_color_normal'])
-        # else:
-        #     widget.modify_bg(gtk.STATE_ACTIVE,
-        #             self.colors['bg_color_active'])
-        #     widget.modify_base(gtk.STATE_NORMAL,
-        #             self.colors['base_color_normal'])
-        #     widget.modify_fg(gtk.STATE_NORMAL,
-        #             self.colors['fg_color_normal'])
-        #     widget.modify_text(gtk.STATE_NORMAL,
-        #             self.colors['text_color_normal'])
-        #     widget.modify_text(gtk.STATE_INSENSITIVE,
-        #             self.colors['text_color_normal'])
 
     def invisible_set(self, value):
         widget = self._invisible_widget()

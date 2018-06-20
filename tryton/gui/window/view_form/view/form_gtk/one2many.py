@@ -272,15 +272,6 @@ class One2Many(Widget):
         return (self.screen.current_view.modified if self.screen.current_view
             else False)
 
-    def color_set(self, name):
-        super(One2Many, self).color_set(name)
-        widget = self._color_widget()
-        # if the style to apply is different from readonly then insensitive
-        # cellrenderers should use the default insensitive color
-        # if name != 'readonly':
-        #     widget.modify_text(gtk.STATE_INSENSITIVE,
-        #             self.colors['text_color_insensitive'])
-
     def _readonly_set(self, value):
         self._readonly = value
         self._set_button_sensitive()

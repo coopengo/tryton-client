@@ -302,6 +302,7 @@ class ViewTree(View):
         else:
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
+        self.mnemonic_widget = self.treeview
 
         # ABD set alway expand through attributes
         self.always_expand = self.attributes.get('always_expand', False)
@@ -726,6 +727,10 @@ class ViewTree(View):
 
     def test_expand_row(self, widget, iter_, path):
         model = widget.get_model()
+        if model.iter_n_children(iter_) > CONFIG['client.limit']:
+            self.screen.current_record = model.get_value(iter_, 0)
+            self.screen.switch_view('form')
+            return True
         iter_ = model.iter_children(iter_)
         if not iter_:
             return False
@@ -1000,9 +1005,8 @@ class ViewTree(View):
                 gobject.idle_add(pop, menu, group, record)
             return True  # Don't change the selection
         elif event.button == 2:
-            event.button = 1
-            event.state |= gtk.gdk.MOD1_MASK
-            treeview.emit('button-press-event', event)
+            with Window(allow_similar=True):
+                self.screen.row_activate()
             return True
         return False
 
@@ -1217,8 +1221,7 @@ class ViewTree(View):
 
             if loaded:
                 if field.attrs['type'] == 'timedelta':
-                    converter = self.screen.context.get(
-                        field.attrs.get('converter'))
+                    converter = field.converter(self.screen.group)
                     selected_sum = common.timedelta.format(
                         selected_sum, converter)
                     sum_ = common.timedelta.format(sum_, converter)
@@ -1327,7 +1330,7 @@ class ViewTree(View):
 
     def expand_nodes(self, nodes):
         model = self.treeview.get_model()
-        # JCA : Manage always_expand atrtibute to force tree expansion
+        # JCA : Manage always_expand attribute to force tree expansion
         if self.view_type == 'tree' and self.always_expand:
             group = model.group
 
@@ -1353,7 +1356,8 @@ class ViewTree(View):
             to_expand = []
             get_all_sub_records(group, None, cur_expand_path, to_expand)
             for path in to_expand:
-                self.treeview.expand_to_path(tuple(path))
+                tree_path = gtk.TreePath.new_from_indices(path)
+                self.treeview.expand_to_path(tree_path)
         else:
             for node in nodes:
                 expand_path = path_convert_id2pos(model, node)

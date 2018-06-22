@@ -29,6 +29,8 @@ import tryton.rpc as rpc
 import socket
 import thread
 import urllib
+import urllib2
+import urlparse
 from string import Template
 import shlex
 try:
@@ -38,10 +40,14 @@ except ImportError:
 from threading import Lock
 import dateutil.tz
 
+from gi.repository import Gtk
+
+from tryton import __version__
 from tryton.exceptions import TrytonServerError, TrytonError
 from tryton.pyson import PYSONEncoder
 
 _ = gettext.gettext
+logger = logging.getLogger(__name__)
 
 
 class TrytonIconFactory(gtk.IconFactory):
@@ -272,8 +278,10 @@ def request_server(server_widget):
     label_port.set_padding(3, 3)
     table.attach(label_port, 0, 1, 1, 2, yoptions=False,
         xoptions=False)
-    dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
-    dialog.add_button("gtk-ok", gtk.RESPONSE_OK)
+    cancel_button = dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
+    cancel_button.set_always_show_image(True)
+    ok_button = dialog.add_button("gtk-ok", gtk.RESPONSE_OK)
+    ok_button.set_always_show_image(True)
     dialog.vbox.pack_start(vbox)
     dialog.set_icon(TRYTON_ICON)
     dialog.show_all()
@@ -338,9 +346,11 @@ def selection(title, values, alwaysask=False):
 
     parent = get_toplevel_window()
     dialog = gtk.Dialog(_('Selection'), parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                gtk.STOCK_OK, gtk.RESPONSE_OK))
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+    cancel_button = dialog.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
+    cancel_button.set_always_show_image(True)
+    ok_button = dialog.add_button('gtk-ok', gtk.RESPONSE_OK)
+    ok_button.set_always_show_image(True)
     dialog.set_icon(TRYTON_ICON)
     dialog.set_default_response(gtk.RESPONSE_OK)
     dialog.set_default_size(400, 400)
@@ -462,7 +472,7 @@ def slugify(value):
     if not isinstance(value, unicode):
         value = unicode(value)
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip().lower())
+    value = unicode(_slugify_strip_re.sub('', value).strip())
     return _slugify_hyphenate_re.sub('-', value)
 
 
@@ -667,8 +677,11 @@ class SurDialog(ConfirmationDialog):
 
     def build_dialog(self, parent, message):
         dialog = super(SurDialog, self).build_dialog(parent, message)
-        dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
-        dialog.set_default(dialog.add_button("gtk-ok", gtk.RESPONSE_OK))
+        cancel_button = dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
+        cancel_button.set_always_show_image(True)
+        ok_button = dialog.add_button("gtk-ok", gtk.RESPONSE_OK)
+        ok_button.set_always_show_image(True)
+        dialog.set_default(ok_button)
         dialog.set_default_response(gtk.RESPONSE_OK)
         return dialog
 
@@ -689,9 +702,13 @@ class Sur3BDialog(ConfirmationDialog):
 
     def build_dialog(self, parent, message):
         dialog = super(Sur3BDialog, self).build_dialog(parent, message)
-        dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
-        dialog.add_button("gtk-no", gtk.RESPONSE_NO)
-        dialog.set_default(dialog.add_button("gtk-yes", gtk.RESPONSE_YES))
+        cancel_button = dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
+        cancel_button.set_always_show_image(True)
+        no_button = dialog.add_button("gtk-no", gtk.RESPONSE_NO)
+        no_button.set_always_show_image(True)
+        yes_button = dialog.add_button("gtk-yes", gtk.RESPONSE_YES)
+        yes_button.set_always_show_image(True)
+        dialog.set_default(yes_button)
         dialog.set_default_response(gtk.RESPONSE_YES)
         return dialog
 
@@ -706,9 +723,11 @@ class AskDialog(UniqueDialog):
 
     def build_dialog(self, parent, question, visibility):
         win = gtk.Dialog(CONFIG['client.title'], parent,
-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                    gtk.STOCK_OK, gtk.RESPONSE_OK))
+                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+        cancel_button = win.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
+        cancel_button.set_always_show_image(True)
+        ok_button = win.add_button('gtk-ok', gtk.RESPONSE_OK)
+        ok_button.set_always_show_image(True)
         win.set_default_response(gtk.RESPONSE_OK)
 
         hbox = gtk.HBox()
@@ -771,16 +790,19 @@ class ConcurrencyDialog(UniqueDialog):
             '    - "Write Anyway" to save your current version.'))
         hbox.pack_start(label, True, True)
         dialog.vbox.pack_start(hbox)
-        dialog.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
+        cancel_button = dialog.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
+        cancel_button.set_always_show_image(True)
         compare_button = gtk.Button(_('Compare'))
         image = gtk.Image()
         image.set_from_stock('tryton-find-replace', gtk.ICON_SIZE_BUTTON)
         compare_button.set_image(image)
+        compare_button.set_always_show_image(True)
         dialog.add_action_widget(compare_button, gtk.RESPONSE_APPLY)
         write_button = gtk.Button(_('Write Anyway'))
         image = gtk.Image()
         image.set_from_stock('tryton-save', gtk.ICON_SIZE_BUTTON)
         write_button.set_image(image)
+        write_button.set_always_show_image(True)
         dialog.add_action_widget(write_button, gtk.RESPONSE_OK)
         return dialog
 
@@ -810,7 +832,8 @@ class ErrorDialog(UniqueDialog):
 
         but_send = gtk.Button(_('Report Bug'))
         dialog.add_action_widget(but_send, gtk.RESPONSE_OK)
-        dialog.add_button("gtk-close", gtk.RESPONSE_CANCEL)
+        close_button = dialog.add_button("gtk-close", gtk.RESPONSE_CANCEL)
+        close_button.set_always_show_image(True)
         dialog.set_default_response(gtk.RESPONSE_CANCEL)
 
         vbox = gtk.VBox()
@@ -889,9 +912,11 @@ def send_bugtracker(title, msg):
     from tryton import rpc
     parent = get_toplevel_window()
     win = gtk.Dialog(_('Bug Tracker'), parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                gtk.STOCK_OK, gtk.RESPONSE_OK))
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+    cancel_button = win.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
+    cancel_button.set_always_show_image(True)
+    ok_button = win.add_button('gtk-ok', gtk.RESPONSE_OK)
+    ok_button.set_always_show_image(True)
     win.set_icon(TRYTON_ICON)
     win.set_default_response(gtk.RESPONSE_OK)
 
@@ -1031,6 +1056,51 @@ class SentryDialog(UniqueDialog):
             webbrowser.open(CONFIG['sentry.homepage'])
 
 sentry = SentryDialog()
+
+def check_version(box, version=__version__):
+    def info_bar_response(info_bar, response, box, url):
+        if response == Gtk.ResponseType.ACCEPT:
+            webbrowser.open(url)
+        box.remove(info_bar)
+
+    class HeadRequest(urllib2.Request):
+        def get_method(self):
+            return 'HEAD'
+
+    version = version.split('.')
+    series = '.'.join(version[:2])
+    version[2] = str(int(version[2]) + 1)
+    version = '.'.join(version)
+    filename = 'tryton-%s.tar.gz' % version
+    if hasattr(sys, 'frozen'):
+        if sys.platform == 'win32':
+            filename = 'tryton-setup-%s.exe' % version
+        elif sys.platform == 'darwin':
+            filename = 'tryton-%s.dmg' % version
+    url = list(urlparse.urlparse(CONFIG['download.url']))
+    url[2] = '/%s/%s' % (series, filename)
+    url = urlparse.urlunparse(url)
+
+    logger.info(_("Check URL: %s"), url)
+    try:
+        urllib2.urlopen(HeadRequest(url), cafile=rpc._CA_CERTS)
+    except urllib2.HTTPError:
+        return True
+    except Exception:
+        logger.error(
+            _("Unable to check for new version"), exc_info=True)
+        return True
+    else:
+        if check_version(box, version):
+            info_bar = Gtk.InfoBar()
+            info_bar.get_content_area().pack_start(
+                gtk.Label(_("A new version is available!")))
+            info_bar.set_show_close_button(True)
+            info_bar.add_button(_("Download"), Gtk.ResponseType.ACCEPT)
+            info_bar.connect('response', info_bar_response, box, url)
+            box.pack_start(info_bar)
+            info_bar.show_all()
+        return False
 
 
 def to_xml(string):
@@ -1350,11 +1420,16 @@ def timezoned_date(date, reverse=False):
     szone = dateutil.tz.tzutc()
     if reverse:
         lzone, szone = szone, lzone
-    return date.replace(tzinfo=szone).astimezone(lzone).replace(tzinfo=None)
+    try:
+        return (date.replace(tzinfo=szone).astimezone(lzone)
+            .replace(tzinfo=None))
+    except (ValueError, OSError):
+        # https://github.com/dateutil/dateutil/issues/434
+        return date.replace(tzinfo=None)
 
 
 def untimezoned_date(date):
-    return timezoned_date(date, reverse=True).replace(tzinfo=None)
+    return timezoned_date(date, reverse=True)
 
 
 def humanize(size):
@@ -1444,3 +1519,7 @@ def ellipsize(string, length):
         return string
     ellipsis = _('...')
     return string[:length - len(ellipsis)] + ellipsis
+
+
+def date_format(format_):
+    return format_ or rpc.CONTEXT.get('locale', {}).get('date', '%x')

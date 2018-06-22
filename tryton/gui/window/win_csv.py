@@ -39,6 +39,7 @@ class WinCSV(NoModal):
             parent=self.parent, flags=gtk.DIALOG_DESTROY_WITH_PARENT)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dialog.set_icon(TRYTON_ICON)
+        self.dialog.set_decorated(False)
         self.dialog.connect('response', self.response)
 
         dialog_vbox = gtk.VBox()
@@ -70,6 +71,7 @@ class WinCSV(NoModal):
         img_button = gtk.Image()
         img_button.set_from_stock('tryton-list-add', gtk.ICON_SIZE_BUTTON)
         button_add.set_image(img_button)
+        button_add.set_always_show_image(True)
         button_add.connect_after('clicked', self.sig_sel)
         vbox_buttons.pack_start(button_add, False, False, 0)
 
@@ -79,6 +81,7 @@ class WinCSV(NoModal):
         img_button = gtk.Image()
         img_button.set_from_stock('tryton-list-remove', gtk.ICON_SIZE_BUTTON)
         button_remove.set_image(img_button)
+        button_remove.set_always_show_image(True)
         button_remove.connect_after('clicked', self.sig_unsel)
         vbox_buttons.pack_start(button_remove, False, False, 0)
 
@@ -88,6 +91,7 @@ class WinCSV(NoModal):
         img_button = gtk.Image()
         img_button.set_from_stock('tryton-clear', gtk.ICON_SIZE_BUTTON)
         button_remove_all.set_image(img_button)
+        button_remove_all.set_always_show_image(True)
         button_remove_all.connect_after('clicked', self.sig_unsel_all)
         vbox_buttons.pack_start(button_remove_all, False, False, 0)
 
@@ -207,12 +211,8 @@ class WinCSV(NoModal):
         self.view2.set_model(self.model2)
         self.view2.connect('row-activated', self.sig_unsel)
 
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.dialog.set_default_size(
-            int(sensible_allocation.width * 0.9),
-            int(sensible_allocation.height * 0.9))
         self.dialog.show_all()
-        center_window(self.dialog, self.parent, self.sensible_widget)
+        self.show()
 
         self.register()
 
@@ -317,7 +317,12 @@ class WinCSV(NoModal):
         self.dialog.destroy()
 
     def show(self):
+        sensible_allocation = self.sensible_widget.get_allocation()
+        self.dialog.resize(
+            sensible_allocation.width, sensible_allocation.height)
         self.dialog.show()
+        gobject.idle_add(
+            center_window, self.dialog, self.parent, self.sensible_widget)
 
     def hide(self):
         self.dialog.hide()

@@ -130,8 +130,6 @@ class Screen(SignalEvent):
         self.search_value = attributes.get('search_value')
         self.fields_view_tree = {}
         self.order = self.default_order = attributes.get('order')
-        self.__date_format = self.context.get(
-            'date_format', rpc.CONTEXT.get('locale', {}).get('date', '%x'))
         self.view_to_load = []
         self._domain_parser = {}
         self.pre_validate = False
@@ -190,6 +188,11 @@ class Screen(SignalEvent):
             fields = collections.OrderedDict(
                 (name, fields[name]) for name in xml_fields)
 
+        if 'active' in view_tree['fields']:
+            self.screen_container.but_active.show()
+        else:
+            self.screen_container.but_active.hide()
+
         # Add common fields
         for name, string, type_ in (
                 ('id', _('ID'), 'integer'),
@@ -207,10 +210,8 @@ class Screen(SignalEvent):
                 if type_ == 'datetime':
                     fields[name]['format'] = '"%H:%M:%S"'
 
-        context = rpc.CONTEXT.copy()
-        context.update(self.context)
         # ABD: Store the screen (self) and the view_id into the parse domain
-        domain_parser = DomainParser(fields, context, self, view_id)
+        domain_parser = DomainParser(fields, self.context, self, view_id)
         self._domain_parser[view_id] = domain_parser
         return domain_parser
 
@@ -259,16 +260,20 @@ class Screen(SignalEvent):
         tab_domain = self.screen_container.get_tab_domain()
         if tab_domain:
             domain = ['AND', domain, tab_domain]
+
+        context = self.context
+        if self.screen_container.but_active.get_active():
+            context['active_test'] = False
         try:
             ids = RPCExecute('model', self.model_name, 'search', domain,
-                self.offset, self.limit, self.order, context=self.context)
+                self.offset, self.limit, self.order, context=context)
         except RPCException:
             ids = []
         if not only_ids:
             if self.limit is not None and len(ids) == self.limit:
                 try:
                     self.search_count = RPCExecute('model', self.model_name,
-                        'search_count', domain, context=self.context)
+                        'search_count', domain, context=context)
                 except RPCException:
                     self.search_count = 0
             else:
@@ -314,6 +319,11 @@ class Screen(SignalEvent):
         else:
             domain = my_domain
 
+        if self.screen_container.but_active.get_active():
+            if domain:
+                domain = [domain, ('active', '=', False)]
+            else:
+                domain = [('active', '=', False)]
         if self.current_view and self.current_view.view_type == 'calendar':
             if domain:
                 domain = ['AND', domain, self.current_view.current_domain()]
@@ -342,11 +352,10 @@ class Screen(SignalEvent):
 
     @property
     def context(self):
-        return self.group.context
-
-    @property
-    def date_format(self):
-        return self.__date_format
+        context = self.group.context
+        if self.context_screen:
+            context['context_model'] = self.context_screen.model_name
+        return context
 
     def __get_group(self):
         return self.__group
@@ -470,7 +479,7 @@ class Screen(SignalEvent):
                 'model': self.model_name,
                 'id': self.current_record.id if self.current_record else None,
                 'ids': [r.id for r in self.selected_records],
-                }, context=self.context.copy(), warning=False)
+                }, context=self.group._context.copy(), warning=False)
         else:
             if not self.modified():
                 self.switch_view(view_type='form')
@@ -606,11 +615,14 @@ class Screen(SignalEvent):
         if func_name:
             self.group.on_write.add(func_name)
 
-    def cancel_current(self):
+    def cancel_current(self, initial_value=None):
         if self.current_record:
             self.current_record.cancel()
             if self.current_record.id < 0:
-                self.remove(records=[self.current_record])
+                if initial_value is not None:
+                    self.current_record.reset(initial_value)
+                else:
+                    self.remove(records=[self.current_record])
 
     def save_current(self):
         if not self.current_record:
@@ -1123,7 +1135,7 @@ class Screen(SignalEvent):
 
     def _button_class(self, button):
         ids = [r.id for r in self.selected_records]
-        context = self.context.copy()
+        context = self.context
         context['_timestamp'] = {}
         for record in self.selected_records:
             context['_timestamp'].update(record.get_timestamp())
@@ -1200,9 +1212,10 @@ class Screen(SignalEvent):
         if self.domain:
             query_string.append(('domain', json.dumps(
                         self.domain, cls=JSONEncoder, separators=(',', ':'))))
-        if self.context:
+        context = self.group._context  # Avoid rpc context
+        if context:
             query_string.append(('context', json.dumps(
-                        self.context, cls=JSONEncoder, separators=(',', ':'))))
+                        context, cls=JSONEncoder, separators=(',', ':'))))
         if self.context_screen:
             query_string.append(
                 ('context_model', self.context_screen.model_name))

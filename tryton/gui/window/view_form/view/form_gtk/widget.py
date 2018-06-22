@@ -87,52 +87,6 @@ class Widget(object):
 
     def color_set(self, name):
         self.color_name = name
-        widget = self._color_widget()
-
-        if not self.colors:
-            style = widget.get_style()
-            self.colors = {
-                'bg_color_active': style.bg[gtk.STATE_ACTIVE],
-                'bg_color_insensitive': style.bg[gtk.STATE_INSENSITIVE],
-                'base_color_normal': style.base[gtk.STATE_NORMAL],
-                'base_color_insensitive': style.base[gtk.STATE_INSENSITIVE],
-                'fg_color_normal': style.fg[gtk.STATE_NORMAL],
-                'fg_color_insensitive': style.fg[gtk.STATE_INSENSITIVE],
-                'text_color_normal': style.text[gtk.STATE_NORMAL],
-                'text_color_insensitive': style.text[gtk.STATE_INSENSITIVE],
-            }
-
-        if COLORS.get(name):
-            colormap = widget.get_colormap()
-            bg_color = colormap.alloc_color(COLORS.get(name, 'white'))
-            fg_color = gtk.gdk.color_parse("black")
-            widget.modify_bg(gtk.STATE_ACTIVE, bg_color)
-            widget.modify_base(gtk.STATE_NORMAL, bg_color)
-            widget.modify_fg(gtk.STATE_NORMAL, fg_color)
-            widget.modify_text(gtk.STATE_NORMAL, fg_color)
-            widget.modify_text(gtk.STATE_INSENSITIVE, fg_color)
-        elif name == 'readonly':
-            widget.modify_bg(gtk.STATE_ACTIVE,
-                    self.colors['bg_color_insensitive'])
-            widget.modify_base(gtk.STATE_NORMAL,
-                    self.colors['base_color_insensitive'])
-            widget.modify_fg(gtk.STATE_NORMAL,
-                    self.colors['fg_color_insensitive'])
-            widget.modify_text(gtk.STATE_NORMAL,
-                    self.colors['text_color_normal'])
-            widget.modify_text(gtk.STATE_INSENSITIVE,
-                    self.colors['text_color_normal'])
-        else:
-            widget.modify_bg(gtk.STATE_ACTIVE,
-                    self.colors['bg_color_active'])
-            widget.modify_base(gtk.STATE_NORMAL,
-                    self.colors['base_color_normal'])
-            widget.modify_fg(gtk.STATE_NORMAL,
-                    self.colors['fg_color_normal'])
-            widget.modify_text(gtk.STATE_NORMAL,
-                    self.colors['text_color_normal'])
-            widget.modify_text(gtk.STATE_INSENSITIVE,
-                    self.colors['text_color_normal'])
 
     def invisible_set(self, value):
         widget = self._invisible_widget()
@@ -143,7 +97,7 @@ class Widget(object):
             self.visible = True
             widget.show()
 
-    def _focus_out(self):
+    def _focus_out(self, *args):
         if not self.field:
             return False
         if not self.visible:
@@ -244,13 +198,18 @@ class TranslateDialog(NoModal):
             gtk.DIALOG_DESTROY_WITH_PARENT)
         self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.win.set_icon(TRYTON_ICON)
+        self.win.set_decorated(False)
         self.win.connect('response', self.response)
 
         self.accel_group = gtk.AccelGroup()
         self.win.add_accel_group(self.accel_group)
 
-        self.win.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK).add_accelerator(
+        cancel_button = self.win.add_button(
+            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        cancel_button.set_always_show_image(True)
+        ok_button = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        ok_button.set_always_show_image(True)
+        ok_button.add_accelerator(
             'clicked', self.accel_group, gtk.keysyms.Return,
             gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
 
@@ -269,7 +228,7 @@ class TranslateDialog(NoModal):
                 label = language['name'] + _(':')
             label = gtk.Label(label)
             label.set_alignment(1.0, 0.0 if self.widget.expand else 0.5)
-            table.attach(label, 0, 1, i, i + 1, xoptions=gtk.FILL)
+            table.attach(label, 0, 1, i, i + 1, xoptions=gtk.FILL, xpadding=2)
 
             context = dict(
                 language=language['code'],
@@ -322,13 +281,14 @@ class TranslateDialog(NoModal):
         scrolledwindow.add(viewport)
         self.win.vbox.pack_start(scrolledwindow, True, True)
 
+        # JCA Specific: Lower by 5%
         sensible_allocation = self.sensible_widget.get_allocation()
         self.win.set_default_size(int(sensible_allocation.width * 0.95),
             int(sensible_allocation.height * 0.95))
+        self.win.show_all()
 
         self.register()
-        self.win.show_all()
-        common.center_window(self.win, self.parent, self.sensible_widget)
+        self.show()
 
     def editing_toggled(self, editing, widget):
         self.widget.translate_widget_set_readonly(widget,
@@ -359,6 +319,17 @@ class TranslateDialog(NoModal):
     def destroy(self):
         self.win.destroy()
         NoModal.destroy(self)
+
+    def show(self):
+        sensible_allocation = self.sensible_widget.get_allocation()
+        self.win.resize(
+            sensible_allocation.width, sensible_allocation.height)
+        self.win.show()
+        gobject.idle_add(
+            common.center_window, self.win, self.parent, self.sensible_widget)
+
+    def hide(self):
+        self.win.hide()
 
 
 class TranslateMixin:
@@ -400,14 +371,11 @@ class TranslateMixin:
     def translate_widget(self):
         raise NotImplemented
 
-    @staticmethod
-    def translate_widget_set(widget, value):
+    def translate_widget_set(self, widget, value):
         raise NotImplemented
 
-    @staticmethod
-    def translate_widget_get(widget):
+    def translate_widget_get(self, widget):
         raise NotImplemented
 
-    @staticmethod
-    def translate_widget_set_readonly(widget, value):
+    def translate_widget_set_readonly(self, widget, value):
         raise NotImplemented

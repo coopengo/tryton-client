@@ -50,15 +50,16 @@ class Date(gtk.Entry):
         'value': (gobject.TYPE_PYOBJECT,
             _('Value'),
             _('Displayed value'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         'format': (gobject.TYPE_STRING,
             '%x',
             _('Format'),
             _('Display format'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         }
     __gsignals__ = {
-        'date-changed': (gobject.SIGNAL_RUN_LAST | gobject.SIGNAL_ACTION,
+        'date-changed': (
+            gobject.SignalFlags.RUN_LAST | gobject.SignalFlags.ACTION,
             gobject.TYPE_NONE, ()),
         }
 
@@ -68,14 +69,14 @@ class Date(gtk.Entry):
 
         gtk.Entry.__init__(self)
 
-        self.set_width_chars(12)
+        self.set_width_chars(20)
 
         self.connect('focus-out-event', self.focus_out)
         self.connect('activate', self.activate)
 
         # Calendar Popup
-        self.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, 'tryton-find')
-        self.set_icon_tooltip_text(gtk.ENTRY_ICON_SECONDARY,
+        self.set_icon_from_stock(gtk.ENTRY_ICON_PRIMARY, 'tryton-calendar')
+        self.set_icon_tooltip_text(gtk.ENTRY_ICON_PRIMARY,
             _('Open the calendar'))
         self.connect('icon-press', self.icon_press)
 
@@ -115,7 +116,7 @@ class Date(gtk.Entry):
         self.set_text(strftime(self.__date, self.__format))
 
     def icon_press(self, entry, icon_pos, event):
-        if icon_pos == gtk.ENTRY_ICON_SECONDARY:
+        if icon_pos == gtk.ENTRY_ICON_PRIMARY:
             self.cal_popup_open()
 
     def cal_popup_open(self):
@@ -209,7 +210,7 @@ class CellRendererDate(gtk.CellRendererText):
             _('Format'),
             _('Display format'),
             '%x',
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         }
 
     def __init__(self):
@@ -250,15 +251,16 @@ class Time(gtk.ComboBoxEntry):
         'value': (gobject.TYPE_PYOBJECT,
             _('Value'),
             _('Displayed value'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         'format': (gobject.TYPE_STRING,
             _('Format'),
             _('Display format'),
             '%X',
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         }
     __gsignals__ = {
-        'time-changed': (gobject.SIGNAL_RUN_LAST | gobject.SIGNAL_ACTION,
+        'time-changed': (
+            gobject.SignalFlags.RUN_LAST | gobject.SignalFlags.ACTION,
             gobject.TYPE_NONE, ()),
         }
 
@@ -357,7 +359,7 @@ class CellRendererTime(gtk.CellRendererText):
             '%X',
             _('Format'),
             _('Display format'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         }
 
     def __init__(self):
@@ -400,20 +402,21 @@ class DateTime(gtk.HBox):
         'value': (gobject.TYPE_PYOBJECT,
             _('Value'),
             _('Displayed value'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         'date-format': (gobject.TYPE_STRING,
             '%x',
             _('Date Format'),
             _('Displayed date format'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         'time-format': (gobject.TYPE_STRING,
             '%X',
             _('Date Format'),
             _('Displayed date format'),
-            gobject.PARAM_READABLE | gobject.PARAM_WRITABLE),
+            gobject.ParamFlags.READABLE | gobject.ParamFlags.WRITABLE),
         }
     __gsignals__ = {
-        'datetime-changed': (gobject.SIGNAL_RUN_LAST | gobject.SIGNAL_ACTION,
+        'datetime-changed': (
+            gobject.SignalFlags.RUN_LAST | gobject.SignalFlags.ACTION,
             gobject.TYPE_NONE, ()),
         }
 
@@ -480,7 +483,7 @@ def popup_position(widget, popup):
     else:
         x, y = widget.window.get_origin()
     width, height = popup.size_request()
-    popup.move(x + allocation.width - width, y + allocation.height)
+    popup.move(x, y + allocation.height)
 
 
 def popup_show(popup):

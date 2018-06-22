@@ -15,6 +15,7 @@ from tryton.common.datetime_ import Date
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
 import tryton.rpc as rpc
 from tryton.exceptions import TrytonError
+from tryton.common.underline import set_underline
 
 _ = gettext.gettext
 
@@ -34,6 +35,7 @@ class DBListEditor(object):
             flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
         self.ok_button = self.dialog.add_button(gtk.STOCK_OK,
             gtk.RESPONSE_ACCEPT)
+        self.ok_button.set_always_show_image(True)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dialog.set_icon(TRYTON_ICON)
 
@@ -55,11 +57,13 @@ class DBListEditor(object):
         add_image = gtk.Image()
         add_image.set_from_stock('gtk-add', gtk.ICON_SIZE_BUTTON)
         self.add_button.set_image(add_image)
+        self.add_button.set_always_show_image(True)
         self.remove_button = gtk.Button(_(u'_Remove'), use_underline=True)
         self.remove_button.connect('clicked', self.profile_delete)
         remove_image = gtk.Image()
         remove_image.set_from_stock('gtk-remove', gtk.ICON_SIZE_BUTTON)
         self.remove_button.set_image(remove_image)
+        self.remove_button.set_always_show_image(True)
         vbox_profiles.pack_start(scroll, expand=True, fill=True)
         vbox_profiles.pack_start(self.add_button, expand=False, fill=True)
         vbox_profiles.pack_start(self.remove_button, expand=False, fill=True)
@@ -68,7 +72,8 @@ class DBListEditor(object):
         table = gtk.Table(4, 2, homogeneous=False)
         table.set_row_spacings(3)
         table.set_col_spacings(3)
-        host = gtk.Label(_(u'Host:'))
+        host = gtk.Label(set_underline(_(u'Host:')))
+        host.set_use_underline(True)
         host.set_alignment(1, 0.5)
         host.set_padding(3, 3)
         self.host_entry = gtk.Entry()
@@ -78,7 +83,8 @@ class DBListEditor(object):
         host.set_mnemonic_widget(self.host_entry)
         table.attach(host, 0, 1, 1, 2, yoptions=False, xoptions=gtk.FILL)
         table.attach(self.host_entry, 1, 2, 1, 2, yoptions=False)
-        database = gtk.Label(_(u'Database:'))
+        database = gtk.Label(set_underline(_(u'Database:')))
+        database.set_use_underline(True)
         database.set_alignment(1, 0.5)
         database.set_padding(3, 3)
         self.database_entry = gtk.Entry()
@@ -113,7 +119,8 @@ class DBListEditor(object):
         db_box.set_size_request(width, height)
         table.attach(database, 0, 1, 2, 3, yoptions=False, xoptions=gtk.FILL)
         table.attach(db_box, 1, 2, 2, 3, yoptions=False)
-        username = gtk.Label(_(u'Username:'))
+        username = gtk.Label(set_underline(_(u'Username:')))
+        username.set_use_underline(True)
         username.set_alignment(1, 0.5)
         username.set_padding(3, 3)
         self.username_entry = gtk.Entry()
@@ -390,6 +397,7 @@ class DBLogin(object):
         img_cancel = gtk.Image()
         img_cancel.set_from_stock('gtk-cancel', gtk.ICON_SIZE_BUTTON)
         button_cancel.set_image(img_cancel)
+        button_cancel.set_always_show_image(True)
         tooltips.set_tip(button_cancel,
             _('Cancel connection to the Tryton server'))
         self.dialog.add_action_widget(button_cancel, gtk.RESPONSE_CANCEL)
@@ -397,6 +405,7 @@ class DBLogin(object):
         img_connect = gtk.Image()
         img_connect.set_from_stock('tryton-connect', gtk.ICON_SIZE_BUTTON)
         self.button_connect.set_image(img_connect)
+        self.button_connect.set_always_show_image(True)
         self.button_connect.set_can_default(True)
         tooltips.set_tip(self.button_connect, _('Connect the Tryton server'))
         self.dialog.add_action_widget(self.button_connect, gtk.RESPONSE_OK)
@@ -426,11 +435,13 @@ class DBLogin(object):
         self.combo_profile.add_attribute(cell, 'sensitive', 1)
         self.combo_profile.set_model(self.profile_store)
         self.combo_profile.connect('changed', self.profile_changed)
-        self.profile_label = gtk.Label(_(u'Profile:'))
+        self.profile_label = gtk.Label(set_underline(_(u'Profile:')))
+        self.profile_label.set_use_underline(True)
         self.profile_label.set_justify(gtk.JUSTIFY_RIGHT)
         self.profile_label.set_alignment(1, 0.5)
         self.profile_label.set_padding(3, 3)
-        self.profile_button = gtk.Button(_('_Manage profiles'),
+        self.profile_label.set_mnemonic_widget(self.combo_profile)
+        self.profile_button = gtk.Button(set_underline(_('Manage profiles')),
             use_underline=True)
         self.profile_button.connect('clicked', self.profile_manage)
         self.table_main.attach(self.profile_label, 0, 1, 1, 2,
@@ -441,11 +452,13 @@ class DBLogin(object):
         image = gtk.Image()
         image.set_from_stock('gtk-edit', gtk.ICON_SIZE_BUTTON)
         self.profile_button.set_image(image)
+        self.profile_button.set_always_show_image(True)
         self.expander = gtk.Expander()
         self.expander.set_label(_('Host / Database information'))
         self.expander.connect('notify::expanded', self.expand_hostspec)
         self.table_main.attach(self.expander, 0, 3, 3, 4)
-        self.label_host = gtk.Label(_('Host:'))
+        self.label_host = gtk.Label(set_underline(_('Host:')))
+        self.label_host.set_use_underline(True)
         self.label_host.set_justify(gtk.JUSTIFY_RIGHT)
         self.label_host.set_alignment(1, 0.5)
         self.label_host.set_padding(3, 3)
@@ -456,7 +469,8 @@ class DBLogin(object):
         self.label_host.set_mnemonic_widget(self.entry_host)
         self.table_main.attach(self.label_host, 0, 1, 4, 5, xoptions=gtk.FILL)
         self.table_main.attach(self.entry_host, 1, 3, 4, 5)
-        self.label_database = gtk.Label(_('Database:'))
+        self.label_database = gtk.Label(set_underline(_('Database:')))
+        self.label_database.set_use_underline(True)
         self.label_database.set_justify(gtk.JUSTIFY_RIGHT)
         self.label_database.set_alignment(1, 0.5)
         self.label_database.set_padding(3, 3)
@@ -471,7 +485,8 @@ class DBLogin(object):
         self.entry_login = gtk.Entry()
         self.entry_login.set_activates_default(True)
         self.table_main.attach(self.entry_login, 1, 3, 6, 7)
-        label_username = gtk.Label(_("User name:"))
+        label_username = gtk.Label(set_underline(_("User name:")))
+        label_username.set_use_underline(True)
         label_username.set_alignment(1, 0.5)
         label_username.set_padding(3, 3)
         label_username.set_mnemonic_widget(self.entry_login)

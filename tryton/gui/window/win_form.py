@@ -3,6 +3,7 @@
 from tryton.common import TRYTON_ICON
 import tryton.common as common
 import gtk
+import gobject
 import pango
 import gettext
 from tryton.gui.window.nomodal import NoModal
@@ -42,6 +43,7 @@ class WinForm(NoModal, InfoBar):
         # But this is not working on each graphical environnement
         # Further more, setting theses windows deletable does not seems
         # to bring any trouble.
+        self.win.set_decorated(False)
         self.win.set_deletable(True)
         self.win.connect('delete-event', lambda *a: True)
         self.win.connect('close', self.close)
@@ -56,17 +58,21 @@ class WinForm(NoModal, InfoBar):
         self.but_ok = None
         self.but_new = None
 
+        self._initial_value = None
         if view_type == 'form':
-            if not new and self.screen.current_record.id < 0:
+            if new:
                 stock_id = gtk.STOCK_DELETE
             else:
                 stock_id = gtk.STOCK_CANCEL
+                self._initial_value = self.screen.current_record.get_eval()
             self.but_cancel = self.win.add_button(stock_id,
                 gtk.RESPONSE_CANCEL)
+            self.but_cancel.set_always_show_image(True)
 
         if new and self.many:
             self.but_new = self.win.add_button(gtk.STOCK_NEW,
                 gtk.RESPONSE_ACCEPT)
+            self.but_new.set_always_show_image(True)
             self.but_new.set_accel_path('<tryton>/Form/New', self.accel_group)
 
         if self.save_current:
@@ -74,6 +80,7 @@ class WinForm(NoModal, InfoBar):
             img_save = gtk.Image()
             img_save.set_from_stock('tryton-save', gtk.ICON_SIZE_BUTTON)
             self.but_ok.set_image(img_save)
+            self.but_ok.set_always_show_image(True)
             self.but_ok.set_accel_path('<tryton>/Form/Save', self.accel_group)
             self.but_ok.set_can_default(True)
             self.but_ok.show()
@@ -83,6 +90,7 @@ class WinForm(NoModal, InfoBar):
         else:
             self.but_ok = self.win.add_button(gtk.STOCK_OK,
                 gtk.RESPONSE_OK)
+            self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
             gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
         self.win.set_default_response(gtk.RESPONSE_OK)
@@ -255,6 +263,7 @@ class WinForm(NoModal, InfoBar):
         self.create_info_bar()
         self.win.vbox.pack_start(self.info_bar, False, True)
 
+        # JCA: Sepcific, lower by 5 %
         sensible_allocation = self.sensible_widget.get_allocation()
         self.win.set_default_size(int(sensible_allocation.width * 0.95),
             int(sensible_allocation.height * 0.95))
@@ -271,9 +280,7 @@ class WinForm(NoModal, InfoBar):
                 self.activate_save)
 
         self.register()
-        self.win.show()
-
-        common.center_window(self.win, self.parent, self.sensible_widget)
+        self.show()
 
         self.screen.display()
         self.screen.current_view.set_cursor()
@@ -419,11 +426,12 @@ class WinForm(NoModal, InfoBar):
                 and response_id in cancel_responses):
             if (self.screen.current_record.id < 0
                     or self.save_current):
+                # JCA: Specific
                 if (self.save_current
                         or common.sur(
                             _('Are you sure you want to delete this record?')
                             )):
-                    self.screen.cancel_current()
+                    self.screen.cancel_current(self._initial_value)
                 elif not self.save_current:
                     return
             elif self.screen.current_record.modified:
@@ -438,6 +446,7 @@ class WinForm(NoModal, InfoBar):
 
     def new(self):
         self.screen.new()
+        self._initial_value = None
         self.screen.current_view.display()
         self.screen.set_cursor(new=True)
         self.many -= 1
@@ -455,8 +464,12 @@ class WinForm(NoModal, InfoBar):
         NoModal.destroy(self)
 
     def show(self):
+        sensible_allocation = self.sensible_widget.get_allocation()
+        self.win.resize(
+            sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        common.center_window(self.win, self.parent, self.sensible_widget)
+        gobject.idle_add(
+            common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):
         self.win.hide()

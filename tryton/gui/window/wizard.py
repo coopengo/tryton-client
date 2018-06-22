@@ -4,6 +4,7 @@ import logging
 import gettext
 
 import gtk
+import gobject
 import pango
 
 from tryton.signal_event import SignalEvent
@@ -58,7 +59,13 @@ class Wizard(InfoBar):
         self.direct_print = direct_print
         self.email_print = email_print
         self.email = email
-        self.context = context
+        self.context = context.copy() if context is not None else {}
+        self.context['active_id'] = self.id
+        self.context['active_ids'] = self.ids
+        self.context['active_model'] = self.model
+        self.context['action_id'] = self.action_id
+        self.context['direct_print'] = self.direct_print
+        self.context['email_print'] = self.email_print
 
         def callback(result):
             try:
@@ -78,12 +85,6 @@ class Wizard(InfoBar):
         self.__processing = True
 
         ctx = self.context.copy()
-        ctx['active_id'] = self.id
-        ctx['active_ids'] = self.ids
-        ctx['active_model'] = self.model
-        ctx['action_id'] = self.action_id
-        ctx['direct_print'] = self.direct_print
-        ctx['email_print'] = self.email_print
         if self.screen:
             data = {
                 self.screen_state: self.screen.get_on_change_value(),
@@ -94,7 +95,7 @@ class Wizard(InfoBar):
         def callback(result):
             try:
                 result = result()
-            except RPCException, rpc_exception:
+            except RPCException as rpc_exception:
                 if (not isinstance(rpc_exception.exception,
                         TrytonServerError)
                         or not self.screen):
@@ -121,7 +122,16 @@ class Wizard(InfoBar):
                             ('email', self.email),
                             ]:
                         action[0].setdefault(k, v)
-                    Action._exec_action(*action, context=self.context.copy())
+                    context = self.context.copy()
+                    # Remove wizard keys added by run
+                    del context['active_id']
+                    del context['active_ids']
+                    del context['active_model']
+                    del context['action_id']
+                    del context['direct_print']
+                    del context['email_print']
+
+                    Action._exec_action(*action, context=context)
 
             if self.state == self.end_state:
                 self.end(lambda *a: execute_actions())
@@ -303,6 +313,7 @@ class WizardDialog(Wizard, NoModal):
             gtk.DIALOG_DESTROY_WITH_PARENT)
         self.dia.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dia.set_icon(TRYTON_ICON)
+        self.dia.set_decorated(False)
         self.dia.set_deletable(False)
         self.dia.connect('delete-event', lambda *a: True)
         self.dia.connect('close', self.close)
@@ -342,6 +353,7 @@ class WizardDialog(Wizard, NoModal):
             int(sensible_allocation.height * 0.95))
         self.dia.show()
         common.center_window(self.dia, self.parent, self.sensible_widget)
+        self.show()
         super(WizardDialog, self).update(view, defaults, buttons)
 
     def destroy(self, action=None):
@@ -387,7 +399,12 @@ class WizardDialog(Wizard, NoModal):
         return True
 
     def show(self):
+        sensible_allocation = self.sensible_widget.get_allocation()
+        self.dia.set_default_size(
+            sensible_allocation.width, sensible_allocation.height)
         self.dia.show()
+        gobject.idle_add(
+            common.center_window, self.dia, self.parent, self.sensible_widget)
 
     def hide(self):
         self.dia.hide()

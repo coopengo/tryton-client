@@ -1,6 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
+import gobject
 import gettext
 import tryton.common as common
 from tryton.gui.window.view_form.screen import Screen
@@ -14,8 +15,8 @@ _ = gettext.gettext
 class WinSearch(NoModal):
 
     def __init__(self, model, callback, sel_multi=True, context=None,
-            domain=None, view_ids=None, views_preload=None, new=True,
-            title=''):
+            domain=None, order=None, view_ids=None,
+            views_preload=None, new=True, title=''):
         NoModal.__init__(self)
         if view_ids is None:
             view_ids = []
@@ -23,6 +24,7 @@ class WinSearch(NoModal):
             views_preload = {}
         self.domain = domain or []
         self.context = context or {}
+        self.order = order
         self.view_ids = view_ids
         self.views_preload = views_preload
         self.sel_multi = sel_multi
@@ -32,6 +34,7 @@ class WinSearch(NoModal):
         self.win = gtk.Dialog(_('Search'), self.parent,
             gtk.DIALOG_DESTROY_WITH_PARENT)
         self.win.set_icon(TRYTON_ICON)
+        self.win.set_decorated(False)
         self.win.set_default_response(gtk.RESPONSE_APPLY)
         self.win.connect('response', self.response)
 
@@ -40,13 +43,17 @@ class WinSearch(NoModal):
 
         self.but_cancel = self.win.add_button(gtk.STOCK_CANCEL,
             gtk.RESPONSE_CANCEL)
+        self.but_cancel.set_always_show_image(True)
         self.but_find = self.win.add_button(gtk.STOCK_FIND, gtk.RESPONSE_APPLY)
+        self.but_find.set_always_show_image(True)
         if new and common.MODELACCESS[model]['create']:
             self.but_new = self.win.add_button(gtk.STOCK_NEW,
                 gtk.RESPONSE_ACCEPT)
+            self.but_new.set_always_show_image(True)
             self.but_new.set_accel_path('<tryton>/Form/New', self.accel_group)
 
         self.but_ok = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
 
@@ -58,7 +65,7 @@ class WinSearch(NoModal):
         scrollwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.win.vbox.pack_start(scrollwindow, expand=True, fill=True)
 
-        self.screen = Screen(model, domain=domain, mode=['tree'],
+        self.screen = Screen(model, domain=domain, mode=['tree'], order=order,
             context=context, view_ids=view_ids, views_preload=views_preload,
             row_activate=self.sig_activate, readonly=True)
         self.view = self.screen.current_view
@@ -81,12 +88,7 @@ class WinSearch(NoModal):
 
         self.model_name = model
 
-        self.win.set_default_size(700, 500)
-
         self.register()
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.9),
-            int(sensible_allocation.height * 0.9))
 
     def sig_activate(self, *args):
         self.view.treeview.emit_stop_by_name('row_activated')
@@ -99,8 +101,12 @@ class WinSearch(NoModal):
         NoModal.destroy(self)
 
     def show(self):
+        sensible_allocation = self.sensible_widget.get_allocation()
+        self.win.resize(
+            sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        common.center_window(self.win, self.parent, self.sensible_widget)
+        gobject.idle_add(
+            common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):
         self.win.hide()
@@ -116,7 +122,7 @@ class WinSearch(NoModal):
             # Remove first tree view as mode if form only
             view_ids = self.view_ids[1:]
             screen = Screen(self.model_name, domain=self.domain,
-                context=self.context, mode=['form'],
+                context=self.context, order=self.order, mode=['form'],
                 view_ids=view_ids, views_preload=self.views_preload)
 
             def callback(result):

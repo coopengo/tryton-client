@@ -8,9 +8,9 @@ import gettext
 import gobject
 
 from .widget import Widget
+from tryton import common
 from tryton.common.datetime_ import (Date as DateEntry, Time as TimeEntry,
     DateTime as DateTimeEntry, add_operators)
-from tryton.common.widget_style import set_widget_style
 from tryton.config import CONFIG
 
 _ = gettext.gettext
@@ -40,8 +40,7 @@ class Date(Widget):
 
     def _set_editable(self, value):
         self.entry.set_editable(value)
-        set_widget_style(self.entry, value)
-        self.entry.set_icon_sensitive(gtk.ENTRY_ICON_SECONDARY, value)
+        self.entry.set_icon_sensitive(gtk.ENTRY_ICON_PRIMARY, value)
 
     def _readonly_set(self, value):
         self._set_editable(not value)
@@ -76,7 +75,8 @@ class Date(Widget):
         if field and record:
             format_ = field.date_format(record)
         else:
-            format_ = self.view.screen.date_format
+            format_ = common.date_format(
+                self.view.screen.context.get('date_format'))
         self.entry.props.format = format_
 
     def display(self, record, field):
@@ -157,8 +157,7 @@ class DateTime(Date):
         for child in self.entry.get_children():
             if isinstance(child, gtk.Entry):
                 child.set_editable(value)
-                set_widget_style(child, value)
-                child.set_icon_sensitive(gtk.ENTRY_ICON_SECONDARY, value)
+                child.set_icon_sensitive(gtk.ENTRY_ICON_PRIMARY, value)
             elif isinstance(child, gtk.ComboBoxEntry):
                 child.set_sensitive(value)
 
@@ -167,7 +166,8 @@ class DateTime(Date):
             date_format = field.date_format(record)
             time_format = field.time_format(record)
         else:
-            date_format = self.view.screen.date_format
+            date_format = common.date_format(
+                self.view.screen.context.get('date_format'))
             time_format = '%X'
         self.entry.props.date_format = date_format
         self.entry.props.time_format = time_format

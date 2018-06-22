@@ -376,6 +376,11 @@ Email...:
 
 .. note:: The path of *Program Files* may vary dependent on the localization of your Windows version.
 
+.. _Menu-Options-Check_Version:
+
+Check Version:
+  Check box to enable the check of new bug-fix version.
+
 .. _Menu-Options-Save_Options:
 
 Save Options:
@@ -592,6 +597,11 @@ increases if lower case or decreases if upper case:
     - `h`: by one hour
     - `i`: by one minute
     - `s`: by one second
+
+.. warn::
+    Under Windows, the datetime before 1970 are shown in UTC instead of the
+    local timezone.
+..
 
 Search Widget
 ^^^^^^^^^^^^^

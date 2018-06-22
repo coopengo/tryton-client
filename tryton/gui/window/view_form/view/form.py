@@ -10,6 +10,7 @@ from . import View
 from tryton.common.focus import (get_invisible_ancestor, find_focused_child,
     next_focus_widget, find_focusable_child, find_first_focus_widget)
 from tryton.common import Tooltips, node_attributes, ICONFACTORY
+from tryton.common.underline import set_underline
 from tryton.common.button import Button
 from tryton.config import CONFIG
 from .form_gtk.calendar import Date, Time, DateTime
@@ -41,14 +42,24 @@ _ = gettext.gettext
 
 
 class Container(object):
-    def __init__(self, col=4):
+
+    @staticmethod
+    def constructor(col=4, homogeneous=False):
         if CONFIG['client.modepda']:
             col = 1
+        if col <= 0:
+            return HContainer(col, homogeneous)
+        elif col == 1:
+            return VContainer(col, homogeneous)
+        else:
+            return Container(col, homogeneous)
+
+    def __init__(self, col=4, homogeneous=False):
         if col < 0:
             col = 0
         self.col = col
         self.table = gtk.Table(1, col)
-        self.table.set_homogeneous(False)
+        self.table.set_homogeneous(homogeneous)
         self.table.set_col_spacings(0)
         self.table.set_row_spacings(0)
         self.table.set_border_width(0)
@@ -113,6 +124,42 @@ class Container(object):
             ypadding=1, xpadding=2)
 
 
+class VContainer(Container):
+    def __init__(self, col=1, homogeneous=False):
+        self.col = 1
+        self.table = gtk.VBox()
+        self.table.set_homogeneous(homogeneous)
+
+    def add_row(self):
+        pass
+
+    def add_col(self):
+        pass
+
+    def add(self, widget, attributes):
+        expand = bool(int(attributes.get('yexpand', False)))
+        fill = bool(int(attributes.get('yfill', False)))
+        self.table.pack_start(widget, expand=expand, fill=fill, padding=2)
+
+
+class HContainer(Container):
+    def __init__(self, col=0, homogeneous=False):
+        self.col = 0
+        self.table = gtk.HBox()
+        self.table.set_homogeneous(homogeneous)
+
+    def add_row(self):
+        pass
+
+    def add_col(self):
+        pass
+
+    def add(self, widget, attributes):
+        expand = bool(int(attributes.get('xexpand', True)))
+        fill = bool(int(attributes.get('xfill', True)))
+        self.table.pack_start(widget, expand=expand, fill=fill, padding=1)
+
+
 class ViewForm(View):
     editable = True
 
@@ -145,7 +192,9 @@ class ViewForm(View):
     def parse(self, node, container=None):
         if not container:
             node_attrs = node_attributes(node)
-            container = Container(int(node_attrs.get('col', 4)))
+            container = Container.constructor(
+                int(node_attrs.get('col', 4)),
+                node_attrs.get('homogeneous', False))
         mnemonics = {}
         for node in node.childNodes:
             if node.nodeType != node.ELEMENT_NODE:
@@ -168,8 +217,10 @@ class ViewForm(View):
                 mnemonics[name] = widget
             if node.tagName == 'field':
                 if name in mnemonics and widget.mnemonic_widget:
-                    mnemonics.pop(name).set_mnemonic_widget(
-                        widget.mnemonic_widget)
+                    label = mnemonics.pop(name)
+                    label.set_label(set_underline(label.get_label()))
+                    label.set_use_underline(True)
+                    label.set_mnemonic_widget(widget.mnemonic_widget)
         return container
 
     def _parse_image(self, node, container, attributes):
@@ -213,7 +264,7 @@ class ViewForm(View):
 
         label = Label(attributes.get('string', ''), attrs=attributes)
         label.set_alignment(float(attributes.get('xalign', 1.0)),
-            float(attributes.get('yalign', 0.0)))
+            float(attributes.get('yalign', 0.5)))
         label.set_angle(int(attributes.get('angle', 0)))
         attributes.setdefault('xexpand', 0)
         self.state_widgets.append(label)
@@ -266,17 +317,16 @@ class ViewForm(View):
             for attr in ('states', 'string'):
                 if attr not in attributes and attr in field.attrs:
                     attributes[attr] = field.attrs[attr]
-        label = gtk.Label('_' + attributes['string'].replace('_', '__'))
+        label = gtk.Label(set_underline(attributes['string']))
         label.set_use_underline(True)
-        tab_box.pack_start(label)
 
         if 'icon' in attributes:
             ICONFACTORY.register_icon(attributes['icon'])
-            pixbuf = tab_box.render_icon(attributes['icon'],
-                gtk.ICON_SIZE_SMALL_TOOLBAR)
             icon = gtk.Image()
-            icon.set_from_pixbuf(pixbuf)
+            icon.set_from_stock(
+                attributes['icon'], gtk.ICON_SIZE_SMALL_TOOLBAR)
             tab_box.pack_start(icon)
+        tab_box.pack_start(label)
         tab_box.show_all()
 
         viewport = gtk.Viewport()
@@ -332,7 +382,6 @@ class ViewForm(View):
 
     def _parse_group(self, node, container, attributes):
         group = self.parse(node)
-        group.table.set_homogeneous(attributes.get('homogeneous', False))
         if 'name' in attributes:
             field = self.screen.group.fields[attributes['name']]
             if attributes['name'] == self.screen.exclude_field:

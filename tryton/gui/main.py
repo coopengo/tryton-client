@@ -11,6 +11,9 @@ import gtk
 import json
 import webbrowser
 import threading
+import logging
+
+from gi.repository import GLib
 
 import tryton.rpc as rpc
 from tryton.common import RPCExecute, RPCException, RPCContextReload
@@ -38,11 +41,12 @@ if os.environ.get('GTKOSXAPPLICATION'):
 else:
     gtkosx_application = None
 try:
-    import gtkspell
+    from gi.repository import GtkSpell
 except ImportError:
-    gtkspell = None
+    GtkSpell = None
 
 _ = gettext.gettext
+logger = logging.getLogger(__name__)
 
 
 _MAIN = []
@@ -142,6 +146,14 @@ class Main(object):
 
         self.buttons = {}
 
+        self.info = gtk.VBox()
+        self.vbox.pack_start(self.info, expand=False)
+        if CONFIG['client.check_version']:
+            common.check_version(self.info)
+            GLib.timeout_add_seconds(
+                int(CONFIG['download.frequency']), common.check_version,
+                self.info)
+
         self.pane = gtk.HPaned()
         self.vbox.pack_start(self.pane, True, True)
         self.pane.connect('button-press-event',
@@ -181,20 +193,6 @@ class Main(object):
             self.radiomenuitem_pda.set_active(True)
         else:
             self.radiomenuitem_normal.set_active(True)
-
-        settings = gtk.settings_get_default()
-        # Due to a bug in old version of pyGTk gtk-button-images can
-        # not be set when there is no buttons
-        gtk.Button()
-        try:
-            settings.set_property('gtk-button-images', True)
-        except TypeError:
-            pass
-        try:
-            settings.set_property('gtk-can-change-accels',
-                CONFIG['client.can_change_accelerators'])
-        except TypeError:
-            pass
 
         # Register plugins
         tryton.plugins.register()
@@ -301,11 +299,11 @@ class Main(object):
         def match_selected(completion, model, iter_):
             model, record_id, model_name = model.get(iter_, 2, 3, 4)
             if model == self.menu_screen.model_name:
+                # ids is not defined to prevent to add suffix
                 Action.exec_keyword('tree_open', {
                         'model': model,
                         'id': record_id,
-                        'ids': [record_id],
-                        }, context=self.menu_screen.context.copy())
+                        })
             else:
                 Window.create(model,
                     res_id=record_id,
@@ -566,24 +564,6 @@ class Main(object):
         if (CONFIG['client.toolbar'] or 'both') == 'text':
             radiomenuitem_text.set_active(True)
 
-        # Menubar accelerators
-        menuitem_menubar = gtk.MenuItem(_('_Menubar'), use_underline=True)
-        menu_options.add(menuitem_menubar)
-
-        menu_menubar = gtk.Menu()
-        menu_menubar.set_accel_group(self.accel_group)
-        menu_menubar.set_accel_path('<tryton>/Options/Menubar')
-        menuitem_menubar.set_submenu(menu_menubar)
-
-        checkmenuitem_accel = gtk.CheckMenuItem(_('Change Accelerators'),
-            use_underline=True)
-        checkmenuitem_accel.connect('activate',
-                lambda menuitem: self.sig_accel_change(menuitem.get_active()))
-        checkmenuitem_accel.set_accel_path('<tryton>/Options/Menubar/Accel')
-        menu_menubar.add(checkmenuitem_accel)
-        if CONFIG['client.can_change_accelerators']:
-            checkmenuitem_accel.set_active(True)
-
         menuitem_mode = gtk.MenuItem(_('_Mode'), use_underline=True)
         menu_options.add(menuitem_mode)
 
@@ -649,7 +629,7 @@ class Main(object):
         menu_form.add(checkmenuitem_fast_tabbing)
         checkmenuitem_fast_tabbing.set_active(CONFIG['client.fast_tabbing'])
 
-        if gtkspell:
+        if GtkSpell:
             checkmenuitem_spellcheck = gtk.CheckMenuItem(_('Spell Checking'),
                 use_underline=True)
             checkmenuitem_spellcheck.connect('activate',
@@ -686,6 +666,20 @@ class Main(object):
         menuitem_email.connect('activate', self.sig_email)
         menuitem_email.set_accel_path('<tryton>/Options/Email')
         menu_options.add(menuitem_email)
+
+        def activate_check_version(menuitem):
+            active = menuitem.get_active()
+            CONFIG['client.check_version'] = active
+            if active:
+                common.check_version(self.info)
+        checkmenu_check_version = gtk.CheckMenuItem(
+            _("Check Version"), use_underline=True)
+        checkmenu_check_version.set_active(
+            bool(CONFIG['client.check_version']))
+        checkmenu_check_version.connect('activate', activate_check_version)
+        checkmenu_check_version.set_accel_path(
+            '<tryton>/Options/Check Version')
+        menu_options.add(checkmenu_check_version)
 
         menu_options.add(gtk.SeparatorMenuItem())
 
@@ -740,11 +734,11 @@ class Main(object):
             allow_similar = (event.state & gtk.gdk.MOD1_MASK or
                              event.state & gtk.gdk.SHIFT_MASK)
             with Window(allow_similar=allow_similar):
+                # ids is not defined to prevent to add suffix
                 Action.exec_keyword('tree_open', {
-                    'model': self.menu_screen.model_name,
-                    'id': id_,
-                    'ids': [id_],
-                })
+                        'model': self.menu_screen.model_name,
+                        'id': id_,
+                        })
 
         def _manage_favorites(widget):
             Window.create(self.menu_screen.model_name + '.favorite',
@@ -789,18 +783,6 @@ class Main(object):
             # As the select event is not managed by the mac menu,
             # it is done using a timeout
             gobject.timeout_add(1000, lambda: not self.favorite_set())
-
-    def sig_accel_change(self, value):
-        CONFIG['client.can_change_accelerators'] = value
-        return self.sig_accel()
-
-    def sig_accel(self):
-        menubar = CONFIG['client.can_change_accelerators']
-        settings = gtk.settings_get_default()
-        if menubar:
-            settings.set_property('gtk-can-change-accels', True)
-        else:
-            settings.set_property('gtk-can-change-accels', False)
 
     def sig_mode_change(self, pda_mode=False):
         CONFIG['client.modepda'] = pda_mode
@@ -895,7 +877,7 @@ class Main(object):
             self.notebook.get_nth_page(self.notebook.get_current_page()))
 
     def sig_login(self, widget=None):
-        if not self.sig_logout(widget, disconnect=False):
+        if not self.sig_logout(widget):
             return
         language = CONFIG['client.lang']
         try:
@@ -949,7 +931,7 @@ class Main(object):
         self.menu_expander_clear()
         return True
 
-    def sig_logout(self, widget=None, disconnect=True):
+    def sig_logout(self, widget=None):
         try:
             if not self.close_pages():
                 return False
@@ -959,8 +941,7 @@ class Main(object):
         self.favorite_unset()
         self.menuitem_favorite.set_sensitive(False)
         self.menuitem_user.set_sensitive(False)
-        if disconnect:
-            rpc.logout()
+        rpc.logout()
         return True
 
     def sig_about(self, widget):
@@ -998,11 +979,22 @@ class Main(object):
             if expanded:
                 CONFIG['menu.pane'] = self.pane.get_position()
 
-    def on_paned_button_press_event(self, paned, event):
-        expander = self.pane.get_child1()
-        if expander:
-            return not expander.get_expanded()
+    def on_paned_button_press_event(self, widget, event):
+        if widget == self.pane:
+            expander = self.pane.get_child1()
+            if expander and not expander.get_expanded():
+                self.menu_toggle()
         return False
+
+    def menu_row_activate(self):
+        screen = self.menu_screen
+        record_id = (screen.current_record.id
+            if screen.current_record else None)
+        # ids is not defined to prevent to add suffix
+        return Action.exec_keyword('tree_open', {
+                'model': screen.model_name,
+                'id': record_id,
+                }, warning=False)
 
     def sig_win_menu(self, prefs=None):
         from tryton.gui.window.view_form.screen import Screen
@@ -1038,7 +1030,8 @@ class Main(object):
         # Postpone domain eval
         domain = action['pyson_domain']
         screen = Screen(action['res_model'], mode=['tree'], view_ids=view_ids,
-            domain=domain, context=action_ctx, readonly=True, limit=None)
+            domain=domain, context=action_ctx, readonly=True, limit=None,
+            row_activate=self.menu_row_activate)
         # Use alternate view to not show search box
         screen.screen_container.alternate_view = True
         screen.switch_view(view_type=screen.current_view.view_type)
@@ -1303,7 +1296,7 @@ class Main(object):
             res_id = None
             mode = None
             try:
-                view_ids = json.loads(params.get('views', 'false'))
+                view_ids = json.loads(params.get('views', '[]'))
                 limit = json.loads(params.get('limit', 'null'))
                 name = json.loads(params.get('name', '""'))
                 search_value = json.loads(params.get('search_value', '[]'),

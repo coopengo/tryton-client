@@ -280,7 +280,14 @@ class Form(SignalEvent, TabContent):
             [r.id for r in self.screen.selected_records],
             context=self.screen.context)
         for name in self.screen.current_view.get_fields():
-            export.sel_field(name)
+            type = self.screen.group.fields[name].attrs['type']
+            if type == 'selection':
+                export.sel_field(name + '.translated')
+            elif type == 'reference':
+                export.sel_field(name + '.translated')
+                export.sel_field(name + '/rec_name')
+            else:
+                export.sel_field(name)
 
     def sig_new(self, widget=None, autosave=True):
         if not common.MODELACCESS[self.model]['create']:
@@ -457,7 +464,7 @@ class Form(SignalEvent, TabContent):
         return True
 
     def sig_close(self, widget=None):
-        for dialog in self.dialogs[:]:
+        for dialog in reversed(self.dialogs[:]):
             dialog.destroy()
         return self.modified_save()
 
@@ -615,7 +622,6 @@ class Form(SignalEvent, TabContent):
             menu.add(menuitem)
         menu.add(gtk.SeparatorMenuItem())
         kw_plugins = []
-
         for plugin in plugins.MODULES:
             for plugin_spec in plugin.get_plugins(self.model):
                 name, func = plugin_spec[:2]

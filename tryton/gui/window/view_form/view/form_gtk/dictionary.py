@@ -20,7 +20,7 @@ from tryton.common.completion import get_completion, update_completion
 from tryton.common.datetime_ import Date, DateTime
 from tryton.common.domain_parser import quote
 from tryton.common.entry_position import reset_position
-from tryton.common.widget_style import set_widget_style
+from tryton.common.underline import set_underline
 
 _ = gettext.gettext
 
@@ -54,7 +54,6 @@ class DictEntry(object):
 
     def set_readonly(self, readonly):
         self.widget.set_editable(not readonly)
-        set_widget_style(self.widget, not readonly)
 
 
 class DictBooleanEntry(DictEntry):
@@ -325,7 +324,9 @@ class DictWidget(Widget):
         self.rows = {}
 
         self.widget = gtk.Frame()
-        self.widget.set_label(attrs.get('string', ''))
+        label = gtk.Label(set_underline(attrs.get('string', '')))
+        label.set_use_underline(True)
+        self.widget.set_label_widget(label)
         self.widget.set_shadow_type(gtk.SHADOW_OUT)
 
         vbox = gtk.VBox()
@@ -337,6 +338,7 @@ class DictWidget(Widget):
         self.table.set_border_width(0)
         vbox.pack_start(self.table, expand=True, fill=True)
 
+        # JCA: Specific
         if not attrs.get('no_command', 0.0):
             hbox = gtk.HBox()
             hbox.set_border_width(2)
@@ -456,6 +458,7 @@ class DictWidget(Widget):
         self._set_button_sensitive()
         for widget in self.fields.values():
             widget.set_readonly(readonly)
+        # JCA: Specific
         if not self.attrs.get('no_command', 0.0):
             self.wid_text.set_sensitive(not readonly)
             self.wid_text.set_editable(not readonly)
@@ -487,7 +490,8 @@ class DictWidget(Widget):
             text = _(':') + self.keys[key]['string']
         else:
             text = self.keys[key]['string'] + _(':')
-        label = gtk.Label(text)
+        label = gtk.Label(set_underline(text))
+        label.set_use_underline(True)
         label.set_alignment(1., .5)
         self.table.attach(label, 0, 1, n_rows - 1, n_rows,
             xoptions=gtk.FILL, yoptions=False, xpadding=4, ypadding=4)

@@ -47,7 +47,8 @@ class Many2Many(Widget):
         self.wid_text = PlaceholderEntry()
         self.wid_text.set_placeholder_text(_('Search'))
         self.wid_text.set_property('width_chars', 13)
-        self.wid_text.connect('focus-out-event', self._focus_out)
+        self.wid_text_focus_out_pid = self.wid_text.connect(
+            'focus-out-event', self._focus_out)
         self.focus_out = True
         hbox.pack_start(self.wid_text, expand=True, fill=True)
 
@@ -147,7 +148,7 @@ class Many2Many(Widget):
         return False
 
     def destroy(self):
-        self.wid_text.disconnect_by_func(self._focus_out)
+        self.wid_text.disconnect(self.wid_text_focus_out_pid)
         self.screen.destroy()
 
     def _sig_add(self, *args):

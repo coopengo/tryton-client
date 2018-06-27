@@ -26,6 +26,7 @@ deps() {
         mingw-w64-i686-python2-gobject \
         mingw-w64-i686-python3-gobject \
         mingw-w64-gtksourceview3 \
+        mingw-w64-i686-gtkglext \
         mingw-w64-i686-python2-cx_Freeze
 
     pip install \

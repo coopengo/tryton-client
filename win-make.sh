@@ -41,23 +41,12 @@ clean() {
     rm -rf build dist coog-*
 }
 
-patch() {
-    git apply win-patch.diff
-    [ ! -z "$1" ] && echo "__version_coog__ = '$v'" >> tryton/__init__.py
-}
-
-unpatch() {
-    git checkout HEAD -- tryton
-}
-
 build() {
     clean
     local v; v=$(version)
-    patch "$v"
     python setup-freeze.py install_exe -d dist
     makensis -DVERSION="$v" setup.nsi
     makensis -DVERSION="$v" setup-single.nsi
-    unpatch
 }
 
 upload() {

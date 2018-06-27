@@ -82,8 +82,8 @@ class One2Many(Widget):
             self.wid_text = Gtk.Entry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
-            self.wid_text.connect('focus-out-event',
-                lambda *a: self._focus_out())
+            self.pid_focus = self.wid_text.connect('focus-out-event',
+                self._focus_out)
             hbox.pack_start(self.wid_text, expand=True, fill=True, padding=0)
 
             if int(self.attrs.get('completion', 1)):
@@ -264,6 +264,8 @@ class One2Many(Widget):
         return False
 
     def destroy(self):
+        if self.attrs.get('add_remove'):
+            self.wid_text.disconnect(self.pid_focus)
         self.screen.destroy()
 
     def _on_activate(self):

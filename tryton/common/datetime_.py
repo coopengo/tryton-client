@@ -4,10 +4,6 @@ import gettext
 import datetime
 import re
 
-import pygtk
-
-pygtk.require('2.0')
-
 import gobject
 import gtk
 

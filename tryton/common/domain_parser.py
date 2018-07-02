@@ -982,7 +982,11 @@ class DomainParser(object):
             factor = self._get_widget_factor(field['name'])
             if factor and field['type'] in ('integer', 'float', 'numeric'):
                 value = (value * factor) if value else value
-            formatted_value = format_value(field, value, target, self.context)
+            if field['type'] in ('char', 'text', 'many2one', 'many2many',
+                    'one2many', 'reference'):
+                value = str(value)
+            formatted_value = format_value(field, value, target,
+                self.context)
             if (operator in OPERATORS and
                     field['type'] in ('char', 'text', 'selection')
                     and value == ''):

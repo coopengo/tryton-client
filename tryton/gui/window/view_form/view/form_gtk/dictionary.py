@@ -445,6 +445,10 @@ class DictWidget(Widget):
         return dict((key, widget.get_value())
             for key, widget in self.fields.items())
 
+    def send_modified(self, *args):
+        super(DictWidget, self).send_modified(*args)
+        self.set_value(self.record, self.field)
+
     @property
     def modified(self):
         if self.record and self.field:

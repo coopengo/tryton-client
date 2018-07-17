@@ -494,7 +494,8 @@ class DBLogin(object):
 
         # Date stuff
         if CONFIG['login.date']:
-            self.label_date = gtk.Label(str=_('Date:'))
+            self.label_date = gtk.Label()
+            self.label_date.set_text('Date:')
             self.label_date.set_justify(gtk.JUSTIFY_RIGHT)
             self.label_date.set_alignment(1, .5)
             self.label_date.set_padding(3, 3)

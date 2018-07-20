@@ -1,5 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import glib
 import gobject
 import gtk
 import sys
@@ -41,7 +42,7 @@ def delay(func):
             if self.treeview.display_counter == display_counter:
                 func(self, *args, **kwargs)
         display_counter = self.treeview.display_counter
-        gobject.idle_add(wait)
+        glib.idle_add(wait)
     return wrapper
 
 
@@ -525,7 +526,7 @@ class ViewTree(View):
 
     def set_column_widget(self, column, field, attributes,
             arrow=True, align=0.5):
-        hbox = gtk.HBox(False, 2)
+        hbox = gtk.HBox(homogeneous=False, spacing=2)
         label = gtk.Label(attributes['string'])
         if field and self.editable:
             required = field.attrs.get('required')
@@ -850,7 +851,7 @@ class ViewTree(View):
 
     def drag_data_get(self, treeview, context, selection, target_id,
             etime):
-        treeview.emit_stop_by_name('drag-data-get')
+        treeview.stop_emission_by_name('drag-data-get')
 
         def _func_sel_get(model, path, iter_, data):
             value = model.get_value(iter_, 0)
@@ -867,7 +868,7 @@ class ViewTree(View):
 
     def drag_data_received(self, treeview, context, x, y, selection,
             info, etime):
-        treeview.emit_stop_by_name('drag-data-received')
+        treeview.stop_emission_by_name('drag-data-received')
         if self.attributes.get('sequence'):
             field = self.screen.group.fields[self.attributes['sequence']]
             for record in self.screen.group:
@@ -932,14 +933,14 @@ class ViewTree(View):
         return True
 
     def drag_drop(self, treeview, context, x, y, time):
-        treeview.emit_stop_by_name('drag-drop')
+        treeview.stop_emission_by_name('drag-drop')
         targets = treeview.drag_dest_get_target_list()
         target = treeview.drag_dest_find_target(context, targets)
         treeview.drag_get_data(context, target, time)
         return True
 
     def drag_data_delete(self, treeview, context):
-        treeview.emit_stop_by_name('drag-data-delete')
+        treeview.stop_emission_by_name('drag-data-delete')
 
     def __button_press(self, treeview, event):
         if event.button == 3:
@@ -1109,7 +1110,7 @@ class ViewTree(View):
                     go_previous()
                     return True
                 # Delay the save to let GTK process the current event
-                gobject.idle_add(save)
+                glib.idle_add(save)
             elif (previous_record != self.screen.current_record
                     and self.screen.pre_validate):
 
@@ -1118,7 +1119,7 @@ class ViewTree(View):
                         if not previous_record.pre_validate():
                             go_previous()
                 # Delay the pre_validate to let GTK process the current event
-                gobject.idle_add(pre_validate)
+                glib.idle_add(pre_validate)
         self.update_sum()
 
     def set_value(self):

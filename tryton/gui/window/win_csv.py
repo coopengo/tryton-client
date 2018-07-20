@@ -249,12 +249,12 @@ class WinCSV(NoModal):
         return True
 
     def drag_drop(self, treeview, context, x, y, time):
-        treeview.emit_stop_by_name('drag-drop')
+        treeview.stop_emission_by_name('drag-drop')
         return True
 
     def drag_data_get(self, treeview, context, selection, target_id,
             etime):
-        treeview.emit_stop_by_name('drag-data-get')
+        treeview.stop_emission_by_name('drag-data-get')
 
         def _func_sel_get(store, path, iter_, data):
             data.append(path[0])
@@ -269,7 +269,7 @@ class WinCSV(NoModal):
 
     def drag_data_received(self, treeview, context, x, y, selection,
             info, etime):
-        treeview.emit_stop_by_name('drag-data-received')
+        treeview.stop_emission_by_name('drag-data-received')
         try:
             selection_data = selection.data
         except AttributeError:
@@ -301,7 +301,7 @@ class WinCSV(NoModal):
         return True
 
     def drag_data_delete(self, treeview, context):
-        treeview.emit_stop_by_name('drag-data-delete')
+        treeview.stop_emission_by_name('drag-data-delete')
 
     def get_delimiter(self):
         return self.csv_delimiter.get_text() or ','

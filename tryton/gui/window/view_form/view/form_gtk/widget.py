@@ -1,11 +1,10 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
-import gobject
+import glib
 import gettext
 import pango
 
-from tryton.common import COLORS
 import tryton.common as common
 from tryton.gui.window.nomodal import NoModal
 from tryton.common import TRYTON_ICON
@@ -80,9 +79,9 @@ class Widget(object):
         def get_value():
             if not self.widget.props.window:
                 return
-            gobject.timeout_add(300, send, self.get_value())
+            glib.timeout_add(300, send, self.get_value())
         # Wait the current event is finished to retreive the value
-        gobject.idle_add(get_value)
+        glib.idle_add(get_value)
         return False
 
     def color_set(self, name):
@@ -325,7 +324,7 @@ class TranslateDialog(NoModal):
         self.win.resize(
             sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        gobject.idle_add(
+        glib.idle_add(
             common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):

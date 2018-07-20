@@ -93,7 +93,7 @@ class DictSelectionEntry(DictEntry):
         widget.connect('notify::active',
             lambda w, e: self.parent_widget._focus_out())
         widget.connect(
-            'scroll-event', lambda c, e: c.emit_stop_by_name('scroll-event'))
+            'scroll-event', lambda c, e: c.stop_emission_by_name('scroll-event'))
         selection_shortcuts(widget)
 
         # setting completion and selection

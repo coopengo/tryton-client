@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 
 import gtk
+import glib
 import gobject
 import glib
 import pango
@@ -121,7 +122,7 @@ class TrytonIconFactory(gtk.IconFactory):
             self._tryton_icons.remove((icon['id'], icon['name']))
             del self._name2id[icon['name']]
             self._loaded_icons.add(icon['name'])
-            iconset = gtk.IconSet(pixbuf)
+            iconset = gtk.IconSet.new_from_pixbuf(pixbuf)
             self.add(icon['name'], iconset)
 
 ICONFACTORY = TrytonIconFactory()
@@ -1269,7 +1270,7 @@ class RPCProgress(object):
                 self.error = True
         if self.callback:
             # Post to GTK queue to be run by the main thread
-            gobject.idle_add(self.process)
+            glib.idle_add(self.process)
         return True
 
     def run(self, process_exception_p=True, callback=None):

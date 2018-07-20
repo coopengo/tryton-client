@@ -6,6 +6,7 @@ import sys
 import gettext
 from urlparse import urlparse, parse_qsl
 import urllib
+import glib
 import gobject
 import gtk
 import json
@@ -377,11 +378,11 @@ class Main(object):
             if self._global_run:
                 if self._global_check_timeout_id:
                     gobject.source_remove(self._global_check_timeout_id)
-                self._global_check_timeout_id = gobject.timeout_add(500,
+                self._global_check_timeout_id = glib.timeout_add(500,
                     check_timeout, widget, search_text)
                 return True
             else:
-                self._global_update_timeout_id = gobject.timeout_add(500,
+                self._global_update_timeout_id = glib.timeout_add(500,
                     update, widget, search_text)
                 self._global_check_timeout_id = None
                 return False
@@ -782,7 +783,7 @@ class Main(object):
         if self.macapp and had_submenu:
             # As the select event is not managed by the mac menu,
             # it is done using a timeout
-            gobject.timeout_add(1000, lambda: not self.favorite_set())
+            glib.timeout_add(1000, lambda: not self.favorite_set())
 
     def sig_mode_change(self, pda_mode=False):
         CONFIG['client.modepda'] = pda_mode
@@ -1067,7 +1068,7 @@ class Main(object):
             if treeview.props.window:
                 self.toggle_favorite(renderer, path, treeview)
         favorite_renderer.connect('clicked',
-            lambda *a: gobject.idle_add(toggle_favorite, *a), treeview)
+            lambda *a: glib.idle_add(toggle_favorite, *a), treeview)
         # Unset fixed height mode to add column
         treeview.set_fixed_height_mode(False)
         treeview.set_property(
@@ -1262,7 +1263,7 @@ class Main(object):
                 current_form.set_cursor()
         # Using idle_add because the gtk.TreeView grabs the focus at the
         # end of the event
-        gobject.idle_add(set_cursor)
+        glib.idle_add(set_cursor)
         for dialog in current_form.dialogs:
             dialog.show()
 
@@ -1395,4 +1396,4 @@ class Main(object):
             with gtk.gdk.lock:
                 self._open_url(url)
                 return False
-        gobject.idle_add(idle_open_url)
+        glib.idle_add(idle_open_url)

@@ -379,12 +379,12 @@ class WinForm(NoModal, InfoBar):
             gtk.RESPONSE_OK if sensitive else gtk.RESPONSE_CANCEL)
 
     def close(self, widget):
-        widget.emit_stop_by_name('close')
+        widget.stop_emission_by_name('close')
         self.response(self.win, gtk.RESPONSE_CANCEL)
         return True
 
     def delete_event(self, widget, event):
-        widget.emit_stop_by_name('delete-event')
+        widget.stop_emission_by_name('delete-event')
         return True
 
     def response(self, win, response_id):

@@ -375,7 +375,7 @@ class SourceView(Widget):
     def _test_check(self, sourceview, event):
         if gtk.gdk.keyval_name(event.keyval) == 'F7':
             self.check_code(None)
-            sourceview.emit_stop_by_name('key-press-event')
+            sourceview.stop_emission_by_name('key-press-event')
 
     def _clear_marks(self, sourcebuffer):
         tag_table = sourcebuffer.get_tag_table()

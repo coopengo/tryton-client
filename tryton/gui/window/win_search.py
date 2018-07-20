@@ -1,7 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
-import gobject
+import glib
 import gettext
 import tryton.common as common
 from tryton.gui.window.view_form.screen import Screen
@@ -91,7 +91,7 @@ class WinSearch(NoModal):
         self.register()
 
     def sig_activate(self, *args):
-        self.view.treeview.emit_stop_by_name('row_activated')
+        self.view.treeview.stop_emission_by_name('row_activated')
         self.win.response(gtk.RESPONSE_OK)
         return True
 
@@ -105,7 +105,7 @@ class WinSearch(NoModal):
         self.win.resize(
             sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        gobject.idle_add(
+        glib.idle_add(
             common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):

@@ -3,7 +3,7 @@
 "Screen"
 import copy
 import functools
-import gobject
+import glib
 import datetime
 import calendar
 import json
@@ -441,8 +441,8 @@ class Screen(SignalEvent):
             unread_note = record.unread_note
         self.signal('unread-note', unread_note)
         # update attachment-count after 1 second
-        gobject.timeout_add(1000, self.update_attachment, record)
-        gobject.timeout_add(1000, self.update_note, record)
+        glib.timeout_add(1000, self.update_attachment, record)
+        glib.timeout_add(1000, self.update_note, record)
         return True
 
     current_record = property(__get_current_record, __set_current_record)
@@ -520,7 +520,7 @@ class Screen(SignalEvent):
         self.screen_container.set(self.current_view.widget)
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
-        gobject.idle_add(self.set_cursor)
+        glib.idle_add(self.set_cursor)
 
     def load_view_to_load(self):
         if len(self.view_to_load):
@@ -601,7 +601,7 @@ class Screen(SignalEvent):
         self.current_record = record
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
-        gobject.idle_add(self.set_cursor, True)
+        glib.idle_add(self.set_cursor, True)
         return self.current_record
 
     def new_model_position(self):

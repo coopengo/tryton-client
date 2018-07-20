@@ -3,7 +3,7 @@
 "Form"
 import gettext
 import gtk
-import gobject
+import glib
 from tryton.gui.window.view_form.screen import Screen
 from tryton.action import Action
 from tryton.gui import Main
@@ -50,7 +50,7 @@ class Form(SignalEvent, TabContent):
             self._record_message)
 
         self.screen.signal_connect(self, 'record-modified',
-            lambda *a: gobject.idle_add(self._record_modified, *a))
+            lambda *a: glib.idle_add(self._record_modified, *a))
         self.screen.signal_connect(self, 'record-saved', self._record_saved)
         self.screen.signal_connect(self, 'attachment-count',
                 self._attachment_count)
@@ -516,7 +516,8 @@ class Form(SignalEvent, TabContent):
                 ('print', 'print', _('Print'), _('Print report')),
         ):
             if action_type is not None:
-                tbutton = gtk.ToggleToolButton(iconstock.get(special_action))
+                tbutton = gtk.ToggleToolButton(
+                    stock_id=iconstock.get(special_action))
                 tbutton.set_label(action_name)
                 tbutton._menu = self._create_popup_menu(tbutton,
                     action_type, toolbars[action_type], special_action)

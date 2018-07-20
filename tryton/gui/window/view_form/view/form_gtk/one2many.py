@@ -3,7 +3,7 @@
 import gtk
 import gettext
 import itertools
-import gobject
+import glib
 
 from .widget import Widget
 from tryton.gui.window.view_form.screen import Screen
@@ -199,7 +199,7 @@ class One2Many(Widget):
         self.screen.signal_connect(self, 'record-message', self._sig_label)
         if self.attrs.get('group'):
             self.screen.signal_connect(self, 'current-record-changed',
-                lambda screen, _: gobject.idle_add(self.group_sync, screen,
+                lambda screen, _: glib.idle_add(self.group_sync, screen,
                     screen.current_record))
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True)
@@ -581,7 +581,7 @@ class One2Many(Widget):
                         record = None
                     screen.current_record = record
                     screen.display()
-                gobject.idle_add(go_previous)
+                glib.idle_add(go_previous)
                 return
             to_sync.append((widget, record))
         for widget, record in to_sync:

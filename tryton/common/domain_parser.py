@@ -238,20 +238,23 @@ def convert_value(field, value, context=None):
             return bool(value)
 
     def convert_float():
+        factor = float(field.get('factor', 1))
         try:
-            return locale.atof(value)
+            return locale.atof(value) / factor
         except (ValueError, AttributeError):
             return
 
     def convert_integer():
+        factor = float(field.get('factor', 1))
         try:
-            return int(locale.atof(value))
+            return int(locale.atof(value) / factor)
         except (ValueError, AttributeError):
             return
 
     def convert_numeric():
+        factor = Decimal(field.get('factor', 1))
         try:
-            return locale.atof(value, Decimal)
+            return locale.atof(value, Decimal) / factor
         except (decimal.InvalidOperation, AttributeError):
             return
 
@@ -347,6 +350,14 @@ def test_convert_float():
         assert convert_value(field, value) == result
 
 
+def test_convert_float_factor():
+    field = {
+        'type': 'float',
+        'factor': '100',
+        }
+    assert convert_value(field, '42') == 0.42
+
+
 def test_convert_integer():
     field = {
         'type': 'integer',
@@ -361,6 +372,14 @@ def test_convert_integer():
         assert convert_value(field, value) == result
 
 
+def test_convert_integer_factor():
+    field = {
+        'type': 'integer',
+        'factor': '2',
+        }
+    assert convert_value(field, '6') == 3
+
+
 def test_convert_numeric():
     field = {
         'type': 'numeric',
@@ -373,6 +392,14 @@ def test_convert_numeric():
             (None, None),
             ):
         assert convert_value(field, value) == result
+
+
+def test_convert_numeric_factor():
+    field = {
+        'type': 'numeric',
+        'factor': '5',
+        }
+    assert convert_value(field, '1') == Decimal('0.2')
 
 
 def test_convert_selection():
@@ -461,8 +488,9 @@ def format_value(field, value, target=None, context=None):
         return _('True') if value else _('False')
 
     def format_integer():
+        factor = float(field.get('factor', 1))
         if value or value is 0 or isinstance(value, float):
-            return str(int(value))
+            return str(int(value * factor))
         return ''
 
     def format_float():
@@ -470,11 +498,16 @@ def format_value(field, value, target=None, context=None):
                 and value is not 0
                 and not isinstance(value, (float, Decimal))):
             return ''
+        if isinstance(value, Decimal):
+            cast = Decimal
+        else:
+            cast = float
+        factor = cast(field.get('factor', 1))
         try:
-            digit = len(str(value).split('.')[1])
+            digit = len(str(value * factor).rstrip('0').split('.')[1])
         except IndexError:
             digit = 0
-        return locale.format('%.*f', (digit, value or 0), True)
+        return locale.format('%.*f', (digit, value * factor or 0), True)
 
     def format_selection():
         selections = dict(field['selection'])
@@ -565,6 +598,14 @@ def test_format_integer():
         assert format_value(field, value) == result
 
 
+def test_format_integer_factor():
+    field = {
+        'type': 'integer',
+        'factor': '2',
+        }
+    assert format_value(field, 3) == '6'
+
+
 def test_format_float():
     field = {
         'type': 'float',
@@ -575,11 +616,19 @@ def test_format_float():
             (1.50, '1.5'),
             (150.79, '150.79'),
             (0, '0'),
-            (0.0, '0.0'),
+            (0.0, '0'),
             (False, ''),
             (None, ''),
             ):
         assert format_value(field, value) == result
+
+
+def test_format_float_factor():
+    field = {
+        'type': 'float',
+        'factor': '100',
+        }
+    assert format_value(field, 0.42) == '42'
 
 
 def test_format_numeric():
@@ -589,14 +638,22 @@ def test_format_numeric():
     for value, result in (
             (Decimal(1), '1'),
             (Decimal('1.5'), '1.5'),
-            (Decimal('1.50'), '1.50'),
+            (Decimal('1.50'), '1.5'),
             (Decimal('150.79'), '150.79'),
             (Decimal(0), '0'),
-            (Decimal('0.0'), '0.0'),
+            (Decimal('0.0'), '0'),
             (False, ''),
             (None, ''),
             ):
         assert format_value(field, value) == result
+
+
+def test_format_numeric_factor():
+    field = {
+        'type': 'numeric',
+        'factor': '5',
+        }
+    assert format_value(field, Decimal('0.2')) == '1'
 
 
 def test_format_selection():

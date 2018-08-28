@@ -27,7 +27,6 @@ from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
-from tryton.pyson import PYSONDecoder
 import tryton.rpc as rpc
 
 _ = gettext.gettext
@@ -210,8 +209,9 @@ class Screen(SignalEvent):
                 if type_ == 'datetime':
                     fields[name]['format'] = '"%H:%M:%S"'
 
-        # ABD: Store the screen (self) and the view_id into the parse domain
-        domain_parser = DomainParser(fields, self.context, self, view_id)
+        context = rpc.CONTEXT.copy()
+        context.update(self.context)
+        domain_parser = DomainParser(fields, context)
         self._domain_parser[view_id] = domain_parser
         return domain_parser
 
@@ -264,6 +264,7 @@ class Screen(SignalEvent):
         context = self.context
         if self.screen_container.but_active.get_active():
             context['active_test'] = False
+
         try:
             ids = RPCExecute('model', self.model_name, 'search', domain,
                 self.offset, self.limit, self.order, context=context)

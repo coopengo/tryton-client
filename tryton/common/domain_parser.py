@@ -979,11 +979,7 @@ class DomainParser(object):
                     operator = ''
             # ABD: Retrieve factor to restore the original typed value in the
             # search bar
-            if field['name'] not in ('create_date', 'write_date',
-                    'create_uid', 'write_uid', 'id'):
-                factor = self._get_widget_factor(field['name'])
-            else:
-                factor = None
+            factor = self._get_widget_factor(field['name'])
             if factor and field['type'] in ('integer', 'float', 'numeric'):
                 value = (value * factor) if value else value
             formatted_value = format_value(field, value, target, self.context)

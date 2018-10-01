@@ -541,6 +541,9 @@ class Form(SignalEvent, TabContent):
             icon = quick_action.get('icon.rec_name')
             if not icon:
                 icon = 'tryton-executable'
+
+            # Fix for #8825
+            common.ICONFACTORY.register_icon(icon)
             qbutton = gtk.ToolButton(icon)
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',

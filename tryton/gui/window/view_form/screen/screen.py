@@ -202,6 +202,11 @@ class Screen(SignalEvent):
         else:
             self.screen_container.but_active.hide()
 
+        if 'active' in view_tree['fields']:
+            self.screen_container.but_active.show()
+        else:
+            self.screen_container.but_active.hide()
+
         # Add common fields
         for name, string, type_ in (
                 ('id', _('ID'), 'integer'),
@@ -219,9 +224,7 @@ class Screen(SignalEvent):
                 if type_ == 'datetime':
                     fields[name]['format'] = '"%H:%M:%S"'
 
-        context = rpc.CONTEXT.copy()
-        context.update(self.context)
-        domain_parser = DomainParser(fields, context)
+        domain_parser = DomainParser(fields, self.context)
         self._domain_parser[view_id] = domain_parser
         return domain_parser
 
@@ -253,7 +256,7 @@ class Screen(SignalEvent):
         return list(self.domain_parser.completion(search_string))
 
     def search_filter(self, search_string=None, only_ids=False):
-        if self.context_screen:
+        if self.context_screen and not only_ids:
             context_record = self.context_screen.current_record
             if not context_record.validate():
                 self.clear()
@@ -274,7 +277,6 @@ class Screen(SignalEvent):
         context = self.context
         if self.screen_container.but_active.get_active():
             context['active_test'] = False
-
         try:
             ids = RPCExecute('model', self.model_name, 'search', domain,
                 self.offset, self.limit, self.order, context=context)
@@ -971,25 +973,29 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.widgets['goocalendar']
-            date = goocalendar.selected_date
-            year = date.year
-            month = date.month
-            start = datetime.datetime(year, month, 1)
-            nb_days = calendar.monthrange(year, month)[1]
-            delta = datetime.timedelta(days=nb_days)
-            end = start + delta
-            events = goocalendar.event_store.get_events(start, end)
-            events.sort()
-            if not record:
-                self.current_record = len(events) and events[0].record
-            else:
-                for idx, event in enumerate(events):
-                    if event.record == record:
-                        next_id = idx + 1
-                        if next_id < len(events):
-                            self.current_record = events[next_id].record
-                        break
+            goocalendar = view.widgets.get('goocalendar')
+            if goocalendar:
+                date = goocalendar.selected_date
+                year = date.year
+                month = date.month
+                start = datetime.datetime(year, month, 1)
+                nb_days = calendar.monthrange(year, month)[1]
+                delta = datetime.timedelta(days=nb_days)
+                end = start + delta
+                events = goocalendar.event_store.get_events(start, end)
+                events.sort()
+                if not record:
+                    if events:
+                        self.current_record = events[0].record
+                    else:
+                        self.current_record = None
+                else:
+                    for idx, event in enumerate(events):
+                        if event.record == record:
+                            next_id = idx + 1
+                            if next_id < len(events):
+                                self.current_record = events[next_id].record
+                            break
         else:
             self.current_record = self.group[0] if len(self.group) else None
         self.set_cursor(reset_view=False)
@@ -1029,25 +1035,29 @@ class Screen(SignalEvent):
             self.current_record = record
         elif view.view_type == 'calendar':
             record = self.current_record
-            goocalendar = view.widgets['goocalendar']
-            date = goocalendar.selected_date
-            year = date.year
-            month = date.month
-            start = datetime.datetime(year, month, 1)
-            nb_days = calendar.monthrange(year, month)[1]
-            delta = datetime.timedelta(days=nb_days)
-            end = start + delta
-            events = goocalendar.event_store.get_events(start, end)
-            events.sort()
-            if not record:
-                self.current_record = len(events) and events[0].record
-            else:
-                for idx, event in enumerate(events):
-                    if event.record == record:
-                        prev_id = idx - 1
-                        if prev_id >= 0:
-                            self.current_record = events[prev_id].record
-                        break
+            goocalendar = view.widgets.get('goocalendar')
+            if goocalendar:
+                date = goocalendar.selected_date
+                year = date.year
+                month = date.month
+                start = datetime.datetime(year, month, 1)
+                nb_days = calendar.monthrange(year, month)[1]
+                delta = datetime.timedelta(days=nb_days)
+                end = start + delta
+                events = goocalendar.event_store.get_events(start, end)
+                events.sort()
+                if not record:
+                    if events:
+                        self.current_record = events[0].record
+                    else:
+                        self.current_record = None
+                else:
+                    for idx, event in enumerate(events):
+                        if event.record == record:
+                            prev_id = idx - 1
+                            if prev_id >= 0:
+                                self.current_record = events[prev_id].record
+                            break
         else:
             self.current_record = self.group[-1] if len(self.group) else None
         self.set_cursor(reset_view=False)

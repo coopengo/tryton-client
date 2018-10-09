@@ -1313,11 +1313,6 @@ msgstr "Zuletzt verändert von"
 msgid "Modification Date"
 msgstr "Zuletzt verändert am"
 
-#: tryton/gui/window/view_form/screen/screen.py:765
-#, python-format
-msgid "Unable to get view tree state for %s"
-msgstr ""
-
 #: tryton/gui/window/view_form/screen/screen.py:777
 #, python-format, python-format, python-format
 msgid "Unable to get view tree state for %s"

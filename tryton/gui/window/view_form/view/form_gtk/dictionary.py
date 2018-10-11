@@ -325,6 +325,7 @@ class DictWidget(Widget):
 
         self.widget = gtk.Frame()
         type_ = gtk.SHADOW_NONE
+        # FEA#5633 Allow to not display label on group
         if not attrs.get('no_label', 0.0):
             label = gtk.Label(set_underline(attrs.get('string', '')))
             label.set_use_underline(True)

@@ -19,7 +19,7 @@ include_files = [
     (os.path.join(sys.prefix, 'lib', 'gdk-pixbuf-2.0'),
         os.path.join('lib', 'gdk-pixbuf-2.0')),
     (os.path.join(sys.prefix, 'lib', 'gtkglext-1.0'),
-        os.path.join('lib', 'gtkglext-1.0')),        
+        os.path.join('lib', 'gtkglext-1.0')),
     (os.path.join(sys.prefix, 'share', 'locale'),
         os.path.join('share', 'locale')),
     (os.path.join(sys.prefix, 'share', 'icons', 'Adwaita'),
@@ -28,6 +28,8 @@ include_files = [
         os.path.join('etc', 'gtk-3.0', 'gtk.immodules')),
     (os.path.join(sys.platform, 'gtk-3.0', 'gdk-pixbuf.loaders'),
         os.path.join('etc', 'gtk-3.0', 'gdk-pixbuf.loaders')),
+    (os.path.join(sys.platform, 'gtk-3.0', 'settings.ini'),
+        os.path.join('etc', 'gtk-3.0', 'settings.ini')),
     ]
 
 BIN_DIR = (os.path.join(sys.prefix, 'bin'))
@@ -81,7 +83,7 @@ for ns in required_gi_namespaces:
 
 if sys.platform == 'win32':
     include_files.extend([
-        ('share/themes/Coog', 'share/themes/MS-Windows'),
+        ('share/themes/Coog', 'share/themes/Coog'),
         (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)

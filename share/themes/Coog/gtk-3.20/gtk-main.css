@@ -4,8 +4,8 @@
 @define-color shape_color #0094d2;
 @define-color base_color #ffffff;
 @define-color text_color #46423d;
-@define-color selected_bg_color #0094d2;
-@define-color selected_fg_color #ffffff;
+@define-color selected_bg_color #a2daf4;
+@define-color selected_fg_color @text_color;
 @define-color tooltip_bg_color #000000;
 @define-color tooltip_fg_color #ffffff;
 @define-color backdrop_fg_color mix (@bg_color, @fg_color, 0.8);
@@ -29,14 +29,14 @@
 
 @define-color backdrop_dark_fg_color mix (@dark_bg_color, @dark_fg_color, 0.75);
 /*@define-color backdrop_dark_bg_color mix (@dark_bg_color, @dark_fg_color, 0.75);*/
-@define-color backdrop_selected_bg_color shade (@bg_color, 0.92);
-@define-color backdrop_selected_fg_color @fg_color;
+@define-color backdrop_selected_bg_color shade (@selected_bg_color, 1.2);
+@define-color backdrop_selected_fg_color @selected_fg_color;
 @define-color backdrop_filling_bg #0094d2;
 
 @define-color focus_color @selected_fg_color;
-@define-color focus_bg_color @selected_bg_color;
+@define-color focus_bg_color @shape_color;
 @define-color hover_color alpha @selected_fg_color;
-@define-color hover_bg_color shade (@selected_bg_color, 1.5);
+@define-color hover_bg_color shade (@shape_color, 1.5);
 
 @define-color scale_highlight_bg #0094d2;
 
@@ -47,7 +47,7 @@
 @define-color scrollbar_track_color mix(@base_color, black, 0.1); /* #e6e6e6 */
 
 @define-color progressbar_fill_a shade(@theme_selected_bg_color, 1.07);
-@define-color progressbar_fill_b shade(mix(@theme_selected_bg_color, @selected_bg_color, 0.10), 0.91);
+@define-color progressbar_fill_b shade(mix(@theme_selected_bg_color, @shape_color, 0.10), 0.91);
 @define-color button_border_active shade(@theme_selected_bg_color, 0.95);
 @define-color progressbar_backdrop_fill_a shade(@backdrop_selected_bg_color, 1.07);
 @define-color progressbar_backdrop_fill_b shade(mix(@backdrop_selected_bg_color, grey, 0.10), 0.91);
@@ -58,7 +58,7 @@
 @define-color places_sidebar_bg shade(@dark_bg_color, 1.56);
 @define-color places_sidebar_backdrop_bg @wm_bg_b;
 @define-color places_sidebar_fg_color @selected_fg_color;
-@define-color places_sidebar_selected_bg_color @selected_bg_color;
+@define-color places_sidebar_selected_bg_color @shape_color;
 
 @define-color suggested_action_bg #38b44a;
 

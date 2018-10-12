@@ -8,7 +8,7 @@ menubar menuitem,
 menubar menuitem:hover,
 .menubar.menuitem:hover {
     border: 1px solid @hover_bg_color;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 /*********
@@ -16,21 +16,21 @@ menubar menuitem:hover,
  *********/
 spinbutton,
 entry {
-    border-radius: 10px;
+    border-radius: 5px;
     border-width: 1px;
     border-style: solid;
     border-color: @shape_color;
     margin:1px;
+    border-image:none;
 }
 
-box.readonly spinbutton,
-box.readonly entry,
-box.readonly spinbutton:focus,
-box.readonly entry:focus {
+*.readonly spinbutton,
+*.readonly entry,
+*.readonly spinbutton:focus,
+*.readonly entry:focus {
     border-width:0px;
     margin:2px;
 }
-
 
 spinbutton:backdrop,
 entry:backdrop {
@@ -80,7 +80,7 @@ headerbar entry:focus {
 .primary-toolbar entry progress,
 menubar toolbar entry progress,
 headerbar entry progress {
-    border-radius: 10px;
+    border-radius: 5px;
     border-width: 0;
 }
 
@@ -108,7 +108,7 @@ headerbar toolitem .linked entry:disabled {
  ******************/
 combobox entry:first-child,
 combobox button:first-child {
-    border-radius: 10px 0 0 10px;
+    border-radius: 5px 0 0 5px;
     border-width: 1px 0 1px 1px;
     margin:1px 0 1px 1px;
     border-style: solid;
@@ -118,7 +118,7 @@ combobox button:first-child {
 
 combobox entry:last-child,
 combobox button:last-child {
-    border-radius: 0 10px 10px 0;
+    border-radius: 0 5px 5px 0;
     border-width: 1px 1px 1px 0;
     margin:1px 1px 1px 0;
     border-style: solid;
@@ -128,7 +128,7 @@ combobox button:last-child {
 
 combobox entry:last-child:first-child,
 combobox button:last-child:first-child {
-    border-radius: 10px;
+    border-radius: 5px;
     border-width: 1px;
     margin:1px;
     border-style: solid;
@@ -138,7 +138,7 @@ combobox button:last-child:first-child {
 
 combobox entry:first-child:focus,
 combobox entry:last-child:focus ~ button:first-child {
-    border-radius: 10px 0 0 10px;
+    border-radius: 5px 0 0 5px;
     border-width: 2px 0 2px 2px;
     margin: 0;
     border-style: solid;
@@ -148,7 +148,7 @@ combobox entry:last-child:focus ~ button:first-child {
 
 combobox entry:first-child:last-child:focus,
 combobox button:first-child:last-child:focus {
-    border-radius: 10px;
+    border-radius: 5px;
     border-width: 2px;
     margin:0;
     border-style: solid;
@@ -158,7 +158,7 @@ combobox button:first-child:last-child:focus {
 
 combobox entry:last-child:focus,
 combobox entry:first-child:focus + button:last-child {
-    border-radius: 0 10px 10px 0;
+    border-radius: 0 5px 5px 0;
     border-width: 2px 2px 2px 0;
     margin:0;
     border-style: solid;
@@ -171,22 +171,22 @@ combobox button:backdrop {
     border-color: shade (@shape_color, 1.8);
 }
 
-box.readonly combobox entry:first-child,
-box.readonly combobox entry:last-child ~ button:first-child {
+*.readonly combobox entry:first-child,
+*.readonly combobox entry:last-child ~ button:first-child {
     border-width: 0;
     margin: 2px 0 2px 2px;
 }
 
-box.readonly combobox entry:first-child:last-child,
-box.readonly combobox button:first-child:last-child {
+*.readonly combobox entry:first-child:last-child,
+*.readonly combobox button:first-child:last-child {
     border-width: 0;
     margin:2px;
 }
 
-box.readonly combobox entry:last-child,
-box.readonly combobox entry:first-child + button:last-child {
+*.readonly combobox entry:last-child,
+*.readonly combobox entry:first-child + button:last-child {
     border-width: 0;
-    margin:2px 0 2px 2px;
+    margin:2px 2px 2px 0;
 }
 
 .primary-toolbar combobox entry button,
@@ -217,7 +217,7 @@ menubar toolbar combobox entry button:first-child,
 headerbar combobox entry:first-child,
 headerbar combobox entry button:first-child {
     border-image-width: 10px 0 10px 12px;
-    border-radius: 8px 0 0 8px;
+    border-radius: 5px 0 0 5px;
     border-right-width: 0;
 }
 
@@ -228,7 +228,7 @@ menubar toolbar combobox entry button:last-child,
 headerbar combobox entry:last-child,
 headerbar combobox entry button:last-child {
     border-image-width: 10px 12px 10px 1px;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 5px 5px 0;
     border-left-width: 0;
 }
 
@@ -371,4 +371,3 @@ scale.vertical:disabled trough.highlight.bottom {
 scale.vertical:backdrop trough.highlight.bottom {
     border-image: -gtk-scaled(url("assets/scale-vertical-fill-backdrop.png"),url("assets/scale-vertical-fill-backdrop@2.png")) 6 2 6 2 / 6px 2px 6px 2px stretch;
 }
-

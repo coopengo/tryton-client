@@ -324,10 +324,15 @@ class DictWidget(Widget):
         self.rows = {}
 
         self.widget = gtk.Frame()
-        label = gtk.Label(set_underline(attrs.get('string', '')))
-        label.set_use_underline(True)
-        self.widget.set_label_widget(label)
-        self.widget.set_shadow_type(gtk.SHADOW_OUT)
+        type_ = gtk.SHADOW_NONE
+        # FEA#5633 Allow to not display label on group
+        if not attrs.get('no_label', 0.0):
+            label = gtk.Label(set_underline(attrs.get('string', '')))
+            label.set_use_underline(True)
+            self.widget.set_label_widget(label)
+            type_ = gtk.SHADOW_OUT
+
+        self.widget.set_shadow_type(type_)
 
         vbox = gtk.VBox()
         self.widget.add(vbox)

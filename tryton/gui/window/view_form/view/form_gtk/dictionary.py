@@ -8,6 +8,7 @@ import locale
 import decimal
 import gettext
 from decimal import Decimal
+from collections import OrderedDict
 
 from .widget import Widget
 from tryton.config import CONFIG
@@ -563,7 +564,28 @@ class DictWidget(Widget):
         new_key_names = set(value.iterkeys()) - set(self.keys)
         if new_key_names:
             self.add_keys(list(new_key_names))
-        for key, val in sorted(value.iteritems()):
+
+        # ABDC: Allow dictschema to be ordered by a sequence
+        value_ordered = OrderedDict()
+        use_sequence = False
+        for skey, svalues in sorted(self.keys.iteritems(),
+                key=lambda x: x[1].get('sequence_order', x[0])
+                    if x[1].get('sequence_order', x[0]) is not None else x[0]):
+            if skey not in value:
+                continue
+            if svalues.get('sequence_order', -1) != -1:
+                use_sequence = True
+            value_ordered[skey] = value[skey]
+
+        def _loop_order_hook():
+            if use_sequence:
+                for key, val in value_ordered.iteritems():
+                    yield key, val
+            else:
+                for key, val in sorted(value.iteritems()):
+                    yield key, val
+
+        for key, val in _loop_order_hook():
             if key not in self.keys:
                 continue
             if key not in self.fields:

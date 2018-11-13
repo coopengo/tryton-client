@@ -567,15 +567,14 @@ class DictWidget(Widget):
 
         # ABDC: Allow dictschema to be ordered by a sequence
         value_ordered = OrderedDict()
-        use_sequence = False
-        for skey, svalues in sorted(self.keys.iteritems(),
-                key=lambda x: x[1].get('sequence_order', x[0])
-                    if x[1].get('sequence_order', x[0]) is not None else x[0]):
-            if skey not in value:
-                continue
-            if svalues.get('sequence_order', -1) != -1:
-                use_sequence = True
-            value_ordered[skey] = value[skey]
+        use_sequence = any(
+            x[1].get('sequence_order', None) for x in self.keys.iteritems())
+        if use_sequence:
+            for skey, svalues in sorted(self.keys.iteritems(),
+                    key=lambda x: x[1].get('sequence_order', None)):
+                if skey not in value:
+                    continue
+                value_ordered[skey] = value[skey]
 
         def _loop_order_hook():
             if use_sequence:

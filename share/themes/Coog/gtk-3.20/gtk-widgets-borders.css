@@ -24,6 +24,12 @@ entry {
     border-image:none;
 }
 
+.required entry {
+    border-color: @shape_color;
+}
+
+
+
 *.readonly spinbutton,
 *.readonly entry,
 *.readonly spinbutton:focus,

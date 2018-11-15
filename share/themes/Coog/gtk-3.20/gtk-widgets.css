@@ -407,6 +407,13 @@ treeview.view header button:active {
     text-shadow:none;
 }
 
+treeview.view:backdrop header button {
+    background-image:-gtk-gradient (linear, left top, left bottom,
+                                     from (shade (@shape_color, 1.8)),
+                                     to (shade (@shape_color, 1.85)));
+}
+
+
 treeview.view header button:hover {
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@hover_bg_color, 0.95)),
@@ -497,6 +504,7 @@ entry:selected:backdrop {
 }
 
 *.readonly spinbutton,
+.readonly entry,
 *.readonly entry,
 *.readonly spinbutton:focus,
 *.readonly entry:focus,
@@ -758,7 +766,7 @@ infobar.question:backdrop,
     background-color: mix (@question_bg_color, @bg_color, 0.5);
 }
 
-.invalid {
+.invalid entry {
     border-style: solid;
     border-width: 1px;
 
@@ -766,6 +774,9 @@ infobar.question:backdrop,
 
     border-color: shade (@error_bg_color, 0.8);
     border-bottom-color: shade (@error_bg_color, 0.75);
+
+    background-image: none;
+    background-color: mix (@error_bg_color, @bg_color, 0.5);
 
     box-shadow: inset 1px 0 shade (@error_bg_color, 1.08),
                 inset -1px 0 shade (@error_bg_color, 1.08),
@@ -794,7 +805,7 @@ infobar.error,
 
 infobar.error:backdrop,
 .error:backdrop,
-.invalid:backdrop {
+.invalid:backdrop entry {
     background-image: none;
     background-color: mix (@error_bg_color, @bg_color, 0.5);
 }
@@ -1075,6 +1086,10 @@ notebook header {
     border-color: @shape_color;
     border-style: solid;
     margin:1px;
+}
+
+notebook header:backdrop {
+    border-color: shade (@shape_color, 1.8);
 }
 
 /* Draw a border between tabs and content ... */

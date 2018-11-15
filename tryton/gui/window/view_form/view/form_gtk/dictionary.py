@@ -571,18 +571,16 @@ class DictWidget(Widget):
             x[1].get('sequence_order', None) for x in self.keys.iteritems())
         if use_sequence:
             for skey, svalues in sorted(self.keys.iteritems(),
-                    key=lambda x: x[1].get('sequence_order', None)):
+                    key=lambda x: x[1]['sequence_order']):
                 if skey not in value:
                     continue
                 value_ordered[skey] = value[skey]
 
         def _loop_order_hook():
             if use_sequence:
-                for key, val in value_ordered.iteritems():
-                    yield key, val
+                return value_ordered.iteritems()
             else:
-                for key, val in sorted(value.iteritems()):
-                    yield key, val
+                return ((key, val) for key, val in sorted(value.iteritems()))
 
         for key, val in _loop_order_hook():
             if key not in self.keys:

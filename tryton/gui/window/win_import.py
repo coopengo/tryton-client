@@ -59,7 +59,7 @@ class WinImport(WinCSV):
 
     def model_populate(self, fields, parent_node=None, prefix_field='',
             prefix_name=''):
-        fields_order = fields.keys()
+        fields_order = list(fields.keys())
         fields_order.sort(lambda x, y: -cmp(fields[x].get('string', ''),
                 fields[y].get('string', '')))
         for field in fields_order:

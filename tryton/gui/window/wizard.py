@@ -185,7 +185,7 @@ class Wizard(InfoBar):
         self.update_buttons(record)
 
     def update_buttons(self, record):
-        for button in self.states.itervalues():
+        for button in self.states.values():
             button.state_set(record)
 
     def update(self, view, defaults, buttons):

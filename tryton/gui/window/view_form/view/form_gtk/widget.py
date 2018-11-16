@@ -134,7 +134,7 @@ class Widget(object):
             get('states', {}))
         states = record.expr_eval(self.attrs.get('states', {})).copy()
         states.update(attrs)
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -142,7 +142,7 @@ class Widget(object):
                 key = key[1:]
             if key[0] == 'label':
                 continue
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -296,7 +296,7 @@ class TranslateDialog(NoModal):
 
     def response(self, win, response):
         if response == gtk.RESPONSE_OK:
-            for code, widget in self.widgets.iteritems():
+            for code, widget in self.widgets.items():
                 widget, editing, fuzzy = widget
                 if not editing.get_active():
                     continue

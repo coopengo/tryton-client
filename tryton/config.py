@@ -1,7 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 "Options"
-import ConfigParser
+import configparser
 import optparse
 import os
 import gettext
@@ -19,14 +19,14 @@ _ = gettext.gettext
 def get_config_dir():
     if os.name == 'nt':
         appdata = os.environ['APPDATA']
-        if not isinstance(appdata, unicode):
-            appdata = unicode(appdata, sys.getfilesystemencoding())
+        if not isinstance(appdata, str):
+            appdata = str(appdata, sys.getfilesystemencoding())
         return os.path.join(appdata, '.config', 'tryton',
                 __version__.rsplit('.', 1)[0])
     return os.path.join(os.environ['HOME'], '.config', 'tryton',
             __version__.rsplit('.', 1)[0])
 if not os.path.isdir(get_config_dir()):
-    os.makedirs(get_config_dir(), 0700)
+    os.makedirs(get_config_dir(), 0o700)
 
 
 class ConfigManager(object):
@@ -123,8 +123,8 @@ class ConfigManager(object):
 
     def save(self):
         try:
-            configparser = ConfigParser.ConfigParser()
-            for entry in self.config.keys():
+            configparser = configparser.ConfigParser()
+            for entry in list(self.config.keys()):
                 if not len(entry.split('.')) == 2:
                     continue
                 section, name = entry.split('.')
@@ -140,7 +140,7 @@ class ConfigManager(object):
         return True
 
     def load(self):
-        configparser = ConfigParser.ConfigParser()
+        configparser = configparser.ConfigParser()
         configparser.read([self.rcfile])
         for section in configparser.sections():
             for (name, value) in configparser.items(section):
@@ -165,7 +165,7 @@ class ConfigManager(object):
             self.defaults.get(key)))
 
 CONFIG = ConfigManager()
-CURRENT_DIR = u''
+CURRENT_DIR = ''
 if not hasattr(sys, 'frozen'):
     try:
         CURRENT_DIR = os.path.dirname(__file__)
@@ -173,8 +173,8 @@ if not hasattr(sys, 'frozen'):
         pass
 else:
     CURRENT_DIR = os.path.dirname(sys.executable)
-if not isinstance(CURRENT_DIR, unicode):
-    CURRENT_DIR = unicode(CURRENT_DIR, sys.getfilesystemencoding())
+if not isinstance(CURRENT_DIR, str):
+    CURRENT_DIR = str(CURRENT_DIR, sys.getfilesystemencoding())
 
 PIXMAPS_DIR = os.path.join(CURRENT_DIR, 'data', 'pixmaps', 'tryton')
 if not os.path.isdir(PIXMAPS_DIR):

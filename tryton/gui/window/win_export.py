@@ -95,8 +95,8 @@ class WinExport(WinCSV):
 
     def model_populate(self, fields, parent_node=None, prefix_field='',
             prefix_name=''):
-        key = lambda (n, f): f.get('string') or n
-        for name, field in sorted(fields.items(), key=key, reverse=True):
+        key = lambda n_f: n_f[1].get('string') or n_f[0]
+        for name, field in sorted(list(fields.items()), key=key, reverse=True):
 
             string_ = field['string'] or name
 
@@ -323,7 +323,7 @@ class WinExport(WinCSV):
             for line in data:
                 row = []
                 for val in line:
-                    if isinstance(type(val), types.StringType):
+                    if isinstance(type(val), bytes):
                         val = val.replace('\n', ' ').replace('\t', ' ')
                         val = val.encode(encoding)
                     row.append(val)
@@ -334,7 +334,7 @@ class WinExport(WinCSV):
                 else:
                     common.message(_('%d records saved.') % len(data))
             return True
-        except IOError, exception:
+        except IOError as exception:
             common.warning(_("Operation failed.\nError message:\n%s")
                 % exception, _('Error'))
             return False

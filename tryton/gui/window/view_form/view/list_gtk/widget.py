@@ -301,7 +301,7 @@ class GenericText(Cell):
         if isinstance(cell, CellRendererText) and \
                 cell.get_property('font') != 'Normal':
             cell.set_property('font', 'Normal')
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -309,7 +309,7 @@ class GenericText(Cell):
                 key = key[1:]
             if key[0] == 'label':
                 continue
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -605,7 +605,7 @@ class Image(GenericText):
         record = store.get_value(iter_, 0)
         field = record[self.field_name]
         value = field.get_client(record)
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             if value > common.BIG_IMAGE_SIZE:
                 value = None
             else:

@@ -4,8 +4,8 @@
 import os
 import sys
 import gettext
-from urlparse import urlparse, parse_qsl
-import urllib
+from urllib.parse import urlparse, parse_qsl
+import urllib.request, urllib.parse, urllib.error
 import gobject
 import gtk
 import json
@@ -882,7 +882,7 @@ class Main(object):
         language = CONFIG['client.lang']
         try:
             host, port, database, username, date = DBLogin().run()
-        except TrytonError, exception:
+        except TrytonError as exception:
             if exception.faultCode == 'QueryCanceled':
                 return
             raise
@@ -892,11 +892,11 @@ class Main(object):
         self.set_title()  # Adds username/profile while password is asked
         try:
             common.Login(func)
-        except TrytonError, exception:
+        except TrytonError as exception:
             if exception.faultCode == 'QueryCanceled':
                 return
             raise
-        except TrytonServerError, exception:
+        except TrytonServerError as exception:
             if exception.faultCode.startswith('404'):
                 return self.sig_login()
             raise
@@ -1273,8 +1273,8 @@ class Main(object):
         urlp = urlparse('http' + url[6:])
         hostname = common.get_hostname(urlp.netloc)
         port = common.get_port(urlp.netloc)
-        database, path = map(urllib.unquote,
-            (urlp.path[1:].split('/', 1) + [''])[:2])
+        database, path = list(map(urllib.parse.unquote,
+            (urlp.path[1:].split('/', 1) + [''])[:2]))
         if (not path or
                 hostname != rpc._HOST or
                 int(port) != rpc._PORT or

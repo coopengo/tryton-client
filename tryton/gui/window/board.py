@@ -7,7 +7,7 @@ from tryton.gui import Main
 from tryton.gui.window.view_board import ViewBoard
 from tryton.common import RPCExecute, RPCException
 
-from tabcontent import TabContent
+from .tabcontent import TabContent
 
 _ = gettext.gettext
 

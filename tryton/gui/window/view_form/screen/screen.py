@@ -8,8 +8,8 @@ import datetime
 import calendar
 import json
 import collections
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import xml.dom.minidom
 import gettext
 import logging
@@ -170,7 +170,7 @@ class Screen(SignalEvent):
             view_tree = self.fields_view_tree[view_id]
 
         fields = copy.deepcopy(view_tree['fields'])
-        for name, props in fields.iteritems():
+        for name, props in fields.items():
             if props['type'] not in ('selection', 'reference'):
                 continue
             if isinstance(props['selection'], (tuple, list)):
@@ -306,7 +306,7 @@ class Screen(SignalEvent):
         return bool(ids)
 
     def get_domain(self):
-        if not self.domain or not isinstance(self.domain, basestring):
+        if not self.domain or not isinstance(self.domain, str):
             return self.domain
         decoder = PYSONDecoder(self.context)
         return decoder.decode(self.domain)
@@ -377,7 +377,7 @@ class Screen(SignalEvent):
         fields = {}
         if self.group is not None:
             self.group.signal_unconnect(self)
-            for name, field in self.group.fields.iteritems():
+            for name, field in self.group.fields.items():
                 fields[name] = field.attrs
         self.tree_states_done.clear()
         self.__group = group
@@ -516,7 +516,7 @@ class Screen(SignalEvent):
                 self.current_view.display()
                 return
         if not view_type or self.current_view.view_type != view_type:
-            for i in xrange(self.number_of_views):
+            for i in range(self.number_of_views):
                 if len(self.view_to_load):
                     self.load_view_to_load()
                     self.__current_view = len(self.views) - 1
@@ -585,7 +585,7 @@ class Screen(SignalEvent):
         view.view_id = view_id
         self.views.append(view)
         # PJA: set list of fields to use on the view
-        view._field_keys = fields.keys()
+        view._field_keys = list(fields.keys())
 
         return view
 
@@ -847,7 +847,7 @@ class Screen(SignalEvent):
         timestamp = self.parent._timestamp if self.parent else None
         for view in self.views:
             if view.view_type == 'form':
-                for widgets in view.widgets.itervalues():
+                for widgets in view.widgets.values():
                     for widget in widgets:
                         if hasattr(widget, 'screen'):
                             widget.screen.save_tree_state(store)
@@ -1068,7 +1068,7 @@ class Screen(SignalEvent):
             record = self.current_record
         domain_string = _('"%s" is not valid according to its domain')
         domain_parser = DomainParser(
-            {n: f.attrs for n, f in record.group.fields.iteritems()})
+            {n: f.attrs for n, f in record.group.fields.items()})
         fields = []
         for field, invalid in sorted(record.invalid_fields.items()):
             string = record.group.fields[field].attrs['string']
@@ -1175,7 +1175,7 @@ class Screen(SignalEvent):
             action_id, action = None, action
 
         self.reload(ids, written=True)
-        if isinstance(action, basestring):
+        if isinstance(action, str):
             self.client_action(action)
         if action_id:
             Action.execute(action_id, {
@@ -1259,7 +1259,7 @@ class Screen(SignalEvent):
         if view_ids:
             query_string.append(('views', json.dumps(
                         view_ids, separators=(',', ':'))))
-        query_string = urllib.urlencode(query_string)
-        return urlparse.urlunparse(('tryton',
+        query_string = urllib.parse.urlencode(query_string)
+        return urllib.parse.urlunparse(('tryton',
                 '%s:%s' % (rpc._HOST, rpc._PORT),
                 '/'.join(path), query_string, '', ''))

@@ -563,7 +563,7 @@ class ScreenContainer(object):
                     self.search_window.handler_unblock_by_func(window_hide)
 
             vbox = gtk.VBox()
-            fields = [f for f in self.screen.domain_parser.fields.itervalues()
+            fields = [f for f in self.screen.domain_parser.fields.values()
                 if f.get('searchable', True)]
             self.search_table = gtk.Table(rows=len(fields), columns=2)
             self.search_table.set_homogeneous(False)
@@ -631,8 +631,8 @@ class ScreenContainer(object):
             self.search_window.add(vbox)
             vbox.show_all()
 
-            new_size = map(sum, zip(self.search_table.size_request(),
-                    scrolled.size_request()))
+            new_size = list(map(sum, list(zip(self.search_table.size_request(),
+                    scrolled.size_request()))))
             self.search_window.set_default_size(*new_size)
 
         parent = widget.get_toplevel()

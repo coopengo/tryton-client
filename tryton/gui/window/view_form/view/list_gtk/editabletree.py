@@ -182,7 +182,7 @@ class EditableTreeView(TreeView):
                         gobject.idle_add(self.set_cursor, path,
                             self.prev_column(path, column), True)
                     elif keyval in self.leaving_record_events:
-                        fields = self.view.widgets.keys()
+                        fields = list(self.view.widgets.keys())
                         if not record.validate(fields):
                             invalid_fields = record.invalid_fields
                             col = None

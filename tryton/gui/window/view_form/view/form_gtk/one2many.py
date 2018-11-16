@@ -445,8 +445,8 @@ class One2Many(Widget):
                 self.screen.group.remove(first, remove=True)
                 return
 
-            fields = product.keys()
-            for values in itertools.product(*product.values()):
+            fields = list(product.keys())
+            for values in itertools.product(*list(product.values())):
                 if first:
                     record = first
                     first = None
@@ -590,7 +590,7 @@ class One2Many(Widget):
                     and widget.screen.group.model_name ==
                     record.group.model_name):
                 fields = dict((name, field.attrs) for name, field in
-                    widget.screen.group.fields.iteritems())
+                    widget.screen.group.fields.items())
                 record.group.load_fields(fields)
             widget.screen.current_record = record
             widget.display(widget.record, widget.field)

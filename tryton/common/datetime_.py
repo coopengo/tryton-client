@@ -10,7 +10,7 @@ import gtk
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 
-from datetime_strftime import datetime_strftime as strftime
+from .datetime_strftime import datetime_strftime as strftime
 
 __all__ = ['Date', 'CellRendererDate', 'Time', 'CellRendererTime', 'DateTime']
 
@@ -178,7 +178,7 @@ class Date(gtk.Entry):
 
     def do_set_property(self, prop, value):
         if prop.name == 'value':
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 self.set_text(value)
                 self.parse()
                 value = self.__date
@@ -327,7 +327,7 @@ class Time(gtk.ComboBoxEntry):
 
     def do_set_property(self, prop, value):
         if prop.name == 'value':
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 self.__entry.set_text(value)
                 self.parse()
                 value = self.__time
@@ -493,13 +493,13 @@ def popup_show(popup):
         (gtk.gdk.BUTTON_PRESS_MASK
             | gtk.gdk.BUTTON_RELEASE_MASK
             | gtk.gdk.POINTER_MOTION_MASK),
-        None, cursor, 0L)
+        None, cursor, 0)
 
 
 def popup_hide(popup):
     popup.hide()
     popup.grab_remove()
-    gtk.gdk.pointer_ungrab(0L)
+    gtk.gdk.pointer_ungrab(0)
 
 
 def timelist_set_list(model, min_, max_, format_):

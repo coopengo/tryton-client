@@ -300,7 +300,7 @@ class TimeDeltaField(Field):
         return group.context.get(self.attrs.get('converter'))
 
     def set_client(self, record, value, force_change=False):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = common.timedelta.parse(value, self.converter(record.group))
         super(TimeDeltaField, self).set_client(
             record, value, force_change=force_change)
@@ -333,7 +333,7 @@ class FloatField(Field):
             return self._default
 
     def set_client(self, record, value, force_change=False, factor=1):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = self.convert(value)
         if value is not None:
             value /= factor
@@ -507,7 +507,7 @@ class O2MField(Field):
     def _set_default_value(self, record, fields=None):
         if record.value.get(self.name) is not None:
             return
-        from group import Group
+        from .group import Group
         parent_name = self.attrs.get('relation_field', '')
         fields = fields or {}
         context = record.expr_eval(self.attrs.get('context', {}))
@@ -604,7 +604,7 @@ class O2MField(Field):
         group = record.value[self.name]
         if value is None:
             value = []
-        if not value or isinstance(value[0], (int, long)):
+        if not value or isinstance(value[0], int):
             mode = 'list ids'
         else:
             mode = 'list values'
@@ -651,7 +651,7 @@ class O2MField(Field):
             fields = record.group.fields
         if fields:
             fields = dict((fname, field.attrs)
-                for fname, field in fields.iteritems())
+                for fname, field in fields.items())
 
         record.value[self.name] = None
         self._set_default_value(record, fields=fields)
@@ -666,7 +666,7 @@ class O2MField(Field):
         if value is None:
             value = []
         # domain inversion could try to set id as value
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             value = [value]
 
         previous_ids = self.get_eval(record)
@@ -812,7 +812,7 @@ class ReferenceField(Field):
 
     def set_client(self, record, value, force_change=False):
         if value:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 value = value.split(',')
             ref_model, ref_id = value
             if isinstance(ref_id, (tuple, list)):
@@ -836,7 +836,7 @@ class ReferenceField(Field):
         if not value:
             record.value[self.name] = self._default
             return
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             ref_model, ref_id = value.split(',')
             if not ref_id:
                 ref_id = None
@@ -929,13 +929,13 @@ class BinaryField(Field):
         result = record.value.get(self.name) or 0
         if isinstance(result, _FileCache):
             result = os.stat(result.path).st_size
-        elif isinstance(result, (basestring, bytes, bytearray)):
+        elif isinstance(result, (str, bytes, bytearray)):
             result = len(result)
         return result
 
     def get_data(self, record):
         if not isinstance(record.value.get(self.name),
-                (basestring, bytes, bytearray, _FileCache)):
+                (str, bytes, bytearray, _FileCache)):
             if record.id < 0:
                 return ''
             context = record.get_context()

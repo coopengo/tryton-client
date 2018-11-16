@@ -1,11 +1,11 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from __future__ import division
+
 import sys
 from io import BytesIO
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape, unescape
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 from gi.repository import Gtk, Gdk, Pango
 
@@ -16,7 +16,7 @@ use_serialize_func = False
 
 
 def _reverse_dict(dct):
-    return {j: i for i, j in dct.iteritems()}
+    return {j: i for i, j in dct.items()}
 
 SIZE2SCALE = {
     '1': 1 / (1.2 * 1.2 * 1.2),
@@ -49,7 +49,7 @@ def _markup(text):
 
 
 def _strip_markup(text):
-    return text[len(u'<markup>'):-len(u'</markup>')]
+    return text[len('<markup>'):-len('</markup>')]
 
 
 def _strip_newline(text):
@@ -129,7 +129,7 @@ def parse_markup(markup_text):
 
 
 def normalize_markup(markup_text, method='html'):
-    if isinstance(markup_text, unicode):
+    if isinstance(markup_text, str):
         markup_text = markup_text.encode('utf-8')
     parser = MarkupHTMLParse()
     parser.feed(_strip_newline(markup_text))
@@ -268,7 +268,7 @@ def serialize(register, content, start, end, data):
 
 
 def deserialize(register, content, iter_, text, create_tags, data):
-    if not isinstance(text, unicode):
+    if not isinstance(text, str):
         for encoding in [sys.getfilesystemencoding(),
                 'utf-8', 'utf-16', 'utf-32']:
             try:
@@ -306,9 +306,9 @@ _TAGS = [
 _TAGS.extend([('family %s' % family, {'family': family})
         for family in FAMILIES])
 _TAGS.extend([('size %s' % size, {'scale': scale})
-        for size, scale in SIZE2SCALE.iteritems()])
+        for size, scale in SIZE2SCALE.items()])
 _TAGS.extend([('justification %s' % align, {'justification': justification})
-        for align, justification in ALIGN2JUSTIFICATION.iteritems()])
+        for align, justification in ALIGN2JUSTIFICATION.items()])
 
 
 def register_foreground(text_buffer, color):
@@ -374,7 +374,7 @@ def _get_html(texttag, close=False, div_only=False):
     if close:
         return ''.join('</%s>' % t for t in tags)
     return ''.join('<%s %s>' % (t, ' '.join('%s="%s"' % (a, v)
-                for a, v in attrib.get(t, {}).iteritems()))
+                for a, v in attrib.get(t, {}).items()))
         for t in tags)
 
 
@@ -403,7 +403,7 @@ def remove_tags(content, start, end, *names):
 
 
 if __name__ == '__main__':
-    html = u'''<b>Bold</b>
+    html = '''<b>Bold</b>
  <i>Italic</i>
  <u>Underline</u>
 <div><br/></div>
@@ -416,13 +416,13 @@ if __name__ == '__main__':
 
     def cb(window, event):
         if use_serialize_func:
-            print text_buffer.serialize(
+            print(text_buffer.serialize(
                 text_buffer, MIME, text_buffer.get_start_iter(),
-                text_buffer.get_end_iter())
+                text_buffer.get_end_iter()))
         else:
-            print serialize(
+            print(serialize(
                 text_buffer, text_buffer, text_buffer.get_start_iter(),
-                text_buffer.get_end_iter(), None)
+                text_buffer.get_end_iter(), None))
         Gtk.main_quit()
     win.connect('delete-event', cb)
     vbox = Gtk.VBox()

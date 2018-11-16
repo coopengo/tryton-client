@@ -86,7 +86,7 @@ class Label(StateMixin, gtk.Label):
         states = record.expr_eval(self.attrs.get('states', {})).copy()
         states.update(attrs)
 
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -94,7 +94,7 @@ class Label(StateMixin, gtk.Label):
                 continue
             if key[0] == 'label':
                 key = key[1:]
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -148,7 +148,7 @@ class Notebook(StateMixin, gtk.Notebook):
         else:
             state_changes = {}
         if state_changes.get('readonly', self.attrs.get('readonly')):
-            for widgets in self.widgets.itervalues():
+            for widgets in self.widgets.values():
                 for widget in widgets:
                     widget._readonly_set(True)
 

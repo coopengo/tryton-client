@@ -1,6 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from itertools import izip
+
 import copy
 import tryton.rpc as rpc
 from tryton.common import message, selection, file_open, mailto
@@ -51,7 +51,7 @@ class Action(object):
             datas = [datas]
         if type(types) is not list:
             types = [types]
-        for data, name, type_ in izip(datas, names, types):
+        for data, name, type_ in zip(datas, names, types):
             fp_name = os.path.join(dtemp,
                 slugify(name) + os.extsep + slugify(type_))
             with open(fp_name, 'wb') as file_d:
@@ -106,7 +106,7 @@ class Action(object):
                 'read', data['ids'][:max_records], ['rec_name'])
             name_suffix = _(', ').join([x['rec_name'] for x in rec_names])
             if len(data['ids']) > max_records:
-                name_suffix += _(u',\u2026')
+                name_suffix += _(',\u2026')
             return _('%s (%s)') % (name, name_suffix)
 
         data['action_id'] = action['id']

@@ -469,13 +469,13 @@ class ViewForm(View):
         return cls.WIDGETS[name]
 
     def get_fields(self):
-        return self.widgets.keys()
+        return list(self.widgets.keys())
 
     def __getitem__(self, name):
         return self.widgets[name][0]
 
     def destroy(self):
-        for widget_name in self.widgets.keys():
+        for widget_name in list(self.widgets.keys()):
             for widget in self.widgets[widget_name]:
                 widget.destroy()
         self.widget.destroy()
@@ -483,7 +483,7 @@ class ViewForm(View):
     def set_value(self, focused_widget=False):
         record = self.screen.current_record
         if record:
-            for name, widgets in self.widgets.iteritems():
+            for name, widgets in self.widgets.items():
                 if name in record.group.fields:
                     field = record.group.fields[name]
                     for widget in widgets:
@@ -501,11 +501,11 @@ class ViewForm(View):
 
     @property
     def modified(self):
-        result = any(w.modified for widgets in self.widgets.itervalues()
+        result = any(w.modified for widgets in self.widgets.values()
             for w in widgets)
         if not result:
             return
-        for widgets in self.widgets.itervalues():
+        for widgets in self.widgets.values():
             for w in widgets:
                 if not w.modified:
                     continue
@@ -519,7 +519,7 @@ class ViewForm(View):
     def reset(self):
         record = self.screen.current_record
         if record:
-            for name, widgets in self.widgets.iteritems():
+            for name, widgets in self.widgets.items():
                 field = record.group.fields.get(name)
                 if field and 'invalid' in field.get_state_attrs(record):
                     for widget in widgets:
@@ -541,7 +541,7 @@ class ViewForm(View):
                 record[field].get(record)
             record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)
-        for name, widgets in self.widgets.iteritems():
+        for name, widgets in self.widgets.items():
             field = None
             if record:
                 field = record.group.fields.get(name)

@@ -124,11 +124,7 @@ class Many2One(Widget):
                 domain = self.field.domain_get(self.record)
                 context = self.field.get_search_context(self.record)
                 order = self.field.get_search_order(self.record)
-<<<<<<< HEAD
-                text = self.wid_text.get_text().decode('utf-8')
-=======
                 text = self.wid_text.get_text()
->>>>>>> origin/5.0
 
                 def callback(result):
                     if result:
@@ -219,11 +215,7 @@ class Many2One(Widget):
             domain = self.field.domain_get(self.record)
             context = self.field.get_search_context(self.record)
             order = self.field.get_search_order(self.record)
-<<<<<<< HEAD
-            text = self.wid_text.get_text().decode('utf-8')
-=======
             text = self.wid_text.get_text()
->>>>>>> origin/5.0
 
             def callback(result):
                 if result:
@@ -313,13 +305,8 @@ class Many2One(Widget):
             return False
         self.set_text(field.get_client(record))
         if self.has_target(field.get(record)):
-<<<<<<< HEAD
-            stock1, tooltip1 = 'tryton-open', _('Open the record <F2>')
-            stock2, tooltip2 = 'tryton-clear', _('Clear the field <Del>')
-=======
             icon1, tooltip1 = 'tryton-open', _('Open the record <F2>')
             icon2, tooltip2 = 'tryton-clear', _('Clear the field <Del>')
->>>>>>> origin/5.0
         else:
             icon1, tooltip1 = None, ''
             icon2, tooltip2 = 'tryton-search', _('Search a record <F2>')

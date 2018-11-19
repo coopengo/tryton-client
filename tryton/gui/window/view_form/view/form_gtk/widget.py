@@ -5,15 +5,11 @@ import gobject
 import gettext
 import pango
 
-from tryton.common import COLORS
+from tryton.common import FORMAT_ERROR
 import tryton.common as common
 from tryton.common import RPCExecute, RPCException
-<<<<<<< HEAD
-from tryton.common import FORMAT_ERROR
-=======
 from tryton.common import TRYTON_ICON
 from tryton.common.underline import set_underline
->>>>>>> origin/5.0
 from tryton.common.widget_style import widget_class
 from tryton.gui import Main
 from tryton.gui.window.nomodal import NoModal
@@ -221,11 +217,6 @@ class TranslateDialog(NoModal):
         self.win.add_accel_group(self.accel_group)
 
         cancel_button = self.win.add_button(
-<<<<<<< HEAD
-            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        cancel_button.set_always_show_image(True)
-        ok_button = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
-=======
             set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
         cancel_button.set_image(common.IconFactory.get_image(
                     'tryton-cancel', gtk.ICON_SIZE_BUTTON))
@@ -234,7 +225,6 @@ class TranslateDialog(NoModal):
             set_underline(_("OK")), gtk.RESPONSE_OK)
         ok_button.set_image(common.IconFactory.get_image(
                 'tryton-ok', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
         ok_button.set_always_show_image(True)
         ok_button.add_accelerator(
             'clicked', self.accel_group, gtk.keysyms.Return,
@@ -307,14 +297,6 @@ class TranslateDialog(NoModal):
         scrolledwindow.set_shadow_type(gtk.SHADOW_NONE)
         scrolledwindow.add(viewport)
         self.win.vbox.pack_start(scrolledwindow, True, True)
-<<<<<<< HEAD
-
-        # JCA Specific: Lower by 5%
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.95),
-            int(sensible_allocation.height * 0.95))
-=======
->>>>>>> origin/5.0
         self.win.show_all()
 
         self.register()
@@ -351,16 +333,12 @@ class TranslateDialog(NoModal):
         NoModal.destroy(self)
 
     def show(self):
-<<<<<<< HEAD
         sensible_allocation = self.sensible_widget.get_allocation()
         self.win.resize(
             sensible_allocation.width, sensible_allocation.height)
         self.win.show()
         gobject.idle_add(
             common.center_window, self.win, self.parent, self.sensible_widget)
-=======
-        self.win.show()
->>>>>>> origin/5.0
 
     def hide(self):
         self.win.hide()

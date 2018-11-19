@@ -8,7 +8,7 @@ import gtk
 import gobject
 import gettext
 
-from tryton.common import IconFactory
+from tryton.common import IconFactory, center_window
 from tryton.common.underline import set_underline
 from tryton.config import TRYTON_ICON
 from tryton.gui import Main

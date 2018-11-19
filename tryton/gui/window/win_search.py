@@ -38,11 +38,7 @@ class WinSearch(NoModal):
             gtk.DIALOG_DESTROY_WITH_PARENT)
         Main().add_window(self.win)
         self.win.set_icon(TRYTON_ICON)
-<<<<<<< HEAD
         self.win.set_decorated(False)
-=======
-        self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
->>>>>>> origin/5.0
         self.win.set_default_response(gtk.RESPONSE_APPLY)
         self.win.connect('response', self.response)
 
@@ -55,20 +51,6 @@ class WinSearch(NoModal):
         self.accel_group = gtk.AccelGroup()
         self.win.add_accel_group(self.accel_group)
 
-<<<<<<< HEAD
-        self.but_cancel = self.win.add_button(gtk.STOCK_CANCEL,
-            gtk.RESPONSE_CANCEL)
-        self.but_cancel.set_always_show_image(True)
-        self.but_find = self.win.add_button(gtk.STOCK_FIND, gtk.RESPONSE_APPLY)
-        self.but_find.set_always_show_image(True)
-        if new and common.MODELACCESS[model]['create']:
-            self.but_new = self.win.add_button(gtk.STOCK_NEW,
-                gtk.RESPONSE_ACCEPT)
-            self.but_new.set_always_show_image(True)
-            self.but_new.set_accel_path('<tryton>/Form/New', self.accel_group)
-
-        self.but_ok = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
-=======
         self.but_cancel = self.win.add_button(
             set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
         self.but_cancel.set_image(common.IconFactory.get_image(
@@ -91,7 +73,6 @@ class WinSearch(NoModal):
             set_underline(_("OK")), gtk.RESPONSE_OK)
         self.but_ok.set_image(common.IconFactory.get_image(
                 'tryton-ok', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
         self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
@@ -136,11 +117,8 @@ class WinSearch(NoModal):
         self.win.resize(
             sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-<<<<<<< HEAD
         gobject.idle_add(
             common.center_window, self.win, self.parent, self.sensible_widget)
-=======
->>>>>>> origin/5.0
 
     def hide(self):
         self.win.hide()

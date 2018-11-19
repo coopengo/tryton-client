@@ -2,10 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 import gettext
 import datetime
-<<<<<<< HEAD
 import re
-=======
->>>>>>> origin/5.0
 
 import gobject
 import gtk
@@ -13,10 +10,7 @@ import gtk
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 
-<<<<<<< HEAD
-=======
 from .common import IconFactory
->>>>>>> origin/5.0
 from .datetime_strftime import datetime_strftime as strftime
 
 __all__ = ['Date', 'CellRendererDate', 'Time', 'CellRendererTime', 'DateTime']
@@ -78,13 +72,9 @@ class Date(gtk.Entry):
         self.connect('activate', self.activate)
 
         # Calendar Popup
-<<<<<<< HEAD
-        self.set_icon_from_stock(gtk.ENTRY_ICON_PRIMARY, 'tryton-calendar')
-=======
         self.set_icon_from_pixbuf(
             gtk.ENTRY_ICON_PRIMARY,
             IconFactory.get_pixbuf('tryton-date', gtk.ICON_SIZE_MENU))
->>>>>>> origin/5.0
         self.set_icon_tooltip_text(gtk.ENTRY_ICON_PRIMARY,
             _('Open the calendar'))
         self.connect('icon-press', self.icon_press)
@@ -93,7 +83,7 @@ class Date(gtk.Entry):
         self.__cal_popup.set_events(
             self.__cal_popup.get_events() | gtk.gdk.KEY_PRESS_MASK)
         self.__cal_popup.set_resizable(False)
-        self.__cal_popup.connect('delete-event', self.cal_popup_closed)
+        self.__cal_popup.connect('delete-event', self.cqal_popup_closed)
         self.__cal_popup.connect('key-press-event', self.cal_popup_key_pressed)
         self.__cal_popup.connect('button-press-event',
             self.cal_popup_button_pressed)

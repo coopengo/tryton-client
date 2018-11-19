@@ -5,9 +5,6 @@ import re
 import operator
 import datetime
 from collections import defaultdict
-<<<<<<< HEAD
-from functools import reduce
-=======
 from functools import reduce, partial
 
 
@@ -38,7 +35,6 @@ def sql_like(value, pattern, ignore_case=True):
 
 like = partial(sql_like, ignore_case=False)
 ilike = partial(sql_like, ignore_case=True)
->>>>>>> origin/5.0
 
 
 def in_(a, b):

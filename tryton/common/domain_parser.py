@@ -234,11 +234,7 @@ def convert_value(field, value, context=None):
 
     def convert_boolean():
         if isinstance(value, str):
-<<<<<<< HEAD
-            return any(test.decode('utf-8').lower().startswith(value.lower())
-=======
             return any(test.lower().startswith(value.lower())
->>>>>>> origin/5.0
                 for test in (
                     _('y'), _('Yes'), _('True'), _('t'), '1'))
         else:
@@ -969,11 +965,7 @@ class DomainParser(object):
             tokens = self.parse_clause(tokens)
             return simplify(rlist(tokens))
         except ValueError as exception:
-<<<<<<< HEAD
-            if exception.message == 'No closing quotation':
-=======
             if str(exception) == 'No closing quotation':
->>>>>>> origin/5.0
                 return self.parse(input_ + '"')
 
     def stringable(self, domain):
@@ -982,7 +974,7 @@ class DomainParser(object):
             if not clause:
                 return True
             if (((clause[0] in ('AND', 'OR'))
-                        or isinstance(clause[0], (list, tuple)))
+                    or isinstance(clause[0], (list, tuple)))
                     and all(isinstance(c, (list, tuple)) for c in clause[1:])):
                 return self.stringable(clause)
             name, _, value = clause[:3]
@@ -1609,9 +1601,7 @@ def test_completion():
     assert list(dom.completion('Name: !=foo')) == []
     assert list(dom.completion('')) == ['Name: ']
     assert list(dom.completion(' ')) == ['', 'Name: ']
-<<<<<<< HEAD
     assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []
-=======
 
 
 if __name__ == '__main__':
@@ -1619,4 +1609,3 @@ if __name__ == '__main__':
         if name.startswith('test_'):
             func = globals()[name]
             func()
->>>>>>> origin/5.0

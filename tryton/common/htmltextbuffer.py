@@ -2,11 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 
 import sys
-<<<<<<< HEAD
-from io import BytesIO
-=======
 from io import StringIO
->>>>>>> origin/5.0
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape, unescape
 from html.parser import HTMLParser
@@ -133,11 +129,6 @@ def parse_markup(markup_text):
 
 
 def normalize_markup(markup_text, method='html'):
-<<<<<<< HEAD
-    if isinstance(markup_text, str):
-        markup_text = markup_text.encode('utf-8')
-=======
->>>>>>> origin/5.0
     parser = MarkupHTMLParse()
     parser.feed(_strip_newline(markup_text))
     root = parser.root
@@ -286,10 +277,6 @@ def deserialize(register, content, iter_, text, create_tags, data):
             break
         else:
             text = text.decode('ascii', errors='replace')
-<<<<<<< HEAD
-    text = text.encode('utf-8')
-=======
->>>>>>> origin/5.0
     text, tags = parse_markup(normalize_markup(text, method='xml'))
     offset = iter_.get_offset()
     content.insert(iter_, text)
@@ -450,12 +437,7 @@ if __name__ == '__main__':
 
     if use_serialize_func:
         text_buffer.deserialize(
-<<<<<<< HEAD
-            text_buffer, MIME, text_buffer.get_start_iter(),
-            html.encode('utf-8'))
-=======
             text_buffer, MIME, text_buffer.get_start_iter(), html)
->>>>>>> origin/5.0
 
         result = text_buffer.serialize(
             text_buffer, MIME, text_buffer.get_start_iter(),
@@ -470,11 +452,7 @@ if __name__ == '__main__':
             text_buffer, text_buffer, text_buffer.get_start_iter(),
             text_buffer.get_end_iter(), None)
 
-<<<<<<< HEAD
-    assert normalize_markup(html) == result
-=======
     assert normalize_markup(html) == result, (normalize_markup(html), result)
->>>>>>> origin/5.0
 
     win.show_all()
     Gtk.main()

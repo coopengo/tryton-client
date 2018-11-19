@@ -1,9 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-<<<<<<< HEAD
 "Options"
-=======
->>>>>>> origin/5.0
 import configparser
 import optparse
 import os
@@ -45,7 +42,6 @@ class ConfigManager(object):
             'login.host': demo_server,
             'login.db': demo_database,
             'login.expanded': False,
-<<<<<<< HEAD
             'login.date': False,
             'tip.autostart': False,
             'tip.position': 0,
@@ -53,9 +49,6 @@ class ConfigManager(object):
             'client.title': 'Coog',
             'client.default_width': 900,
             'client.default_height': 750,
-=======
-            'client.title': 'Tryton',
->>>>>>> origin/5.0
             'client.modepda': False,
             'client.toolbar': 'default',
             'client.save_width_height': True,
@@ -65,17 +58,6 @@ class ConfigManager(object):
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
             'client.email': '',
-<<<<<<< HEAD
-            'client.limit': 100,
-            'client.check_version': False,
-            'roundup.url': 'https://support.coopengo.com/',
-            'roundup.xmlrpc': '',
-            'download.url': '',
-            'download.frequency': 60 * 60 * 8,
-            'menu.pane': 200,
-            'menu.expanded': True,
-            'sentry.homepage': 'http://app.getsentry.com',
-=======
             'client.limit': 1000,
             'client.check_version': True,
             'client.bus_timeout': 10 * 60,
@@ -86,7 +68,6 @@ class ConfigManager(object):
             'download.url': 'https://downloads.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,
->>>>>>> origin/5.0
         }
         self.config = {}
         self.options = {}
@@ -137,11 +118,7 @@ class ConfigManager(object):
 
     def save(self):
         try:
-<<<<<<< HEAD
-            configparser = configparser.ConfigParser()
-=======
             parser = configparser.ConfigParser()
->>>>>>> origin/5.0
             for entry in list(self.config.keys()):
                 if not len(entry.split('.')) == 2:
                     continue
@@ -159,17 +136,10 @@ class ConfigManager(object):
         return True
 
     def load(self):
-<<<<<<< HEAD
-        configparser = configparser.ConfigParser()
-        configparser.read([self.rcfile])
-        for section in configparser.sections():
-            for (name, value) in configparser.items(section):
-=======
         parser = configparser.ConfigParser()
         parser.read([self.rcfile])
         for section in parser.sections():
             for (name, value) in parser.items(section):
->>>>>>> origin/5.0
                 if value.lower() == 'true':
                     value = True
                 elif value.lower() == 'false':

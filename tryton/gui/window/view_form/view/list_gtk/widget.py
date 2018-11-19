@@ -11,11 +11,7 @@ from functools import wraps, partial
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-<<<<<<< HEAD
-from tryton.common import COLORS, file_selection, file_open, slugify
-=======
-from tryton.common import file_selection, file_open, file_write
->>>>>>> origin/5.0
+from tryton.common import COLORS, file_selection, file_open, file_write
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
@@ -606,22 +602,14 @@ class Image(GenericText):
         field = record[self.field_name]
         value = field.get_client(record)
         if isinstance(value, int):
-<<<<<<< HEAD
-            if value > common.BIG_IMAGE_SIZE:
-=======
             if value > CONFIG['image.max_size']:
->>>>>>> origin/5.0
                 value = None
             else:
                 value = field.get_data(record)
         pixbuf = data2pixbuf(value)
         width = self.attrs.get('width', -1)
         height = self.attrs.get('height', -1)
-<<<<<<< HEAD
-        if width != -1 or height != -1:
-=======
         if pixbuf and (width != -1 or height != -1):
->>>>>>> origin/5.0
             pixbuf = common.resize_pixbuf(pixbuf, width, height)
         cell.set_property('pixbuf', pixbuf)
 
@@ -663,17 +651,6 @@ class M2O(GenericText):
                 field.set_client(record, (None, ''))
 
             if field.get(record):
-<<<<<<< HEAD
-                stock1, tooltip1 = 'tryton-open', _("Open the record <F2>")
-                stock2, tooltip2 = 'tryton-clear', _("Clear the field <Del>")
-            else:
-                stock1, tooltip1 = None, ''
-                stock2, tooltip2 = 'tryton-find', _("Search a record <F2>")
-            for pos, stock, tooltip in [
-                    (gtk.ENTRY_ICON_PRIMARY, stock1, tooltip1),
-                    (gtk.ENTRY_ICON_SECONDARY, stock2, tooltip2)]:
-                editable.set_icon_from_stock(pos, stock)
-=======
                 icon1, tooltip1 = 'tryton-open', _("Open the record <F2>")
                 icon2, tooltip2 = 'tryton-clear', _("Clear the field <Del>")
             else:
@@ -688,7 +665,6 @@ class M2O(GenericText):
                 else:
                     pixbuf = None
                 editable.set_icon_from_pixbuf(pos, pixbuf)
->>>>>>> origin/5.0
                 editable.set_icon_tooltip_text(pos, tooltip)
 
         def icon_press(editable, icon_pos, event):

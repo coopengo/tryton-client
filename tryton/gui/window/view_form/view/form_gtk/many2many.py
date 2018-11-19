@@ -10,10 +10,6 @@ import tryton.common as common
 import gettext
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.domain_parser import quote
-<<<<<<< HEAD
-from tryton.common.widget_style import widget_class
-=======
->>>>>>> origin/5.0
 from tryton.common.underline import set_underline
 
 _ = gettext.gettext
@@ -49,12 +45,7 @@ class Many2Many(Widget):
         self.wid_text = gtk.Entry()
         self.wid_text.set_placeholder_text(_('Search'))
         self.wid_text.set_property('width_chars', 13)
-<<<<<<< HEAD
-        self.wid_text_focus_out_pid = self.wid_text.connect(
-            'focus-out-event', self._focus_out)
-=======
         self.wid_text.connect('focus-out-event', self._focus_out)
->>>>>>> origin/5.0
         self.focus_out = True
         hbox.pack_start(self.wid_text, expand=True, fill=True)
 
@@ -148,11 +139,7 @@ class Many2Many(Widget):
         return False
 
     def destroy(self):
-<<<<<<< HEAD
-        self.wid_text.disconnect(self.wid_text_focus_out_pid)
-=======
         self.wid_text.disconnect_by_func(self._focus_out)
->>>>>>> origin/5.0
         self.screen.destroy()
 
     def _sig_add(self, *args):
@@ -164,11 +151,7 @@ class Many2Many(Widget):
             domain = [domain, add_remove]
         context = self.field.get_search_context(self.record)
         order = self.field.get_search_order(self.record)
-<<<<<<< HEAD
-        value = self.wid_text.get_text().decode('utf-8')
-=======
         value = self.wid_text.get_text()
->>>>>>> origin/5.0
 
         self.focus_out = False
 

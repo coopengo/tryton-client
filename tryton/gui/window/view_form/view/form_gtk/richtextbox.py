@@ -37,14 +37,10 @@ class RichTextBox(TextBox):
         tag_widgets = self.tag_widgets[textview] = {}
 
         for icon in ['bold', 'italic', 'underline']:
-<<<<<<< HEAD
-            button = gtk.ToggleToolButton('gtk-%s' % icon)
-=======
             button = gtk.ToggleToolButton()
             button.set_icon_widget(IconFactory.get_image(
                     'tryton-format-%s' % icon,
                     gtk.ICON_SIZE_SMALL_TOOLBAR))
->>>>>>> origin/5.0
             button.connect('toggled', self.toggle_props, icon, textview)
             toolbar.insert(button, -1)
             tag_widgets[icon] = button

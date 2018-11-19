@@ -8,6 +8,7 @@ import locale
 import gettext
 import ast
 import logging
+import pango
 from functools import wraps
 from collections import defaultdict
 
@@ -301,12 +302,8 @@ class ViewTree(View):
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
         self.mnemonic_widget = self.treeview
-<<<<<<< HEAD
-
         # ABD set alway expand through attributes
         self.always_expand = self.attributes.get('always_expand', False)
-=======
->>>>>>> origin/5.0
 
         self.parse(xml)
 
@@ -601,7 +598,7 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
-        highlight_sum_ = attributes.get('highlight_sum','0')
+        highlight_sum_ = attributes.get('highlight_sum', '0')
 
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']
@@ -1213,9 +1210,9 @@ class ViewTree(View):
                 text1 = ''
                 text2 = '-'
             if highlight_sum_ == "1":
-                label.set_markup( text1 + '<b>' + text2 + '</b>' )
+                label.set_markup(text1 + '<b>' + text2 + '</b>')
             else:
-                label.set_markup( text1 + text2 )
+                label.set_markup(text1 + text2)
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

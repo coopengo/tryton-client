@@ -1,35 +1,25 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import xmlrpc.client
-<<<<<<< HEAD
-import urllib.request, urllib.parse, urllib.error
-from urllib.parse import urlparse
-=======
->>>>>>> origin/5.0
 import json
 import ssl
 import http.client
 from decimal import Decimal
 import datetime
 import socket
-<<<<<<< HEAD
-import gzip
-import io
-=======
->>>>>>> origin/5.0
 import hashlib
 import base64
 import threading
 import errno
 from functools import partial
 from contextlib import contextmanager
-<<<<<<< HEAD
-import string
-from functools import reduce
-=======
 from functools import reduce
 from urllib.parse import urljoin
->>>>>>> origin/5.0
+import urllib.request
+import urllib.parse
+import urllib.error
+from urllib.parse import urlparse
+
 
 __all__ = ["ResponseError", "Fault", "ProtocolError", "Transport",
     "ServerProxy", "ServerPool"]
@@ -141,11 +131,7 @@ class JSONUnmarshaller(object):
         return json.loads(''.join(self.data), object_hook=object_hook)
 
 
-<<<<<<< HEAD
 class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
-=======
-class Transport(xmlrpc.client.SafeTransport):
->>>>>>> origin/5.0
 
     accept_gzip_encoding = True
     encode_threshold = 1400  # common MTU
@@ -221,30 +207,11 @@ class Transport(xmlrpc.client.SafeTransport):
         extra_headers.append(('Connection', 'keep-alive'))
         return host, extra_headers, x509
 
-<<<<<<< HEAD
-    def send_content(self, connection, request_body):
-        connection.putheader("Content-Type", "application/json")
-        if (self.encode_threshold is not None and
-                self.encode_threshold < len(request_body) and
-                gzip):
-            connection.putheader("Content-Encoding", "gzip")
-            buffer = io.StringIO()
-            output = gzip.GzipFile(mode='wb', fileobj=buffer)
-            output.write(request_body)
-            output.close()
-            buffer.seek(0)
-            request_body = buffer.getvalue()
-        connection.putheader("Content-Length", str(len(request_body)))
-        connection.endheaders()
-        if request_body:
-            connection.send(request_body)
-=======
     def send_headers(self, connection, headers):
         for key, val in headers:
             if key == 'Content-Type':
                 val = 'application/json'
             connection.putheader(key, val)
->>>>>>> origin/5.0
 
     def make_connection(self, host):
         if self._connection and host == self._connection[0]:
@@ -280,12 +247,7 @@ class Transport(xmlrpc.client.SafeTransport):
                     timeout=CONNECT_TIMEOUT)
 
         def http_connection():
-<<<<<<< HEAD
             set_connection(http.client.HTTPConnection)
-=======
-            self._connection = host, http.client.HTTPConnection(host,
-                timeout=CONNECT_TIMEOUT)
->>>>>>> origin/5.0
             self._connection[1].connect()
             sock = self._connection[1].sock
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

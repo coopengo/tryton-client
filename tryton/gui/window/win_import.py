@@ -29,14 +29,8 @@ class WinImport(WinCSV):
         button_autodetect = gtk.Button(
             _('_Auto-Detect'), stock=None, use_underline=True)
         button_autodetect.set_alignment(0.0, 0.0)
-<<<<<<< HEAD
-        img_button = gtk.Image()
-        img_button.set_from_stock('tryton-find', gtk.ICON_SIZE_BUTTON)
-        button_autodetect.set_image(img_button)
-=======
         button_autodetect.set_image(common.IconFactory.get_image(
                 'tryton-search', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
         button_autodetect.set_always_show_image(True)
         button_autodetect.connect_after('clicked', self.sig_autodetect)
         box.pack_start(button_autodetect, False, False, 0)
@@ -63,13 +57,8 @@ class WinImport(WinCSV):
     def model_populate(self, fields, parent_node=None, prefix_field='',
             prefix_name=''):
         fields_order = list(fields.keys())
-<<<<<<< HEAD
-        fields_order.sort(lambda x, y: -cmp(fields[x].get('string', ''),
-                fields[y].get('string', '')))
-=======
         fields_order.sort(
             key=lambda x: fields[x].get('string', ''), reverse=True)
->>>>>>> origin/5.0
         for field in fields_order:
             if not fields[field].get('readonly', False):
                 self.fields_data[prefix_field + field] = fields[field]

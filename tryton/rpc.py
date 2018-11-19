@@ -18,14 +18,11 @@ from tryton.config import CONFIG
 
 CONNECTION = None
 _USER = None
-<<<<<<< HEAD
 _USERNAME = ''
 _HOST = ''
 _PORT = None
 _CLIENT_DATE = None
 _DATABASE = ''
-=======
->>>>>>> origin/5.0
 CONTEXT = {}
 _VIEW_CACHE = {}
 _TOOLBAR_CACHE = {}
@@ -57,13 +54,8 @@ def db_list(host, port):
         logging.getLogger(__name__).debug(repr(result))
         return result
     except Fault as exception:
-<<<<<<< HEAD
-        if exception.faultCode == 'AccessDenied':
-            logging.getLogger(__name__).debug('AccessDenied')
-=======
         logging.getLogger(__name__).debug(exception.faultCode)
         if exception.faultCode == str(HTTPStatus.FORBIDDEN.value):
->>>>>>> origin/5.0
             return []
         else:
             return None
@@ -82,7 +74,6 @@ def server_version(host, port):
         return None
 
 
-<<<<<<< HEAD
 # ABD: Add date and set_date parameters to login function (ca093423)
 def login(host, port, database, username, parameters, language=None, date=None,
         set_date=None):
@@ -90,19 +81,6 @@ def login(host, port, database, username, parameters, language=None, date=None,
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
     connection = ServerProxy(host, port, database)
-=======
-def login(parameters):
-    from tryton import common
-    global CONNECTION, _USER
-    global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
-    host = CONFIG['login.host']
-    hostname = common.get_hostname(host)
-    port = common.get_port(host)
-    database = CONFIG['login.db']
-    username = CONFIG['login.login']
-    language = CONFIG['client.lang']
-    connection = ServerProxy(hostname, port, database)
->>>>>>> origin/5.0
     logging.getLogger(__name__).info('common.db.login(%s, %s, %s)'
         % (username, 'x' * 10, language))
     if set_date:
@@ -124,12 +102,9 @@ def login(parameters):
 def logout():
     global CONNECTION, _USER
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
-<<<<<<< HEAD
     global _CLIENT_DATE
     if IPCServer.instance:
         IPCServer.instance.stop()
-=======
->>>>>>> origin/5.0
     if CONNECTION is not None:
         try:
             logging.getLogger(__name__).info('common.db.logout()')

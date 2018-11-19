@@ -67,11 +67,8 @@ class Wizard(InfoBar):
         self.context['active_ids'] = self.ids
         self.context['active_model'] = self.model
         self.context['action_id'] = self.action_id
-<<<<<<< HEAD
         self.context['direct_print'] = self.direct_print
         self.context['email_print'] = self.email_print
-=======
->>>>>>> origin/5.0
 
         def callback(result):
             try:
@@ -139,12 +136,9 @@ class Wizard(InfoBar):
                     del context['active_ids']
                     del context['active_model']
                     del context['action_id']
-<<<<<<< HEAD
                     del context['direct_print']
                     del context['email_print']
 
-=======
->>>>>>> origin/5.0
                     Action._exec_action(*action, context=context)
 
             if self.state == self.end_state:
@@ -369,18 +363,6 @@ class WizardDialog(Wizard, NoModal):
             self.dia.set_default_response(response)
         return button
 
-<<<<<<< HEAD
-    def update(self, view, defaults, buttons):
-        # Dialog must be shown before the screen is displayed
-        # to get the treeview realized when displayed
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.dia.set_default_size(int(sensible_allocation.width * 0.95),
-            int(sensible_allocation.height * 0.95))
-        self.dia.show()
-        common.center_window(self.dia, self.parent, self.sensible_widget)
-        self.show()
-        super(WizardDialog, self).update(view, defaults, buttons)
-=======
     def update(self, view, buttons):
         super(WizardDialog, self).update(view, buttons)
         current_view = self.screen.current_view
@@ -389,7 +371,6 @@ class WizardDialog(Wizard, NoModal):
             current_view.scroll.set_policy(
                 gtk.POLICY_NEVER, gtk.POLICY_NEVER)
         self.show()
->>>>>>> origin/5.0
 
     def destroy(self, action=None):
         super(WizardDialog, self).destroy(action=action)
@@ -427,13 +408,9 @@ class WizardDialog(Wizard, NoModal):
         return True
 
     def show(self):
-<<<<<<< HEAD
         sensible_allocation = self.sensible_widget.get_allocation()
         self.dia.set_default_size(
             sensible_allocation.width, sensible_allocation.height)
-=======
-        self.dia.set_default_size(200, -1)
->>>>>>> origin/5.0
         self.dia.show()
         gobject.idle_add(
             common.center_window, self.dia, self.parent, self.sensible_widget)

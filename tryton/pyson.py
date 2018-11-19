@@ -4,27 +4,7 @@ import json
 import datetime
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-<<<<<<< HEAD
-from functools import reduce, wraps
-
-
-def reduced_type(types):
-    types = types.copy()
-    for k, r in [(int, int), (str, str), (str, str)]:
-        if k in types:
-            types.remove(k)
-            types.add(r)
-    return types
-
-
-def reduce_type(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return reduced_type(func(*args, **kwargs))
-    return wrapper
-=======
 from functools import reduce
->>>>>>> origin/5.0
 
 
 class PYSON(object):
@@ -316,11 +296,7 @@ class Greater(PYSON):
         super(Greater, self).__init__()
         for i in (statement1, statement2):
             if isinstance(i, PYSON):
-<<<<<<< HEAD
-                assert i.types().issubset({int, int, float, type(None)}), \
-=======
                 assert i.types().issubset({int, float, type(None)}), \
->>>>>>> origin/5.0
                     'statement must be an integer or a float'
             else:
                 assert isinstance(i, (int, float, type(None))), \
@@ -445,11 +421,7 @@ class Get(PYSON):
             assert isinstance(obj, dict), 'obj must be a dict'
         self._obj = obj
         if isinstance(key, PYSON):
-<<<<<<< HEAD
-            assert key.types() == set([str]), 'key must be a string'
-=======
             assert key.types() == {str}, 'key must be a string'
->>>>>>> origin/5.0
         else:
             assert isinstance(key, str), 'key must be a string'
         self._key = key
@@ -484,11 +456,7 @@ class In(PYSON):
         key, obj = k, v
         super(In, self).__init__()
         if isinstance(key, PYSON):
-<<<<<<< HEAD
-            assert key.types().issubset(set([str, int])), \
-=======
             assert key.types().issubset({str, int}), \
->>>>>>> origin/5.0
                 'key must be a string or an integer or a long'
         else:
             assert isinstance(key, (str, int)), \
@@ -496,11 +464,7 @@ class In(PYSON):
         if isinstance(obj, PYSON):
             assert obj.types().issubset({dict, list}), \
                 'obj must be a dict or a list'
-<<<<<<< HEAD
-            if obj.types() == set([dict]):
-=======
             if obj.types() == {dict}:
->>>>>>> origin/5.0
                 assert isinstance(key, str), 'key must be a string'
         else:
             assert isinstance(obj, (dict, list))
@@ -541,11 +505,7 @@ class Date(PYSON):
         super(Date, self).__init__()
         for i in (year, month, day, delta_years, delta_months, delta_days):
             if isinstance(i, PYSON):
-<<<<<<< HEAD
-                assert i.types().issubset(set([int, int, type(None)])), \
-=======
                 assert i.types().issubset({int, type(None)}), \
->>>>>>> origin/5.0
                     '%s must be an integer or None' % (i,)
             else:
                 assert isinstance(i, (int, type(None))), \
@@ -711,11 +671,7 @@ class Len(PYSON):
     def __init__(self, v):
         super(Len, self).__init__()
         if isinstance(v, PYSON):
-<<<<<<< HEAD
-            assert v.types().issubset(set([dict, list, str])), \
-=======
             assert v.types().issubset({dict, list, str}), \
->>>>>>> origin/5.0
                 'value must be a dict or a list or a string'
         else:
             assert isinstance(v, (dict, list, str)), \

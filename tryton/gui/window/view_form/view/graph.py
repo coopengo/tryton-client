@@ -101,11 +101,6 @@ class ViewGraph(View):
         parent = get_toplevel_window()
         dia = gtk.Dialog(_('Image Size'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-<<<<<<< HEAD
-        cancel_button = dia.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
-        cancel_button.set_always_show_image(True)
-        ok_button = dia.add_button('gtk-ok', gtk.RESPONSE_OK)
-=======
         Main().add_window(dia)
         cancel_button = dia.add_button(
             set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
@@ -116,7 +111,6 @@ class ViewGraph(View):
             set_underline(_("OK")), gtk.RESPONSE_OK)
         ok_button.set_image(IconFactory.get_image(
                 'tryton-ok', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
         ok_button.set_always_show_image(True)
         dia.set_icon(TRYTON_ICON)
         dia.set_default_response(gtk.RESPONSE_OK)
@@ -134,12 +128,8 @@ class ViewGraph(View):
 
         hbox.pack_start(gtk.Label(_('Height:')), False, True)
         spinheight = gtk.SpinButton()
-<<<<<<< HEAD
-        spinheight.configure(gtk.Adjustment(200.0, 0.0, sys.maxsize, 1.0, 10.0),
-=======
         spinheight.configure(gtk.Adjustment(
                 200.0, 0.0, sys.maxsize, 1.0, 10.0),
->>>>>>> origin/5.0
             climb_rate=1, digits=0)
         spinheight.set_numeric(True)
         spinheight.set_activates_default(True)

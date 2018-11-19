@@ -8,6 +8,7 @@ import locale
 import gettext
 import ast
 import logging
+import pango
 from functools import wraps
 from collections import defaultdict
 
@@ -1209,9 +1210,9 @@ class ViewTree(View):
                 text1 = ''
                 text2 = '-'
             if highlight_sum_ == "1":
-                label.set_markup( text1 + '<b>' + text2 + '</b>' )
+                label.set_markup(text1 + '<b>' + text2 + '</b>')
             else:
-                label.set_markup( text1 + text2 )
+                label.set_markup(text1 + text2)
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

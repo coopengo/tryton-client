@@ -77,13 +77,6 @@ class Times(Dates):
         value = widget.props.value
         if value:
             return datetime.time.strftime(value, widget.props.format)
-<<<<<<< HEAD
-
-    def connect_activate(self, callback):
-        for widget in self.from_.get_children() + self.to.get_children():
-            widget.connect('activate', callback)
-=======
->>>>>>> origin/5.0
 
 
 class DateTimes(Dates):
@@ -217,16 +210,8 @@ class ScreenContainer(object):
         but_active = gtk.ToggleButton()
         self.but_active = but_active
         self._set_active_tooltip()
-<<<<<<< HEAD
-        img_active = gtk.Image()
-        img_active.set_from_stock(
-            'tryton-archive', gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_active.set_alignment(0.5, 0.5)
-        but_active.add(img_active)
-=======
         but_active.add(common.IconFactory.get_image(
                 'tryton-archive', gtk.ICON_SIZE_SMALL_TOOLBAR))
->>>>>>> origin/5.0
         but_active.set_relief(gtk.RELIEF_NONE)
         but_active.connect('toggled', self.search_active)
         hbox.pack_start(but_active, expand=False, fill=False)

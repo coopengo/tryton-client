@@ -12,10 +12,6 @@ from tryton.gui.window.win_form import WinForm
 import tryton.common as common
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.domain_parser import quote
-<<<<<<< HEAD
-from tryton.common.widget_style import widget_class
-=======
->>>>>>> origin/5.0
 from tryton.common.underline import set_underline
 
 _ = gettext.gettext
@@ -85,12 +81,8 @@ class One2Many(Widget):
             self.wid_text = gtk.Entry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
-<<<<<<< HEAD
             self.pid_focus = self.wid_text.connect('focus-out-event',
                 self._focus_out)
-=======
-            self.wid_text.connect('focus-out-event', self._focus_out)
->>>>>>> origin/5.0
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
             if int(self.attrs.get('completion', 1)):
@@ -234,11 +226,7 @@ class One2Many(Widget):
 
     def destroy(self):
         if self.attrs.get('add_remove'):
-<<<<<<< HEAD
             self.wid_text.disconnect(self.pid_focus)
-=======
-            self.wid_text.disconnect_by_func(self._focus_out)
->>>>>>> origin/5.0
         self.screen.destroy()
 
     def _on_activate(self):
@@ -246,11 +234,9 @@ class One2Many(Widget):
 
     def switch_view(self, widget):
         self.screen.switch_view()
-<<<<<<< HEAD
         # ABD: Specific, keep colors
         self.color_set(self.color_name)
-=======
->>>>>>> origin/5.0
+
         mnemonic_widget = self.screen.current_view.mnemonic_widget
         string = self.attrs.get('string', '')
         if mnemonic_widget:

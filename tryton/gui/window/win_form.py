@@ -70,19 +70,6 @@ class WinForm(NoModal, InfoBar):
         self._initial_value = None
         if view_type == 'form':
             if new:
-<<<<<<< HEAD
-                stock_id = gtk.STOCK_DELETE
-            else:
-                stock_id = gtk.STOCK_CANCEL
-                self._initial_value = self.screen.current_record.get_eval()
-            self.but_cancel = self.win.add_button(stock_id,
-                gtk.RESPONSE_CANCEL)
-            self.but_cancel.set_always_show_image(True)
-
-        if new and self.many:
-            self.but_new = self.win.add_button(gtk.STOCK_NEW,
-                gtk.RESPONSE_ACCEPT)
-=======
                 label, icon = _("Delete"), 'tryton-delete'
             else:
                 label, icon = _("Cancel"), 'tryton-cancel'
@@ -98,20 +85,13 @@ class WinForm(NoModal, InfoBar):
                 set_underline(_("New")), gtk.RESPONSE_ACCEPT)
             self.but_new.set_image(common.IconFactory.get_image(
                     'tryton-create', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
             self.but_new.set_always_show_image(True)
             self.but_new.set_accel_path('<tryton>/Form/New', self.accel_group)
 
         if self.save_current:
             self.but_ok = gtk.Button(_('_Save'), use_underline=True)
-<<<<<<< HEAD
-            img_save = gtk.Image()
-            img_save.set_from_stock('tryton-save', gtk.ICON_SIZE_BUTTON)
-            self.but_ok.set_image(img_save)
-=======
             self.but_ok.set_image(common.IconFactory.get_image(
                     'tryton-save', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
             self.but_ok.set_always_show_image(True)
             self.but_ok.set_accel_path('<tryton>/Form/Save', self.accel_group)
             self.but_ok.set_can_default(True)
@@ -120,15 +100,10 @@ class WinForm(NoModal, InfoBar):
             if not new:
                 self.but_ok.props.sensitive = False
         else:
-<<<<<<< HEAD
-            self.but_ok = self.win.add_button(gtk.STOCK_OK,
-                gtk.RESPONSE_OK)
-=======
             self.but_ok = self.win.add_button(
                 set_underline(_("OK")), gtk.RESPONSE_OK)
             self.but_ok.set_image(common.IconFactory.get_image(
                     'tryton-ok', gtk.ICON_SIZE_BUTTON))
->>>>>>> origin/5.0
             self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
             gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
@@ -279,14 +254,6 @@ class WinForm(NoModal, InfoBar):
         self.create_info_bar()
         self.win.vbox.pack_start(self.info_bar, False, True)
 
-<<<<<<< HEAD
-        # JCA: Sepcific, lower by 5 %
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.95),
-            int(sensible_allocation.height * 0.95))
-
-=======
->>>>>>> origin/5.0
         if view_type == 'tree':
             self.screen.signal_connect(self, 'record-message', self._sig_label)
             self.screen.screen_container.alternate_viewport.connect(
@@ -445,8 +412,6 @@ class WinForm(NoModal, InfoBar):
                 and response_id in cancel_responses):
             if (self.screen.current_record.id < 0
                     or self.save_current):
-<<<<<<< HEAD
-                # JCA: Specific
                 if (self.save_current
                         or common.sur(
                             _('Are you sure you want to delete this record?')
@@ -454,9 +419,6 @@ class WinForm(NoModal, InfoBar):
                     self.screen.cancel_current(self._initial_value)
                 elif not self.save_current:
                     return
-=======
-                self.screen.cancel_current(self._initial_value)
->>>>>>> origin/5.0
             elif self.screen.current_record.modified:
                 self.screen.current_record.cancel()
                 self.screen.current_record.reload()
@@ -491,11 +453,8 @@ class WinForm(NoModal, InfoBar):
         self.win.resize(
             sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-<<<<<<< HEAD
         gobject.idle_add(
             common.center_window, self.win, self.parent, self.sensible_widget)
-=======
->>>>>>> origin/5.0
 
     def hide(self):
         self.win.hide()

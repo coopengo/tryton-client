@@ -90,9 +90,17 @@ class SelectionMixin(object):
     def filter_selection(self, domain, record, field):
         if not domain:
             return
+<<<<<<< HEAD
         test = lambda value: eval_domain(domain, {
                 self.field_name: value[0],
                 })
+=======
+
+        def test(value):
+            return eval_domain(domain, {
+                    self.field_name: value[0],
+                    })
+>>>>>>> origin/5.0
         self.selection = list(filter(test, self.selection))
 
     def get_inactive_selection(self, value):

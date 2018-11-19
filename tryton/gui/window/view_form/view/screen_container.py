@@ -7,8 +7,8 @@ import gettext
 import gobject
 
 import tryton.common as common
+from tryton.gui import Main
 from tryton.common.domain_parser import quote
-from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.common.treeviewcontrol import TreeViewControl
 from tryton.common.datetime_ import Date, Time, DateTime, add_operators
 from tryton.pyson import PYSONDecoder
@@ -47,9 +47,21 @@ class Dates(gtk.HBox):
         elif to:
             return '<=%s' % quote(to)
 
+    @property
+    def _widgets(self):
+        return [self.from_, self.to]
+
     def connect_activate(self, callback):
-        self.from_.connect('activate', callback)
-        self.to.connect('activate', callback)
+        for widget in self._widgets:
+            if isinstance(widget, Date):
+                widget.connect('activate', callback)
+            elif isinstance(widget, Time):
+                widget.get_child().connect('activate', callback)
+
+    def connect_combo(self, callback):
+        for widget in self._widgets:
+            if isinstance(widget, Time):
+                widget.connect('notify::popup-shown', callback)
 
     def set_values(self, from_, to):
         self.from_.props.value = from_
@@ -65,10 +77,13 @@ class Times(Dates):
         value = widget.props.value
         if value:
             return datetime.time.strftime(value, widget.props.format)
+<<<<<<< HEAD
 
     def connect_activate(self, callback):
         for widget in self.from_.get_children() + self.to.get_children():
             widget.connect('activate', callback)
+=======
+>>>>>>> origin/5.0
 
 
 class DateTimes(Dates):
@@ -86,12 +101,9 @@ class DateTimes(Dates):
             return common.datetime_strftime(value,
                 widget.props.date_format + ' ' + widget.props.time_format)
 
-    def connect_activate(self, callback):
-        for widget in self.from_.get_children() + self.to.get_children():
-            if isinstance(widget, Date):
-                widget.connect('activate', callback)
-            elif isinstance(widget, Time):
-                widget.get_child().connect('activate', callback)
+    @property
+    def _widgets(self):
+        return self.from_.get_children() + self.to.get_children()
 
 
 class Selection(gtk.ScrolledWindow):
@@ -114,6 +126,8 @@ class Selection(gtk.ScrolledWindow):
         self.add(self.treeview)
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+        self.set_min_content_height(min(20 * len(selections), 200))
+        self.set_max_content_height(200)
 
     def get_value(self):
         values = []
@@ -147,11 +161,12 @@ class ScreenContainer(object):
         self.filter_vbox.set_border_width(0)
         hbox = gtk.HBox(homogeneous=False, spacing=0)
 
-        self.search_entry = PlaceholderEntry()
+        self.search_entry = gtk.Entry()
         self.search_entry.set_placeholder_text(_('Search'))
         self.search_entry.set_alignment(0.0)
-        self.search_entry.set_icon_from_stock(
-            gtk.ENTRY_ICON_PRIMARY, 'tryton-find')
+        self.search_entry.set_icon_from_pixbuf(
+            gtk.ENTRY_ICON_PRIMARY,
+            common.IconFactory.get_pixbuf('tryton-filter', gtk.ICON_SIZE_MENU))
         self.search_entry.set_icon_tooltip_text(
             gtk.ENTRY_ICON_PRIMARY, _('Open filters'))
         self.completion = gtk.EntryCompletion()
@@ -202,11 +217,16 @@ class ScreenContainer(object):
         but_active = gtk.ToggleButton()
         self.but_active = but_active
         self._set_active_tooltip()
+<<<<<<< HEAD
         img_active = gtk.Image()
         img_active.set_from_stock(
             'tryton-archive', gtk.ICON_SIZE_SMALL_TOOLBAR)
         img_active.set_alignment(0.5, 0.5)
         but_active.add(img_active)
+=======
+        but_active.add(common.IconFactory.get_image(
+                'tryton-archive', gtk.ICON_SIZE_SMALL_TOOLBAR))
+>>>>>>> origin/5.0
         but_active.set_relief(gtk.RELIEF_NONE)
         but_active.connect('toggled', self.search_active)
         hbox.pack_start(but_active, expand=False, fill=False)
@@ -214,11 +234,8 @@ class ScreenContainer(object):
         but_bookmark = gtk.ToggleButton()
         self.but_bookmark = but_bookmark
         tooltips.set_tip(but_bookmark, _('Show bookmarks of filters'))
-        img_bookmark = gtk.Image()
-        img_bookmark.set_from_stock('tryton-bookmark',
-            gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_bookmark.set_alignment(0.5, 0.5)
-        but_bookmark.add(img_bookmark)
+        but_bookmark.add(common.IconFactory.get_image(
+                'tryton-bookmarks', gtk.ICON_SIZE_SMALL_TOOLBAR))
         but_bookmark.set_relief(gtk.RELIEF_NONE)
         menu = gtk.Menu()
         menu.set_property('reserve-toggle-size', False)
@@ -231,11 +248,8 @@ class ScreenContainer(object):
         self.but_prev = but_prev
         tooltips.set_tip(but_prev, _('Previous'))
         but_prev.connect('clicked', self.search_prev)
-        img_prev = gtk.Image()
-        img_prev.set_from_stock('tryton-go-previous',
-                gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_prev.set_alignment(0.5, 0.5)
-        but_prev.add(img_prev)
+        but_prev.add(common.IconFactory.get_image(
+                'tryton-back', gtk.ICON_SIZE_SMALL_TOOLBAR))
         but_prev.set_relief(gtk.RELIEF_NONE)
         hbox.pack_start(but_prev, expand=False, fill=False)
 
@@ -243,11 +257,8 @@ class ScreenContainer(object):
         self.but_next = but_next
         tooltips.set_tip(but_next, _('Next'))
         but_next.connect('clicked', self.search_next)
-        img_next = gtk.Image()
-        img_next.set_from_stock('tryton-go-next',
-                gtk.ICON_SIZE_SMALL_TOOLBAR)
-        img_next.set_alignment(0.5, 0.5)
-        but_next.add(img_next)
+        but_next.add(common.IconFactory.get_image(
+                'tryton-forward', gtk.ICON_SIZE_SMALL_TOOLBAR))
         but_next.set_relief(gtk.RELIEF_NONE)
         hbox.pack_start(but_next, expand=False, fill=False)
 
@@ -351,7 +362,7 @@ class ScreenContainer(object):
             model.append([r.strip()])
 
     def get_text(self):
-        return self.search_entry.get_text().decode('utf-8')
+        return self.search_entry.get_text()
 
     def set_text(self, value):
         self.search_entry.set_text(value)
@@ -367,7 +378,6 @@ class ScreenContainer(object):
         self.do_search()
 
     def bookmark_match(self):
-        icon_stock = self.search_entry.get_icon_stock(gtk.ENTRY_ICON_SECONDARY)
         current_text = self.get_text()
         if current_text:
             current_domain = self.screen.domain_parser.parse(current_text)
@@ -377,18 +387,20 @@ class ScreenContainer(object):
                 bool(current_text))
             for id_, name, domain in self.bookmarks():
                 text = self.screen.domain_parser.string(domain)
-                domain = self.screen.domain_parser.parse(text.decode('utf-8'))
+                domain = self.screen.domain_parser.parse(text)
                 if (text == current_text
                         or domain == current_domain):
-                    if icon_stock != 'tryton-star':
-                        self.search_entry.set_icon_from_stock(
-                            gtk.ENTRY_ICON_SECONDARY, 'tryton-star')
+                    self.search_entry.set_icon_from_pixbuf(
+                        gtk.ENTRY_ICON_SECONDARY,
+                        common.IconFactory.get_pixbuf(
+                            'tryton-bookmark', gtk.ICON_SIZE_MENU))
                     self.search_entry.set_icon_tooltip_text(
                         gtk.ENTRY_ICON_SECONDARY, _('Remove this bookmark'))
                     return id_
-        if icon_stock != 'tryton-unstar':
-            self.search_entry.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
-                'tryton-unstar')
+        self.search_entry.set_icon_from_pixbuf(
+            gtk.ENTRY_ICON_SECONDARY,
+            common.IconFactory.get_pixbuf(
+                'tryton-bookmark-border', gtk.ICON_SIZE_MENU))
         if current_text:
             self.search_entry.set_icon_tooltip_text(gtk.ENTRY_ICON_SECONDARY,
                 _('Bookmark this filter'))
@@ -487,9 +499,9 @@ class ScreenContainer(object):
         if icon_pos == gtk.ENTRY_ICON_PRIMARY:
             self.search_box(widget)
         elif icon_pos == gtk.ENTRY_ICON_SECONDARY:
-            icon_stock = self.search_entry.get_icon_stock(icon_pos)
             model_name = self.screen.model_name
-            if icon_stock == 'tryton-unstar':
+            id_ = self.bookmark_match()
+            if not id_:
                 text = self.get_text()
                 if not text:
                     return
@@ -499,8 +511,7 @@ class ScreenContainer(object):
                 domain = self.screen.domain_parser.parse(text)
                 common.VIEW_SEARCH.add(model_name, name, domain)
                 self.set_text(self.screen.domain_parser.string(domain))
-            elif icon_stock == 'tryton-star':
-                id_ = self.bookmark_match()
+            else:
                 common.VIEW_SEARCH.remove(model_name, id_)
             # Refresh icon and bookmark button
             self.bookmark_match()
@@ -541,6 +552,7 @@ class ScreenContainer(object):
 
         if not self.search_window:
             self.search_window = gtk.Window()
+            Main().add_window(self.search_window)
             self.search_window.set_transient_for(widget.get_toplevel())
             self.search_window.set_type_hint(
                 gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
@@ -605,6 +617,7 @@ class ScreenContainer(object):
                         elif field['type'] == 'datetime':
                             entry = DateTimes(date_format, time_format)
                     entry.connect_activate(lambda *a: search())
+                    entry.connect_combo(toggle_window_hide)
                 else:
                     entry = gtk.Entry()
                     entry.connect('activate', lambda *a: search())
@@ -620,9 +633,8 @@ class ScreenContainer(object):
             vbox.pack_start(scrolled, expand=True, fill=True)
             find_button = gtk.Button(_('Find'))
             find_button.connect('clicked', lambda *a: search())
-            find_img = gtk.Image()
-            find_img.set_from_stock('tryton-find', gtk.ICON_SIZE_SMALL_TOOLBAR)
-            find_button.set_image(find_img)
+            find_button.set_image(common.IconFactory.get_image(
+                    'tryton-search', gtk.ICON_SIZE_SMALL_TOOLBAR))
             hbuttonbox = gtk.HButtonBox()
             hbuttonbox.set_spacing(5)
             hbuttonbox.pack_start(find_button)

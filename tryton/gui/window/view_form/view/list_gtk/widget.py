@@ -2,7 +2,6 @@
 # this repository contains the full copyright notices and license terms.
 import datetime
 import os
-import tempfile
 import gtk
 import gettext
 import webbrowser
@@ -12,7 +11,11 @@ from functools import wraps, partial
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
+<<<<<<< HEAD
 from tryton.common import COLORS, file_selection, file_open, slugify
+=======
+from tryton.common import file_selection, file_open, file_write
+>>>>>>> origin/5.0
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
@@ -30,6 +33,7 @@ from tryton.common.selection import SelectionMixin, PopdownMixin
 from tryton.common.datetime_ import CellRendererDate, CellRendererTime
 from tryton.common.datetime_strftime import datetime_strftime
 from tryton.common.domain_parser import quote
+from tryton.config import CONFIG
 
 _ = gettext.gettext
 
@@ -131,7 +135,7 @@ class Affix(Cell):
             self.renderer = CellRendererClickablePixbuf()
             self.renderer.connect('clicked', self.clicked)
             if not self.icon:
-                self.icon = 'tryton-web-browser'
+                self.icon = 'tryton-public'
         elif self.icon:
             self.renderer = gtk.CellRendererPixbuf()
         else:
@@ -151,9 +155,7 @@ class Affix(Cell):
                 value = record[self.icon].get_client(record) or ''
             else:
                 value = self.icon
-            common.ICONFACTORY.register_icon(value)
-            pixbuf = self.view.treeview.render_icon(stock_id=value,
-                size=gtk.ICON_SIZE_BUTTON, detail=None)
+            pixbuf = common.IconFactory.get_pixbuf(value, gtk.ICON_SIZE_BUTTON)
             cell.set_property('pixbuf', pixbuf)
         else:
             text = self.attrs.get('string', '')
@@ -547,20 +549,12 @@ class Binary(GenericText):
     def open_binary(self, renderer, path):
         if not self.filename:
             return
-        dtemp = tempfile.mkdtemp(prefix='tryton_')
         record, field = self._get_record_field(path)
         filename_field = record.group.fields.get(self.filename)
         filename = filename_field.get(record)
         if not filename:
             return
-        root, ext = os.path.splitext(filename)
-        filename = ''.join([slugify(root), os.extsep, slugify(ext)])
-        file_path = os.path.join(dtemp, filename)
-        with open(file_path, 'wb') as fp:
-            if hasattr(field, 'get_data'):
-                fp.write(field.get_data(record))
-            else:
-                fp.write(field.get(record))
+        file_path = file_write(filename, self.get_data(record, field))
         root, type_ = os.path.splitext(filename)
         if type_:
             type_ = type_[1:]
@@ -576,10 +570,16 @@ class Binary(GenericText):
             action=gtk.FILE_CHOOSER_ACTION_SAVE)
         if filename:
             with open(filename, 'wb') as fp:
-                if hasattr(field, 'get_data'):
-                    fp.write(field.get_data(record))
-                else:
-                    fp.write(field.get(record))
+                fp.write(self.get_data(record, field))
+
+    def get_data(self, record, field):
+        if hasattr(field, 'get_data'):
+            data = field.get_data(record)
+        else:
+            data = field.get(record)
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return data
 
     def clear_binary(self, renderer, path):
         record, field = self._get_record_field(path)
@@ -606,14 +606,22 @@ class Image(GenericText):
         field = record[self.field_name]
         value = field.get_client(record)
         if isinstance(value, int):
+<<<<<<< HEAD
             if value > common.BIG_IMAGE_SIZE:
+=======
+            if value > CONFIG['image.max_size']:
+>>>>>>> origin/5.0
                 value = None
             else:
                 value = field.get_data(record)
         pixbuf = data2pixbuf(value)
         width = self.attrs.get('width', -1)
         height = self.attrs.get('height', -1)
+<<<<<<< HEAD
         if width != -1 or height != -1:
+=======
+        if pixbuf and (width != -1 or height != -1):
+>>>>>>> origin/5.0
             pixbuf = common.resize_pixbuf(pixbuf, width, height)
         cell.set_property('pixbuf', pixbuf)
 
@@ -655,6 +663,7 @@ class M2O(GenericText):
                 field.set_client(record, (None, ''))
 
             if field.get(record):
+<<<<<<< HEAD
                 stock1, tooltip1 = 'tryton-open', _("Open the record <F2>")
                 stock2, tooltip2 = 'tryton-clear', _("Clear the field <Del>")
             else:
@@ -664,6 +673,22 @@ class M2O(GenericText):
                     (gtk.ENTRY_ICON_PRIMARY, stock1, tooltip1),
                     (gtk.ENTRY_ICON_SECONDARY, stock2, tooltip2)]:
                 editable.set_icon_from_stock(pos, stock)
+=======
+                icon1, tooltip1 = 'tryton-open', _("Open the record <F2>")
+                icon2, tooltip2 = 'tryton-clear', _("Clear the field <Del>")
+            else:
+                icon1, tooltip1 = None, ''
+                icon2, tooltip2 = 'tryton-search', _("Search a record <F2>")
+            for pos, icon, tooltip in [
+                    (gtk.ENTRY_ICON_PRIMARY, icon1, tooltip1),
+                    (gtk.ENTRY_ICON_SECONDARY, icon2, tooltip2)]:
+                if icon:
+                    pixbuf = common.IconFactory.get_pixbuf(
+                        icon, gtk.ICON_SIZE_MENU)
+                else:
+                    pixbuf = None
+                editable.set_icon_from_pixbuf(pos, pixbuf)
+>>>>>>> origin/5.0
                 editable.set_icon_tooltip_text(pos, tooltip)
 
         def icon_press(editable, icon_pos, event):
@@ -743,7 +768,7 @@ class M2O(GenericText):
             context=context, domain=domain,
             order=order, view_ids=self.attrs.get('view_ids', '').split(','),
             new=create_access, title=self.attrs.get('string'))
-        win.screen.search_filter(quote(text.decode('utf-8')))
+        win.screen.search_filter(quote(text))
         return win
 
     def set_completion(self, entry, path):
@@ -897,7 +922,8 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         record = store.get_value(store.get_iter(path), 0)
         field = record[self.attrs['name']]
 
-        set_value = lambda *a: self.set_value(editable, record, field)
+        def set_value(*a):
+            return self.set_value(editable, record, field)
         editable.get_child().connect('activate', set_value)
         editable.get_child().connect('focus-out-event', set_value)
         editable.connect('changed', set_value)

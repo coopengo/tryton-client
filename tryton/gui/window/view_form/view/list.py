@@ -17,7 +17,6 @@ from tryton.gui.window import Window
 from tryton.common.popup_menu import populate
 from tryton.common import RPCExecute, RPCException, node_attributes, Tooltips
 from tryton.common import domain_inversion, simplify, unique_value
-from tryton.common.widget_style import widget_class
 from tryton.pyson import PYSONDecoder
 from tryton.common import COLOR_RGB, FORMAT_ERROR
 import tryton.common as common
@@ -165,8 +164,7 @@ class AdaptModelGroup(gtk.GenericTreeModel):
                 pos += 1
             except KeyError:
                 continue
-        self.group.sort(lambda x, y:
-            cmp(new_order[ids2pos[x.id]], new_order[ids2pos[y.id]]))
+        self.group.sort(key=lambda x: new_order[ids2pos[x.id]])
         prev = None
         for record in self.group:
             if prev:
@@ -303,9 +301,12 @@ class ViewTree(View):
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
         self.mnemonic_widget = self.treeview
+<<<<<<< HEAD
 
         # ABD set alway expand through attributes
         self.always_expand = self.attributes.get('always_expand', False)
+=======
+>>>>>>> origin/5.0
 
         self.parse(xml)
 
@@ -329,7 +330,7 @@ class ViewTree(View):
         self.set_drag_and_drop()
 
         self.widget = gtk.VBox()
-        scroll = gtk.ScrolledWindow()
+        self.scroll = scroll = gtk.ScrolledWindow()
         scroll.add(self.treeview)
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.set_placement(gtk.CORNER_TOP_LEFT)
@@ -530,10 +531,7 @@ class ViewTree(View):
         if field and self.editable:
             required = field.attrs.get('required')
             readonly = field.attrs.get('readonly')
-            attrlist = common.get_label_attributes(readonly, required)
-            label.set_attributes(attrlist)
-            widget_class(label, 'readonly', readonly)
-            widget_class(label, 'required', required)
+            common.apply_label_attributes(label, readonly, required)
         label.show()
         help = None
         if field and field.attrs.get('help'):
@@ -835,8 +833,7 @@ class ViewTree(View):
         treeselection.selected_foreach(_func_sel_get, data)
         if not data:
             return
-        data = str(data[0])
-        selection.set(selection.get_target(), 8, data)
+        selection.set(selection.get_target(), 8, data[0].encode('utf-8'))
         return True
 
     def drag_data_received(self, treeview, context, x, y, selection,

@@ -7,6 +7,8 @@ import gtk
 import gobject
 import pango
 
+from gi.repository import Gtk
+
 from tryton.signal_event import SignalEvent
 import tryton.common as common
 from tryton.gui.window.view_form.screen import Screen
@@ -14,9 +16,10 @@ from tryton.gui import Main
 from tryton.exceptions import TrytonServerError
 from tryton.gui.window.nomodal import NoModal
 from tryton.common.button import Button
-from tryton.common import RPCExecute, RPCException
+from tryton.common import RPCExecute, RPCException, RPCContextReload
 from tryton.common import TRYTON_ICON
 from .infobar import InfoBar
+from .tabcontent import TabContent
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -64,8 +67,11 @@ class Wizard(InfoBar):
         self.context['active_ids'] = self.ids
         self.context['active_model'] = self.model
         self.context['action_id'] = self.action_id
+<<<<<<< HEAD
         self.context['direct_print'] = self.direct_print
         self.context['email_print'] = self.email_print
+=======
+>>>>>>> origin/5.0
 
         def callback(result):
             try:
@@ -107,8 +113,13 @@ class Wizard(InfoBar):
             if 'view' in result:
                 self.clean()
                 view = result['view']
-                self.update(view['fields_view'], view['defaults'],
-                    view['buttons'])
+                self.update(view['fields_view'], view['buttons'])
+
+                self.screen.new(default=False)
+                self.screen.current_record.set_default(view['defaults'])
+                self.update_buttons(self.screen.current_record)
+                self.screen.set_cursor()
+
                 self.screen_state = view['state']
                 self.__waiting_response = True
             else:
@@ -128,9 +139,12 @@ class Wizard(InfoBar):
                     del context['active_ids']
                     del context['active_model']
                     del context['action_id']
+<<<<<<< HEAD
                     del context['direct_print']
                     del context['email_print']
 
+=======
+>>>>>>> origin/5.0
                     Action._exec_action(*action, context=context)
 
             if self.state == self.end_state:
@@ -142,14 +156,18 @@ class Wizard(InfoBar):
         RPCExecute('wizard', self.action, 'execute', self.session_id, data,
             self.state, context=ctx, callback=callback)
 
-    def destroy(self):
+    def destroy(self, action=None):
         if self.screen:
             self.screen.destroy()
 
     def end(self, callback=None):
+        def end_callback(action):
+            self.destroy(action=action())
+            if callback:
+                callback()
         try:
             RPCExecute('wizard', self.action, 'delete', self.session_id,
-                process_exception=False, callback=callback)
+                process_exception=False, callback=end_callback)
         except Exception:
             logger.warn(
                 _("Unable to delete wizard %s") % self.session_id,
@@ -188,7 +206,8 @@ class Wizard(InfoBar):
         for button in self.states.values():
             button.state_set(record)
 
-    def update(self, view, defaults, buttons):
+    def update(self, view, buttons):
+        tooltips = common.Tooltips()
         for button in buttons:
             self._get_button(button)
 
@@ -201,9 +220,12 @@ class Wizard(InfoBar):
 
         title = gtk.Label()
         title.modify_font(pango.FontDescription("bold 14"))
-        title.set_label(self.name)
+        title.set_label(common.ellipsize(self.name, 80))
+        tooltips.set_tip(title, self.name)
         title.set_padding(20, 4)
         title.set_alignment(0.0, 0.5)
+        title.set_max_width_chars(1)
+        title.set_ellipsize(pango.ELLIPSIZE_END)
         title.set_size_request(0, -1)  # Allow overflow
         title.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("#000000"))
         title.show()
@@ -243,13 +265,8 @@ class Wizard(InfoBar):
         self.create_info_bar()
         self.widget.pack_start(self.info_bar, False, True)
 
-        self.screen.new(default=False)
-        self.screen.current_record.set_default(defaults)
-        self.update_buttons(self.screen.current_record)
-        self.screen.set_cursor()
 
-
-class WizardForm(Wizard, SignalEvent):
+class WizardForm(Wizard, TabContent, SignalEvent):
     "Wizard"
 
     def __init__(self, name=''):
@@ -278,8 +295,8 @@ class WizardForm(Wizard, SignalEvent):
         self.hbuttonbox.pack_start(button)
         return button
 
-    def update(self, view, defaults, buttons):
-        super(WizardForm, self).update(view, defaults, buttons)
+    def update(self, view, buttons):
+        super(WizardForm, self).update(view, buttons)
         self.widget.pack_start(self.hbuttonbox, expand=False, fill=True)
 
     def sig_close(self):
@@ -287,15 +304,19 @@ class WizardForm(Wizard, SignalEvent):
             self.states[self.end_state].clicked()
         return self.state == self.end_state
 
-    def destroy(self):
+    def destroy(self, action=None):
         if self.toolbar_box.get_children():
             toolbar = self.toolbar_box.get_children()[0]
             self.toolbar_box.remove(toolbar)
-        super(WizardForm, self).destroy()
+        super(WizardForm, self).destroy(action=action)
+        if action == 'reload menu':
+            RPCContextReload(Main().sig_win_menu)
+        elif action == 'reload context':
+            RPCContextReload()
 
     def end(self, callback=None):
         super(WizardForm, self).end(callback=callback)
-        Main.get_main()._win_del(self.widget)
+        Main()._win_del(self.widget)
 
     def set_cursor(self):
         if self.screen:
@@ -311,6 +332,7 @@ class WizardDialog(Wizard, NoModal):
         NoModal.__init__(self)
         self.dia = gtk.Dialog(self.name, self.parent,
             gtk.DIALOG_DESTROY_WITH_PARENT)
+        Main().add_window(self.dia)
         self.dia.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dia.set_icon(TRYTON_ICON)
         self.dia.set_decorated(False)
@@ -340,11 +362,14 @@ class WizardDialog(Wizard, NoModal):
             button.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK,
                 gtk.ACCEL_VISIBLE)
+            button.get_style_context().add_class(
+                Gtk.STYLE_CLASS_SUGGESTED_ACTION)
             button.set_can_default(True)
             button.grab_default()
             self.dia.set_default_response(response)
         return button
 
+<<<<<<< HEAD
     def update(self, view, defaults, buttons):
         # Dialog must be shown before the screen is displayed
         # to get the treeview realized when displayed
@@ -355,12 +380,22 @@ class WizardDialog(Wizard, NoModal):
         common.center_window(self.dia, self.parent, self.sensible_widget)
         self.show()
         super(WizardDialog, self).update(view, defaults, buttons)
+=======
+    def update(self, view, buttons):
+        super(WizardDialog, self).update(view, buttons)
+        current_view = self.screen.current_view
+        self.scrolledwindow.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
+        if current_view.scroll:
+            current_view.scroll.set_policy(
+                gtk.POLICY_NEVER, gtk.POLICY_NEVER)
+        self.show()
+>>>>>>> origin/5.0
 
     def destroy(self, action=None):
-        super(WizardDialog, self).destroy()
+        super(WizardDialog, self).destroy(action=action)
         self.dia.destroy()
         NoModal.destroy(self)
-        main = Main.get_main()
+        main = Main()
         if self.parent == main.window:
             current_form = main.get_page()
             if current_form:
@@ -385,13 +420,6 @@ class WizardDialog(Wizard, NoModal):
             if action:
                 screen.client_action(action)
 
-    def end(self, callback=None):
-        def end_callback(action):
-            self.destroy(action=action())
-            if callback:
-                callback()
-        super(WizardDialog, self).end(callback=end_callback)
-
     def close(self, widget, event=None):
         widget.emit_stop_by_name('close')
         if self.end_state in self.states:
@@ -399,9 +427,13 @@ class WizardDialog(Wizard, NoModal):
         return True
 
     def show(self):
+<<<<<<< HEAD
         sensible_allocation = self.sensible_widget.get_allocation()
         self.dia.set_default_size(
             sensible_allocation.width, sensible_allocation.height)
+=======
+        self.dia.set_default_size(200, -1)
+>>>>>>> origin/5.0
         self.dia.show()
         gobject.idle_add(
             common.center_window, self.dia, self.parent, self.sensible_widget)

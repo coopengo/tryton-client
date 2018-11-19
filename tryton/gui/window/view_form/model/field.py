@@ -15,6 +15,11 @@ import decimal
 from decimal import Decimal
 import math
 from tryton.common import RPCExecute, RPCException
+<<<<<<< HEAD
+=======
+from tryton.pyson import PYSONDecoder
+from tryton.config import CONFIG
+>>>>>>> origin/5.0
 
 
 class Field(object):
@@ -33,6 +38,7 @@ class Field(object):
     def __init__(self, attrs):
         self.attrs = attrs
         self.name = attrs['name']
+        self.views = set()
 
     def sig_changed(self, record):
         record.on_change([self.name])
@@ -58,8 +64,16 @@ class Field(object):
     def validation_domains(self, record, pre_validate=None):
         return concat(*self.domains_get(record, pre_validate))
 
+<<<<<<< HEAD
     def get_context(self, record):
         context = record.get_context()
+=======
+    def get_context(self, record, record_context=None):
+        if record_context is not None:
+            context = record_context.copy()
+        else:
+            context = record.get_context()
+>>>>>>> origin/5.0
         context.update(record.expr_eval(self.attrs.get('context', {})))
         return context
 
@@ -336,7 +350,11 @@ class FloatField(Field):
         if isinstance(value, str):
             value = self.convert(value)
         if value is not None:
-            value /= factor
+            # Keep the same type
+            if isinstance(value, int):
+                value //= factor
+            else:
+                value /= factor
         super(FloatField, self).set_client(record, value,
             force_change=force_change)
 
@@ -345,7 +363,7 @@ class FloatField(Field):
         if value is not None:
             digits = self.digits(record, factor=factor)
             if digits:
-                p = digits[1]
+                p = int(digits[1])
             else:
                 d = value * factor
                 if not isinstance(d, Decimal):
@@ -436,7 +454,7 @@ class M2OField(Field):
 
     def set(self, record, value):
         rec_name = record.value.get(self.name + '.rec_name') or ''
-        if not rec_name and value >= 0:
+        if not rec_name and value is not None and value >= 0:
             try:
                 result, = RPCExecute('model', self.attrs['relation'], 'read',
                     [value], ['rec_name'])
@@ -446,8 +464,8 @@ class M2OField(Field):
         record.value[self.name + '.rec_name'] = rec_name
         record.value[self.name] = value
 
-    def get_context(self, record):
-        context = super(M2OField, self).get_context(record)
+    def get_context(self, record, record_context=None):
+        context = super(M2OField, self).get_context(record, record_context)
         if self.attrs.get('datetime_field'):
             context['_datetime'] = record.get_eval(
                 )[self.attrs.get('datetime_field')]
@@ -701,7 +719,7 @@ class O2MField(Field):
             values = chain(value.get('update', []),
                 (d for _, d in value.get('add', [])))
             field_names = set(f for v in values
-                for f in v if f not in fields and f != 'id')
+                for f in v if f not in fields and f != 'id' and '.' not in f)
             if field_names:
                 try:
                     fields = RPCExecute('model', self.attrs['relation'],
@@ -791,7 +809,8 @@ class ReferenceField(Field):
 
     def _is_empty(self, record):
         result = super(ReferenceField, self)._is_empty(record)
-        if not result and record.value[self.name][1] < 0:
+        if not result and (record.value[self.name] is None
+                or record.value[self.name][1] < 0):
             result = True
         return result
 
@@ -806,6 +825,7 @@ class ReferenceField(Field):
     def get(self, record):
         if (record.value.get(self.name)
                 and record.value[self.name][0]
+                and record.value[self.name][1] is not None
                 and record.value[self.name][1] >= -1):
             return ','.join(map(str, record.value[self.name]))
         return None
@@ -848,7 +868,7 @@ class ReferenceField(Field):
         else:
             ref_model, ref_id = value
         rec_name = record.value.get(self.name + '.rec_name') or ''
-        if ref_model and ref_id >= 0:
+        if ref_model and ref_id is not None and ref_id >= 0:
             if not rec_name and ref_id >= 0:
                 try:
                     result, = RPCExecute('model', ref_model, 'read', [ref_id],
@@ -863,8 +883,9 @@ class ReferenceField(Field):
         record.value[self.name] = ref_model, ref_id
         record.value[self.name + '.rec_name'] = rec_name
 
-    def get_context(self, record):
-        context = super(ReferenceField, self).get_context(record)
+    def get_context(self, record, record_context=None):
+        context = super(ReferenceField, self).get_context(
+            record, record_context)
         if self.attrs.get('datetime_field'):
             context['_datetime'] = record.get_eval(
                 )[self.attrs.get('datetime_field')]
@@ -899,14 +920,13 @@ class _FileCache(object):
 class BinaryField(Field):
 
     _default = None
-    cast = bytearray if bytes == str else bytes
 
     def get(self, record):
         result = record.value.get(self.name, self._default)
         if isinstance(result, _FileCache):
             try:
                 with open(result.path, 'rb') as fp:
-                    result = self.cast(fp.read())
+                    result = fp.read()
             except IOError:
                 result = self.get_data(record)
         return result
@@ -916,8 +936,11 @@ class BinaryField(Field):
 
     def set_client(self, record, value, force_change=False):
         _, filename = tempfile.mkstemp(prefix='tryton_')
+        data = value or b''
+        if isinstance(data, str):
+            data = data.encode('utf-8')
         with open(filename, 'wb') as fp:
-            fp.write(value or '')
+            fp.write(data)
         self.set(record, _FileCache(filename))
         record.modified_fields.setdefault(self.name)
         record.signal('record-modified')
@@ -929,24 +952,35 @@ class BinaryField(Field):
         result = record.value.get(self.name) or 0
         if isinstance(result, _FileCache):
             result = os.stat(result.path).st_size
+<<<<<<< HEAD
         elif isinstance(result, (str, bytes, bytearray)):
+=======
+        elif isinstance(result, (str, bytes)):
+>>>>>>> origin/5.0
             result = len(result)
         return result
 
     def get_data(self, record):
         if not isinstance(record.value.get(self.name),
+<<<<<<< HEAD
                 (str, bytes, bytearray, _FileCache)):
+=======
+                (str, bytes, _FileCache)):
+>>>>>>> origin/5.0
             if record.id < 0:
-                return ''
+                return b''
             context = record.get_context()
             try:
                 values, = RPCExecute('model', record.model_name, 'read',
                     [record.id], [self.name], context=context)
             except RPCException:
-                return ''
+                return b''
             _, filename = tempfile.mkstemp(prefix='tryton_')
+            data = values[self.name] or b''
+            if isinstance(data, str):
+                data = data.encode('utf-8')
             with open(filename, 'wb') as fp:
-                fp.write(values[self.name] or '')
+                fp.write(data)
             self.set(record, _FileCache(filename))
         return self.get(record)
 
@@ -954,6 +988,10 @@ class BinaryField(Field):
 class DictField(Field):
 
     _default = {}
+
+    def __init__(self, attrs):
+        super(DictField, self).__init__(attrs)
+        self.keys = {}
 
     def get(self, record):
         return super(DictField, self).get(record) or self._default
@@ -977,6 +1015,71 @@ class DictField(Field):
     def time_format(self, record):
         return '%X'
 
+    def add_keys(self, keys, record):
+        schema_model = self.attrs['schema_model']
+        context = self.get_context(record)
+        domain = self.domain_get(record)
+        batchlen = min(10, CONFIG['client.limit'])
+        for i in range(0, len(keys), batchlen):
+            sub_keys = keys[i:i + batchlen]
+            try:
+                key_ids = RPCExecute('model', schema_model, 'search',
+                    [('name', 'in', sub_keys), domain], 0,
+                    CONFIG['client.limit'], None, context=context)
+            except RPCException:
+                key_ids = []
+            if not key_ids:
+                continue
+            try:
+                values = RPCExecute('model', schema_model,
+                    'get_keys', key_ids, context=context)
+            except RPCException:
+                values = []
+            if not values:
+                continue
+            self.keys.update({k['name']: k for k in values})
+
+    def add_new_keys(self, key_ids, record):
+        schema_model = self.attrs['schema_model']
+        context = self.get_context(record)
+        try:
+            new_fields = RPCExecute('model', schema_model,
+                'get_keys', key_ids, context=context)
+        except RPCException:
+            new_fields = []
+
+        new_keys = []
+        for new_field in new_fields:
+            name = new_field['name']
+            new_keys.append(name)
+            self.keys[name] = new_field
+
+        return new_keys
+
+    def validate(self, record, softvalidation=False, pre_validate=None):
+        valid = super(DictField, self).validate(
+            record, softvalidation, pre_validate)
+
+        if self.attrs.get('readonly'):
+            return valid
+
+        decoder = PYSONDecoder()
+        field_value = self.get_eval(record)
+        domain = []
+        for key in field_value:
+            if key not in self.keys:
+                continue
+            key_domain = self.keys[key].get('domain')
+            if key_domain:
+                domain.append(decoder.decode(key_domain))
+
+        valid_value = eval_domain(domain, field_value)
+        if not valid_value:
+            self.get_state_attrs(record)['invalid'] = 'domain'
+
+        return valid and valid_value
+
+
 TYPES = {
     'char': CharField,
     'integer': IntegerField,
@@ -992,6 +1095,7 @@ TYPES = {
     'datetime': DateTimeField,
     'date': DateField,
     'time': TimeField,
+    'timestamp': DateTimeField,
     'timedelta': TimeDeltaField,
     'one2one': O2OField,
     'binary': BinaryField,

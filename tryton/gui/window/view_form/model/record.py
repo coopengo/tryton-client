@@ -1,11 +1,17 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+<<<<<<< HEAD
 import logging
+=======
+>>>>>>> origin/5.0
 from tryton.signal_event import SignalEvent
 import tryton.common as common
 from tryton.pyson import PYSONDecoder
 from . import field as fields
+<<<<<<< HEAD
 from functools import reduce
+=======
+>>>>>>> origin/5.0
 from tryton.common import RPCExecute, RPCException
 from tryton.config import CONFIG
 
@@ -48,11 +54,20 @@ class Record(SignalEvent):
                 self.id: self,
                 }
             if name == '*':
+<<<<<<< HEAD
                 loading = reduce(
                         lambda x, y: 'eager' if x == y == 'eager' else 'lazy',
                         (field.attrs.get('loading', 'eager')
                             for field in self.group.fields.values()),
                         'eager')
+=======
+                loading = 'eager'
+                views = set()
+                for field in self.group.fields.values():
+                    if field.attrs.get('loading', 'eager') == 'lazy':
+                        loading = 'lazy'
+                    views |= field.views
+>>>>>>> origin/5.0
                 # Set a valid name for next loaded check
                 for fname, field in self.group.fields.items():
                     if field.attrs.get('loading', 'eager') == loading:
@@ -60,8 +75,10 @@ class Record(SignalEvent):
                         break
             else:
                 loading = self.group.fields[name].attrs.get('loading', 'eager')
+                views = self.group.fields[name].views
 
             if loading == 'eager':
+<<<<<<< HEAD
                 fnames = [fname
                     for fname, field in self.group.fields.items()
                     if field.attrs.get('loading', 'eager') == 'eager']
@@ -73,6 +90,17 @@ class Record(SignalEvent):
                 fnames = [fname for fname in fnames
                     if fname in self.fields_to_load]
             fnames = [fname for fname in fnames if fname not in self._loaded]
+=======
+                fields = ((fname, field)
+                    for fname, field in self.group.fields.items()
+                    if field.attrs.get('loading', 'eager') == 'eager')
+            else:
+                fields = self.group.fields.items()
+
+            fnames = [fname for fname, field in fields
+                if fname not in self._loaded
+                and (not views or (views & field.views))]
+>>>>>>> origin/5.0
             fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
                     if self.group.fields[fname].attrs['type']
                     in ('many2one', 'one2one', 'reference')))
@@ -124,7 +152,11 @@ class Record(SignalEvent):
             try:
                 values = RPCExecute('model', self.model_name, 'read',
                     list(id2record.keys()), fnames, context=ctx)
+<<<<<<< HEAD
             except RPCException:
+=======
+            except RPCException as exception:
+>>>>>>> origin/5.0
                 values = [{'id': x} for x in id2record]
                 default_values = dict((f, None) for f in fnames)
                 for value in values:
@@ -357,32 +389,6 @@ class Record(SignalEvent):
             self.parent.modified_fields.pop(self.group.child_name, None)
             self.parent.save(force_reload=force_reload)
         return self.id
-
-    @staticmethod
-    def delete(records):
-        if not records:
-            return
-        record = records[0]
-        root_group = record.group.root_group
-        assert all(r.model_name == record.model_name for r in records)
-        assert all(r.group.root_group == root_group for r in records)
-        records = [r for r in records if r.id >= 0]
-        ctx = {}
-        ctx['_timestamp'] = {}
-        for rec in records:
-            ctx['_timestamp'].update(rec.get_timestamp())
-        record_ids = set(r.id for r in records)
-        reload_ids = set(root_group.on_write_ids(list(record_ids)))
-        reload_ids -= record_ids
-        reload_ids = list(reload_ids)
-        try:
-            RPCExecute('model', record.model_name, 'delete', list(record_ids),
-                context=ctx)
-        except RPCException:
-            return False
-        if reload_ids:
-            root_group.reload(reload_ids)
-        return True
 
     def default_get(self, rec_name=None):
         if len(self.group.fields):

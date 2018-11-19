@@ -11,7 +11,11 @@ class View(object):
     modified = None
     editable = None
     children_field = None
+<<<<<<< HEAD
     children_definitions = None
+=======
+    scroll = None
+>>>>>>> origin/5.0
 
     def __init__(self, screen, xml):
         self.screen = screen

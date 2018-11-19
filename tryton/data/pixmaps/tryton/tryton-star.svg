@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -140,4 +141,10 @@
      d="M 35.973752,39.712833 L 24.028333,33.709386 L 12.082531,39.678326 L 14.362768,27.008543 L 4.7776396,18.070249 L 18.056076,16.247921 L 24.062792,4.6783526 L 30.045232,16.255741 L 43.322959,18.11306 L 33.713703,27.034785 L 35.973752,39.712833 z"
      id="ol"
      style="opacity:0.68999999;fill:none;stroke:#ffffff" />
+=======
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <path d="M0 0h24v24H0z" fill="none"/>
+    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+    <path d="M0 0h24v24H0z" fill="none"/>
+>>>>>>> origin/5.0
 </svg>

@@ -2,7 +2,10 @@
 # this repository contains the full copyright notices and license terms.
 import gettext
 import datetime
+<<<<<<< HEAD
 import re
+=======
+>>>>>>> origin/5.0
 
 import gobject
 import gtk
@@ -10,6 +13,10 @@ import gtk
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 
+<<<<<<< HEAD
+=======
+from .common import IconFactory
+>>>>>>> origin/5.0
 from .datetime_strftime import datetime_strftime as strftime
 
 __all__ = ['Date', 'CellRendererDate', 'Time', 'CellRendererTime', 'DateTime']
@@ -71,7 +78,13 @@ class Date(gtk.Entry):
         self.connect('activate', self.activate)
 
         # Calendar Popup
+<<<<<<< HEAD
         self.set_icon_from_stock(gtk.ENTRY_ICON_PRIMARY, 'tryton-calendar')
+=======
+        self.set_icon_from_pixbuf(
+            gtk.ENTRY_ICON_PRIMARY,
+            IconFactory.get_pixbuf('tryton-date', gtk.ICON_SIZE_MENU))
+>>>>>>> origin/5.0
         self.set_icon_tooltip_text(gtk.ENTRY_ICON_PRIMARY,
             _('Open the calendar'))
         self.connect('icon-press', self.icon_press)
@@ -198,6 +211,7 @@ class Date(gtk.Entry):
         elif prop.name == 'format':
             return self.__format
 
+
 gobject.type_register(Date)
 
 
@@ -238,6 +252,7 @@ class CellRendererDate(gtk.CellRendererText):
         widget.grab_focus()
         widget.show()
         return widget
+
 
 gobject.type_register(CellRendererDate)
 
@@ -347,6 +362,7 @@ class Time(gtk.ComboBoxEntry):
         elif prop.name == 'format':
             return self.__format
 
+
 gobject.type_register(Time)
 
 
@@ -389,6 +405,7 @@ class CellRendererTime(gtk.CellRendererText):
         widget.grab_focus()
         widget.show()
         return widget
+
 
 gobject.type_register(CellRendererTime)
 
@@ -470,6 +487,7 @@ class DateTime(gtk.HBox):
         self.__date.modify_text(state, color)
         self.__time.child.modify_text(state, color)
 
+
 gobject.type_register(DateTime)
 
 
@@ -509,10 +527,10 @@ def timelist_set_list(model, min_, max_, format_):
         model.append((time.strftime(format_), time))
         hour = time.hour
         minute = time.minute + delta
-        hour += minute / 60
+        hour, minute = divmod(minute, 60)
+        hour += time.hour
         if hour >= 24:
             break
-        minute = minute % 60
         time = datetime.time(hour, minute)
 
 
@@ -546,6 +564,7 @@ def add_operators(widget):
         editable = widget
     editable.connect('key-press-event', key_press)
     return widget
+
 
 OPERATORS = {
     gtk.keysyms.S: relativedelta(seconds=-1),

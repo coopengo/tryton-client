@@ -3,8 +3,11 @@
 import sys
 import gtk
 import gettext
+
+from tryton.common import get_toplevel_window, IconFactory
+from tryton.common.underline import set_underline
 from tryton.config import TRYTON_ICON, CONFIG
-from tryton.common import get_toplevel_window
+from tryton.gui import Main
 
 _ = gettext.gettext
 
@@ -16,9 +19,22 @@ class Limit(object):
         self.parent = get_toplevel_window()
         self.win = gtk.Dialog(_('Limit'), self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+<<<<<<< HEAD
         cancel_button = self.win.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
         cancel_button.set_always_show_image(True)
         ok_button = self.win.add_button('gtk-ok', gtk.RESPONSE_OK)
+=======
+        Main().add_window(self.win)
+        cancel_button = self.win.add_button(
+            set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        cancel_button.set_image(IconFactory.get_image(
+                'tryton-cancel', gtk.ICON_SIZE_BUTTON))
+        cancel_button.set_always_show_image(True)
+        ok_button = self.win.add_button(
+            set_underline(_("OK")), gtk.RESPONSE_OK)
+        ok_button.set_image(IconFactory.get_image(
+                'tryton-ok', gtk.ICON_SIZE_BUTTON))
+>>>>>>> origin/5.0
         ok_button.set_always_show_image(True)
         self.win.set_default_response(gtk.RESPONSE_OK)
         self.win.set_icon(TRYTON_ICON)

@@ -1,20 +1,25 @@
-Version 4.8.6 - 2018-09-22
+Version 5.0.1 - 2018-10-31
 * Bug fixes (see mercurial logs for details)
+* Ensure URL scheme of bus (issue7792)
 
-Version 4.8.5 - 2018-08-20
+Version 5.0.0 - 2018-10-01
 * Bug fixes (see mercurial logs for details)
-
-Version 4.8.4 - 2018-08-03
-* Bug fixes (see mercurial logs for details)
-
-Version 4.8.3 - 2018-07-05
-* Bug fixes (see mercurial logs for details)
-
-Version 4.8.2 - 2018-05-28
-* Bug fixes (see mercurial logs for details)
-
-Version 4.8.1 - 2018-05-21
-* Bug fixes (see mercurial logs for details)
+* Use dropdown for attachment
+* Apply factor on domain parser
+* Use tab name in CSV Export/Import
+* Add bus management
+* Use CSS to style label
+* New icons
+* Support timestamp field
+* Add support for Python 3.7
+* Use GtkApplication
+* Validate dictionary items
+* Add (i)like support to domain inversion
+* Use Python 3
+* Improve loading strategy by using views
+* Use non conflicting keyboard shortcuts in sync with sao
+* Use the context to get the suffix of window name
+* Call on_change methods after setting default dtstart on calendar view
 
 Version 4.8.0 - 2018-04-23
 * Bug fixes (see mercurial logs for details)
@@ -31,21 +36,6 @@ Version 4.8.0 - 2018-04-23
 * Add icons on Many2One in editable tree
 * Use translated values when exporting Reference and Selection fields
 
-Version 4.6.5 - 2018-04-03
-* Bug fixes (see mercurial logs for details)
-
-Version 4.6.4 - 2018-03-15
-* Bug fixes (see mercurial logs for details)
-
-Version 4.6.3 - 2018-03-01
-* Bug fixes (see mercurial logs for details)
-
-Version 4.6.2 - 2018-01-04
-* Bug fixes (see mercurial logs for details)
-
-Version 4.6.1 - 2017-12-04
-* Bug fixes (see mercurial logs for details)
-
 Version 4.6.0 - 2017-10-30
 * Bug fixes (see mercurial logs for details)
 * Allow to export model and record name of Reference fields
@@ -56,21 +46,6 @@ Version 4.6.0 - 2017-10-30
 * Make readonly, required and invalid widget themable
 * Load user CSS theme
 * Use profile name or login details in title
-
-Version 4.4.5 - 2018-01-04
-* Bug fixes (see mercurial logs for details)
-
-Version 4.4.4 - 2017-12-04
-* Bug fixes (see mercurial logs for details)
-
-Version 4.4.3 - 2017-11-07
-* Bug fixes (see mercurial logs for details)
-
-Version 4.4.2 - 2017-10-03
-* Bug fixes (see mercurial logs for details)
-
-Version 4.4.1 - 2017-08-08
-* Bug fixes (see mercurial logs for details)
 
 Version 4.4.0 - 2017-05-01
 * Bug fixes (see mercurial logs for details)

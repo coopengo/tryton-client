@@ -6,12 +6,14 @@ import gtk
 import gettext
 
 from . import View
-from tryton.common import node_attributes, get_toplevel_window, message
-from tryton.common import file_selection
-from tryton.config import TRYTON_ICON
 from .graph_gtk.bar import VerticalBar, HorizontalBar
 from .graph_gtk.line import Line
 from .graph_gtk.pie import Pie
+from tryton.common import file_selection, IconFactory
+from tryton.common import node_attributes, get_toplevel_window, message
+from tryton.common.underline import set_underline
+from tryton.config import TRYTON_ICON
+from tryton.gui import Main
 
 _ = gettext.gettext
 
@@ -99,9 +101,22 @@ class ViewGraph(View):
         parent = get_toplevel_window()
         dia = gtk.Dialog(_('Image Size'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+<<<<<<< HEAD
         cancel_button = dia.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
         cancel_button.set_always_show_image(True)
         ok_button = dia.add_button('gtk-ok', gtk.RESPONSE_OK)
+=======
+        Main().add_window(dia)
+        cancel_button = dia.add_button(
+            set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        cancel_button.set_image(IconFactory.get_image(
+                'tryton-cancel', gtk.ICON_SIZE_BUTTON))
+        cancel_button.set_always_show_image(True)
+        ok_button = dia.add_button(
+            set_underline(_("OK")), gtk.RESPONSE_OK)
+        ok_button.set_image(IconFactory.get_image(
+                'tryton-ok', gtk.ICON_SIZE_BUTTON))
+>>>>>>> origin/5.0
         ok_button.set_always_show_image(True)
         dia.set_icon(TRYTON_ICON)
         dia.set_default_response(gtk.RESPONSE_OK)
@@ -119,7 +134,12 @@ class ViewGraph(View):
 
         hbox.pack_start(gtk.Label(_('Height:')), False, True)
         spinheight = gtk.SpinButton()
+<<<<<<< HEAD
         spinheight.configure(gtk.Adjustment(200.0, 0.0, sys.maxsize, 1.0, 10.0),
+=======
+        spinheight.configure(gtk.Adjustment(
+                200.0, 0.0, sys.maxsize, 1.0, 10.0),
+>>>>>>> origin/5.0
             climb_rate=1, digits=0)
         spinheight.set_numeric(True)
         spinheight.set_activates_default(True)
@@ -159,9 +179,8 @@ class ViewGraph(View):
         if event.button == 3:
             menu = gtk.Menu()
             item = gtk.ImageMenuItem(_('Save As...'))
-            img = gtk.Image()
-            img.set_from_stock('tryton-save-as', gtk.ICON_SIZE_MENU)
-            item.set_image(img)
+            item.set_image(IconFactory.get_image(
+                    'tryton-save-as', gtk.ICON_SIZE_MENU))
             item.connect('activate', self.save)
             item.show()
             menu.append(item)

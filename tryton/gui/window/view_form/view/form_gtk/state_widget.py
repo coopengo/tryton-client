@@ -5,7 +5,6 @@ import pango
 import logging
 
 import tryton.common as common
-from tryton.common.widget_style import widget_class
 
 
 class StateMixin(object):
@@ -46,6 +45,7 @@ class Label(StateMixin, gtk.Label):
         required = ((field and field.attrs.get('required'))
                 or state_changes.get('required'))
         readonly = ((field and field.attrs.get('readonly'))
+<<<<<<< HEAD
                 or state_changes.get('readonly'))
         attrlist = common.get_label_attributes(readonly, required)
         if field is not None:
@@ -53,6 +53,10 @@ class Label(StateMixin, gtk.Label):
         self.set_attributes(attrlist)
         widget_class(self, 'readonly', readonly)
         widget_class(self, 'required', required)
+=======
+                or state_changes.get('readonly', not bool(field)))
+        common.apply_label_attributes(self, readonly, required)
+>>>>>>> origin/5.0
 
     def _set_background(self, value, attrlist):
         if value not in common.COLOR_RGB:
@@ -116,8 +120,13 @@ class Image(StateMixin, gtk.Image):
         if name in record.group.fields:
             field = record.group.fields[name]
             name = field.get(record)
+<<<<<<< HEAD
         common.ICONFACTORY.register_icon(name)
         self.set_from_stock(name, gtk.ICON_SIZE_DIALOG)
+=======
+        self.set_from_pixbuf(common.IconFactory.get_pixbuf(
+                name, gtk.ICON_SIZE_DIALOG))
+>>>>>>> origin/5.0
 
 
 class Frame(StateMixin, gtk.Frame):

@@ -8,11 +8,15 @@ import datetime
 import calendar
 import json
 import collections
+<<<<<<< HEAD
 import urllib.request, urllib.parse, urllib.error
+=======
+>>>>>>> origin/5.0
 import urllib.parse
 import xml.dom.minidom
 import gettext
 import logging
+from operator import itemgetter
 
 import gtk
 
@@ -27,7 +31,11 @@ from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
+<<<<<<< HEAD
 import tryton.rpc as rpc
+=======
+from tryton.pyson import PYSONDecoder
+>>>>>>> origin/5.0
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -201,11 +209,14 @@ class Screen(SignalEvent):
             self.screen_container.but_active.show()
         else:
             self.screen_container.but_active.hide()
+<<<<<<< HEAD
 
         if 'active' in view_tree['fields']:
             self.screen_container.but_active.show()
         else:
             self.screen_container.but_active.hide()
+=======
+>>>>>>> origin/5.0
 
         # Add common fields
         for name, string, type_ in (
@@ -217,7 +228,7 @@ class Screen(SignalEvent):
                 ):
             if name not in fields:
                 fields[name] = {
-                    'string': string.decode('utf-8'),
+                    'string': string,
                     'name': name,
                     'type': type_,
                     }
@@ -239,7 +250,7 @@ class Screen(SignalEvent):
                     props['selection'])
         except RPCException:
             selection = []
-        selection.sort(lambda x, y: cmp(x[1], y[1]))
+        selection.sort(key=itemgetter(1))
         return selection
 
     def search_prev(self, search_string):
@@ -375,10 +386,12 @@ class Screen(SignalEvent):
 
     def __set_group(self, group):
         fields = {}
+        fields_views = {}
         if self.group is not None:
             self.group.signal_unconnect(self)
             for name, field in self.group.fields.items():
                 fields[name] = field.attrs
+                fields_views[name] = field.views
         self.tree_states_done.clear()
         self.__group = group
         self.parent = group.parent
@@ -391,7 +404,13 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'record-modified',
             self._record_modified)
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
+<<<<<<< HEAD
         self.__group.add_fields(fields, signal=False)
+=======
+        self.__group.add_fields(fields)
+        for name, views in fields_views.items():
+            self.__group.fields[name].views.update(views)
+>>>>>>> origin/5.0
         self.__group.exclude_field = self.exclude_field
         if len(group):
             self.current_record = group[0]
@@ -503,6 +522,11 @@ class Screen(SignalEvent):
         return len(self.views) + len(self.view_to_load)
 
     def switch_view(self, view_type=None, view_id=None):
+<<<<<<< HEAD
+=======
+        if view_id is not None:
+            view_id = int(view_id)
+>>>>>>> origin/5.0
         if self.current_view:
             self.current_view.set_value()
             if (self.current_record and
@@ -515,6 +539,7 @@ class Screen(SignalEvent):
                 self.set_cursor()
                 self.current_view.display()
                 return
+<<<<<<< HEAD
         if not view_type or self.current_view.view_type != view_type:
             for i in range(self.number_of_views):
                 if len(self.view_to_load):
@@ -530,6 +555,32 @@ class Screen(SignalEvent):
                     break
                 elif self.current_view.view_type == view_type:
                     break
+=======
+
+        def found():
+            if not self.current_view:
+                return False
+            elif not view_type and view_id is None:
+                return False
+            elif view_id is not None:
+                return self.current_view.view_id == view_id
+            else:
+                return self.current_view.view_type == view_type
+        while not found():
+            if len(self.view_to_load):
+                self.load_view_to_load()
+                self.__current_view = len(self.views) - 1
+            elif (view_id is not None
+                    and view_id not in {v.view_id for v in self.views}):
+                self.add_view_id(view_id, view_type)
+                self.__current_view = len(self.views) - 1
+                break
+            else:
+                self.__current_view = ((self.__current_view + 1)
+                        % len(self.views))
+            if not view_type and view_id is None:
+                break
+>>>>>>> origin/5.0
         self.screen_container.set(self.current_view.widget)
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
@@ -580,8 +631,14 @@ class Screen(SignalEvent):
                 fields[field]['loading'] = \
                     self.group.fields[field].attrs['loading']
         self.group.add_fields(fields)
+<<<<<<< HEAD
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
+=======
+        for field in fields:
+            self.group.fields[field].views.add(view_id)
+        view = View.parse(self, xml_dom, view.get('field_childs'))
+>>>>>>> origin/5.0
         view.view_id = view_id
         self.views.append(view)
         # PJA: set list of fields to use on the view
@@ -913,12 +970,19 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
+<<<<<<< HEAD
 
             # PJA: we are greedy people
             #  for view in self.views:
             #      view.display()
             self.current_view.display()
 
+=======
+            for view in self.views:
+                if (view == self.current_view
+                        or view.widget.get_parent()):
+                    view.display()
+>>>>>>> origin/5.0
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1210,21 +1274,25 @@ class Screen(SignalEvent):
             self.display_prev()
         elif action == 'close':
             from tryton.gui import Main
-            Main.get_main().sig_win_close()
+            Main().sig_win_close()
         elif action.startswith('switch'):
+<<<<<<< HEAD
             _, view_type = action.split(None, 1)
             self.switch_view(view_type=view_type)
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
             _, view_id = action.split(':')
             self.switch_view(view_id=int(view_id))
+=======
+            self.switch_view(*action.split(None, 2)[1:])
+>>>>>>> origin/5.0
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']
                     and not self.parent):
                 self.search_filter()
         elif action == 'reload menu':
             from tryton.gui import Main
-            RPCContextReload(Main.get_main().sig_win_menu)
+            RPCContextReload(Main().sig_win_menu)
         elif action == 'reload context':
             RPCContextReload()
 
@@ -1243,7 +1311,7 @@ class Screen(SignalEvent):
         if name:
             query_string.append(
                 ('name', json.dumps(name, separators=(',', ':'))))
-        path = [rpc._DATABASE, 'model', self.model_name]
+        path = [CONFIG['login.db'], 'model', self.model_name]
         view_ids = [v.view_id for v in self.views] + self.view_ids
         if self.current_view.view_type != 'form':
             search_string = self.screen_container.get_text()
@@ -1261,5 +1329,9 @@ class Screen(SignalEvent):
                         view_ids, separators=(',', ':'))))
         query_string = urllib.parse.urlencode(query_string)
         return urllib.parse.urlunparse(('tryton',
+<<<<<<< HEAD
                 '%s:%s' % (rpc._HOST, rpc._PORT),
+=======
+                CONFIG['login.host'],
+>>>>>>> origin/5.0
                 '/'.join(path), query_string, '', ''))

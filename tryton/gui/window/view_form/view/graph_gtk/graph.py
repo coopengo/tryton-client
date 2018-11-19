@@ -127,7 +127,7 @@ class Graph(gtk.DrawingArea):
         self.drawGraph(cx, width, height)
         self.drawAxis(cx, width, height)
         self.drawLegend(cx, width, height)
-        surface.write_to_png(filename.encode('utf-8'))
+        surface.write_to_png(filename)
 
         self.queue_draw()
 

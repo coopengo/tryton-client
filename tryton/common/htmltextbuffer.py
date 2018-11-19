@@ -2,7 +2,11 @@
 # this repository contains the full copyright notices and license terms.
 
 import sys
+<<<<<<< HEAD
 from io import BytesIO
+=======
+from io import StringIO
+>>>>>>> origin/5.0
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape, unescape
 from html.parser import HTMLParser
@@ -41,7 +45,7 @@ FAMILIES = ['normal', 'sans', 'serif', 'monospace']
 def gdk_to_hex(gdk_color):
     "Convert color to 2 digit hex"
     colors = [gdk_color.red, gdk_color.green, gdk_color.blue]
-    return "#" + "".join(["%02x" % (color / 256) for color in colors])
+    return "#" + "".join(["%02x" % (color // 256) for color in colors])
 
 
 def _markup(text):
@@ -101,7 +105,7 @@ class MarkupHTMLParse(HTMLParser):
 
 def parse_markup(markup_text):
     'Return plain text and a list of start, end TextTag'
-    markup_text = BytesIO(_markup(markup_text))
+    markup_text = StringIO(_markup(markup_text))
     plain_text = ''
     tag_stack = []
     tags = []
@@ -129,8 +133,11 @@ def parse_markup(markup_text):
 
 
 def normalize_markup(markup_text, method='html'):
+<<<<<<< HEAD
     if isinstance(markup_text, str):
         markup_text = markup_text.encode('utf-8')
+=======
+>>>>>>> origin/5.0
     parser = MarkupHTMLParse()
     parser.feed(_strip_newline(markup_text))
     root = parser.root
@@ -177,7 +184,8 @@ def normalize_markup(markup_text, method='html'):
         if em.text is None and len(em) == 0:
             em.append(ET.Element('br'))
     # TODO order attributes
-    return _strip_markup(ET.tostring(root, encoding='utf-8', method=method))
+    return _strip_markup(
+        ET.tostring(root, encoding='utf-8', method=method).decode('utf-8'))
 
 
 def find_list_delta(old, new):
@@ -278,14 +286,17 @@ def deserialize(register, content, iter_, text, create_tags, data):
             break
         else:
             text = text.decode('ascii', errors='replace')
+<<<<<<< HEAD
     text = text.encode('utf-8')
+=======
+>>>>>>> origin/5.0
     text, tags = parse_markup(normalize_markup(text, method='xml'))
     offset = iter_.get_offset()
     content.insert(iter_, text)
 
     def sort_key(tag):
         start, end, element = tag
-        return start, -end, element
+        return start, -end, element.tag
 
     for start, end, element in sorted(tags, key=sort_key):
         for tag in _get_tags(content, element):
@@ -439,8 +450,12 @@ if __name__ == '__main__':
 
     if use_serialize_func:
         text_buffer.deserialize(
+<<<<<<< HEAD
             text_buffer, MIME, text_buffer.get_start_iter(),
             html.encode('utf-8'))
+=======
+            text_buffer, MIME, text_buffer.get_start_iter(), html)
+>>>>>>> origin/5.0
 
         result = text_buffer.serialize(
             text_buffer, MIME, text_buffer.get_start_iter(),
@@ -455,7 +470,11 @@ if __name__ == '__main__':
             text_buffer, text_buffer, text_buffer.get_start_iter(),
             text_buffer.get_end_iter(), None)
 
+<<<<<<< HEAD
     assert normalize_markup(html) == result
+=======
+    assert normalize_markup(html) == result, (normalize_markup(html), result)
+>>>>>>> origin/5.0
 
     win.show_all()
     Gtk.main()

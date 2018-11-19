@@ -1,24 +1,35 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import xmlrpc.client
+<<<<<<< HEAD
 import urllib.request, urllib.parse, urllib.error
 from urllib.parse import urlparse
+=======
+>>>>>>> origin/5.0
 import json
 import ssl
 import http.client
 from decimal import Decimal
 import datetime
 import socket
+<<<<<<< HEAD
 import gzip
 import io
+=======
+>>>>>>> origin/5.0
 import hashlib
 import base64
 import threading
 import errno
 from functools import partial
 from contextlib import contextmanager
+<<<<<<< HEAD
 import string
 from functools import reduce
+=======
+from functools import reduce
+from urllib.parse import urljoin
+>>>>>>> origin/5.0
 
 __all__ = ["ResponseError", "Fault", "ProtocolError", "Transport",
     "ServerProxy", "ServerPool"]
@@ -60,8 +71,7 @@ def object_hook(dct):
         elif dct['__class__'] == 'timedelta':
             return datetime.timedelta(seconds=dct['seconds'])
         elif dct['__class__'] == 'bytes':
-            cast = bytearray if bytes == str else bytes
-            return cast(base64.decodestring(dct['base64']))
+            return base64.decodebytes(dct['base64'].encode('utf-8'))
         elif dct['__class__'] == 'Decimal':
             return Decimal(dct['decimal'])
     return dct
@@ -97,9 +107,9 @@ class JSONEncoder(json.JSONEncoder):
             return {'__class__': 'timedelta',
                 'seconds': obj.total_seconds(),
                 }
-        elif isinstance(obj, (bytes, bytearray)):
+        elif isinstance(obj, bytes):
             return {'__class__': 'bytes',
-                'base64': base64.encodestring(obj),
+                'base64': base64.encodebytes(obj).decode('utf-8'),
                 }
         elif isinstance(obj, Decimal):
             return {'__class__': 'Decimal',
@@ -125,13 +135,17 @@ class JSONUnmarshaller(object):
         self.data = []
 
     def feed(self, data):
-        self.data.append(data)
+        self.data.append(data.decode('utf-8'))
 
     def close(self):
         return json.loads(''.join(self.data), object_hook=object_hook)
 
 
+<<<<<<< HEAD
 class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
+=======
+class Transport(xmlrpc.client.SafeTransport):
+>>>>>>> origin/5.0
 
     accept_gzip_encoding = True
     encode_threshold = 1400  # common MTU
@@ -198,14 +212,16 @@ class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
             for key, value in proxy_headers.items():
                 extra_headers.append((key, value))
         if self.session:
-            auth = base64.encodestring(self.session)
-            auth = string.join(string.split(auth), "")  # get rid of whitespace
+            auth = base64.encodebytes(
+                self.session.encode('utf-8')).decode('ascii')
+            auth = ''.join(auth.split())  # get rid of whitespace
             extra_headers.append(
                 ('Authorization', 'Session ' + auth),
                 )
         extra_headers.append(('Connection', 'keep-alive'))
         return host, extra_headers, x509
 
+<<<<<<< HEAD
     def send_content(self, connection, request_body):
         connection.putheader("Content-Type", "application/json")
         if (self.encode_threshold is not None and
@@ -222,6 +238,13 @@ class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
         connection.endheaders()
         if request_body:
             connection.send(request_body)
+=======
+    def send_headers(self, connection, headers):
+        for key, val in headers:
+            if key == 'Content-Type':
+                val = 'application/json'
+            connection.putheader(key, val)
+>>>>>>> origin/5.0
 
     def make_connection(self, host):
         if self._connection and host == self._connection[0]:
@@ -257,7 +280,12 @@ class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
                     timeout=CONNECT_TIMEOUT)
 
         def http_connection():
+<<<<<<< HEAD
             set_connection(http.client.HTTPConnection)
+=======
+            self._connection = host, http.client.HTTPConnection(host,
+                timeout=CONNECT_TIMEOUT)
+>>>>>>> origin/5.0
             self._connection[1].connect()
             sock = self._connection[1].sock
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -323,7 +351,7 @@ class ServerProxy(xmlrpc.client.ServerProxy):
                 'id': id_,
                 'method': methodname,
                 'params': params,
-                }, cls=JSONEncoder, separators=(',', ':'))
+                }, cls=JSONEncoder, separators=(',', ':')).encode('utf-8')
 
         try:
             try:
@@ -347,7 +375,7 @@ class ServerProxy(xmlrpc.client.ServerProxy):
                     )
         except xmlrpc.client.ProtocolError as e:
             raise Fault(str(e.errcode), e.errmsg)
-        except:
+        except Exception:
             self.__transport.close()
             raise
 
@@ -370,12 +398,18 @@ class ServerProxy(xmlrpc.client.ServerProxy):
 class ServerPool(object):
     keep_max = 4
 
-    def __init__(self, *args, **kwargs):
-        self.ServerProxy = partial(ServerProxy, *args, **kwargs)
+    def __init__(self, host, port, database, *args, **kwargs):
+        self.ServerProxy = partial(
+            ServerProxy, host, port, database, *args, **kwargs)
+
+        self._host = host
+        self._port = port
+        self._database = database
+
         self._lock = threading.Lock()
         self._pool = []
         self._used = {}
-        self.session = None
+        self.session = kwargs.get('session')
 
     def getconn(self):
         with self._lock:
@@ -407,7 +441,16 @@ class ServerPool(object):
     def ssl(self):
         for conn in self._pool + list(self._used.values()):
             return conn.ssl
-        return False
+        return None
+
+    @property
+    def url(self):
+        if self.ssl is None:
+            return None
+        scheme = 'https' if self.ssl else 'http'
+        return urljoin(
+            scheme + '://' + self._host + ':' + str(self._port),
+            self._database)
 
     @contextmanager
     def __call__(self):

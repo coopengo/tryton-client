@@ -81,7 +81,10 @@ def simplify(value):
 
 def group_operator(tokens):
     "Group token of operators"
-    cur = next(tokens)
+    try:
+        cur = next(tokens)
+    except StopIteration:
+        return
     nex = None
     for nex in tokens:
         if nex == '=' and cur and cur + nex in OPERATORS:
@@ -158,7 +161,7 @@ def append_ending_clause(domain, clause, deep):
     "Append clause after the ending clause"
     if not domain:
         yield clause
-        raise StopIteration
+        return
     for dom in domain[:-1]:
         yield dom
     if isinstance(domain[-1], list):
@@ -231,7 +234,11 @@ def convert_value(field, value, context=None):
 
     def convert_boolean():
         if isinstance(value, str):
+<<<<<<< HEAD
             return any(test.decode('utf-8').lower().startswith(value.lower())
+=======
+            return any(test.lower().startswith(value.lower())
+>>>>>>> origin/5.0
                 for test in (
                     _('y'), _('Yes'), _('True'), _('t'), '1'))
         else:
@@ -865,9 +872,12 @@ def test_parenthesize():
 def operatorize(tokens, operator='or'):
     "Convert operators"
     test = (operator, (operator,))
-    cur = next(tokens)
-    while cur in test:
+    try:
         cur = next(tokens)
+        while cur in test:
+            cur = next(tokens)
+    except StopIteration:
+        return
     if isgenerator(cur):
         cur = operatorize(cur, operator)
     nex = None
@@ -959,7 +969,11 @@ class DomainParser(object):
             tokens = self.parse_clause(tokens)
             return simplify(rlist(tokens))
         except ValueError as exception:
+<<<<<<< HEAD
             if exception.message == 'No closing quotation':
+=======
+            if str(exception) == 'No closing quotation':
+>>>>>>> origin/5.0
                 return self.parse(input_ + '"')
 
     def stringable(self, domain):
@@ -1159,7 +1173,7 @@ class DomainParser(object):
             except ValueError:
                 for part in parts:
                     yield (part,)
-                raise StopIteration
+                return
             for j in range(i):
                 name = ' '.join(parts[j:i])
                 if name.lower() in self.strings:
@@ -1595,4 +1609,14 @@ def test_completion():
     assert list(dom.completion('Name: !=foo')) == []
     assert list(dom.completion('')) == ['Name: ']
     assert list(dom.completion(' ')) == ['', 'Name: ']
+<<<<<<< HEAD
     assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []
+=======
+
+
+if __name__ == '__main__':
+    for name in list(globals()):
+        if name.startswith('test_'):
+            func = globals()[name]
+            func()
+>>>>>>> origin/5.0

@@ -1,17 +1,15 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-
 import copy
-import tryton.rpc as rpc
-from tryton.common import message, selection, file_open, mailto
-from tryton.gui.window import Window
-from tryton.pyson import PYSONDecoder
 import gettext
-import tempfile
-import os
 import webbrowser
+import os
+import tempfile
+import tryton.rpc as rpc
 from tryton.common import RPCProgress, RPCExecute, RPCException, slugify
+from tryton.common import message, selection, file_open, mailto
 from tryton.config import CONFIG
+from tryton.pyson import PYSONDecoder
 
 _ = gettext.gettext
 
@@ -89,6 +87,7 @@ class Action(object):
 
     @staticmethod
     def _exec_action(action, data=None, context=None):
+        from tryton.gui.window import Window
         if context is None:
             context = {}
         if data is None:
@@ -98,12 +97,13 @@ class Action(object):
         if 'type' not in (action or {}):
             return
 
-        def add_name_suffix(name):
+        def add_name_suffix(name, context=None):
             if not data.get('ids') or not data.get('model'):
                 return name
             max_records = 5
             rec_names = RPCExecute('model', data['model'],
-                'read', data['ids'][:max_records], ['rec_name'])
+                'read', data['ids'][:max_records], ['rec_name'],
+                context=context)
             name_suffix = _(', ').join([x['rec_name'] for x in rec_names])
             if len(data['ids']) > max_records:
                 name_suffix += _(',\u2026')
@@ -145,7 +145,7 @@ class Action(object):
 
             name = action.get('name', '')
             if action.get('keyword', ''):
-                name = add_name_suffix(name)
+                name = add_name_suffix(name, action_ctx)
 
             res_model = action.get('res_model', data.get('res_model'))
             res_id = action.get('res_id', data.get('res_id'))
@@ -170,7 +170,7 @@ class Action(object):
         elif action['type'] == 'ir.action.wizard':
             name = action.get('name', '')
             if action.get('keyword', 'form_action') == 'form_action':
-                name = add_name_suffix(name)
+                name = add_name_suffix(name, context)
             context = copy.deepcopy(context)
             context.update(data.get('extra_context', {}))
             Window.create_wizard(action['wiz_name'], data,

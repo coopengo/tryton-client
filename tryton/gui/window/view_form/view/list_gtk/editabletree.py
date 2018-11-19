@@ -144,7 +144,7 @@ class EditableTreeView(TreeView):
         if event.keyval == gtk.keysyms.Right:
             if isinstance(entry, gtk.Entry):
                 if entry.get_position() >= \
-                        len(entry.get_text().decode('utf-8')) \
+                        len(entry.get_text()) \
                         and not entry.get_selection_bounds():
                     leaving = True
             else:

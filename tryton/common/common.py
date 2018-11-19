@@ -8,11 +8,15 @@ import pango
 import gettext
 import os
 import subprocess
+import tempfile
 import re
 import logging
 import unicodedata
 import colorsys
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 from decimal import Decimal
+from http import HTTPStatus
 from functools import partial
 from tryton.config import CONFIG
 from tryton.config import TRYTON_ICON, PIXMAPS_DIR
@@ -29,9 +33,9 @@ import traceback
 import tryton.rpc as rpc
 import socket
 import _thread
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
 import urllib.parse
+import urllib.error
 from string import Template
 import shlex
 try:
@@ -46,45 +50,35 @@ from gi.repository import Gtk
 from tryton import __version__
 from tryton.exceptions import TrytonServerError, TrytonError
 from tryton.pyson import PYSONEncoder
+from .underline import set_underline
+from .widget_style import widget_class
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
-class TrytonIconFactory(gtk.IconFactory):
+class IconFactory:
 
     batchnum = 10
     _tryton_icons = []
     _name2id = {}
-    _locale_icons = set()
-    _loaded_icons = set()
+    _icons = {}
+    _local_icons = {}
+    _pixbufs = defaultdict(dict)
 
-    def load_client_icons(self):
+    @classmethod
+    def load_local_icons(cls):
         for fname in os.listdir(PIXMAPS_DIR):
             name = os.path.splitext(fname)[0]
-            if not name.startswith('tryton-'):
-                continue
-            if not os.path.isfile(os.path.join(PIXMAPS_DIR, fname)):
-                continue
-            try:
-                pixbuf = gtk.gdk.pixbuf_new_from_file(
-                        os.path.join(PIXMAPS_DIR, fname).decode('utf-8'))
-            except (IOError, glib.GError):
-                continue
-            finally:
-                self._locale_icons.add(name)
-            icon_set = gtk.IconSet(pixbuf)
-            self.add(name, icon_set)
-        for name in ('ok', 'cancel'):
-            icon_set = gtk.Style().lookup_icon_set('gtk-%s' % name)
-            self.add('tryton-%s' % name, icon_set)
-            self._locale_icons.add('tryton-%s' % name)
+            path = os.path.join(PIXMAPS_DIR, fname)
+            cls._local_icons[name] = path
 
-    def load_icons(self, refresh=False):
+    @classmethod
+    def load_icons(cls, refresh=False):
         if not refresh:
-            self._name2id.clear()
-            self._loaded_icons.clear()
-        del self._tryton_icons[:]
+            cls._name2id.clear()
+            cls._icons.clear()
+        del cls._tryton_icons[:]
 
         try:
             icons = rpc.execute('model', 'ir.ui.icon', 'list_icons',
@@ -92,41 +86,82 @@ class TrytonIconFactory(gtk.IconFactory):
         except TrytonServerError:
             icons = []
         for icon_id, icon_name in icons:
-            if refresh and icon_name in self._loaded_icons:
+            if refresh and icon_name in cls._icons:
                 continue
-            self._tryton_icons.append((icon_id, icon_name))
-            self._name2id[icon_name] = icon_id
+            cls._tryton_icons.append((icon_id, icon_name))
+            cls._name2id[icon_name] = icon_id
 
-    def register_icon(self, iconname):
+    @classmethod
+    def register_icon(cls, iconname):
         # iconname might be '' when page do not define icon
         if (not iconname
-                or iconname in (self._loaded_icons | self._locale_icons)):
+                or iconname in cls._icons
+                or iconname in cls._local_icons):
             return
-        if iconname not in self._name2id:
-            self.load_icons(refresh=True)
+        if iconname not in cls._name2id:
+            cls.load_icons(refresh=True)
         try:
-            icon_ref = (self._name2id[iconname], iconname)
+            icon_ref = (cls._name2id[iconname], iconname)
         except KeyError:
             return
-        idx = self._tryton_icons.index(icon_ref)
-        to_load = slice(max(0, idx - self.batchnum // 2),
-            idx + self.batchnum // 2)
-        ids = [e[0] for e in self._tryton_icons[to_load]]
+        idx = cls._tryton_icons.index(icon_ref)
+        to_load = slice(max(0, idx - cls.batchnum // 2),
+            idx + cls.batchnum // 2)
+        ids = [e[0] for e in cls._tryton_icons[to_load]]
         try:
             icons = rpc.execute('model', 'ir.ui.icon', 'read', ids,
                 ['name', 'icon'], rpc.CONTEXT)
         except TrytonServerError:
             icons = []
         for icon in icons:
-            pixbuf = _data2pixbuf(icon['icon'])
-            self._tryton_icons.remove((icon['id'], icon['name']))
-            del self._name2id[icon['name']]
-            self._loaded_icons.add(icon['name'])
-            iconset = gtk.IconSet(pixbuf)
-            self.add(icon['name'], iconset)
+            name = icon['name']
+            data = icon['icon'].encode('utf-8')
+            cls._icons[name] = data
+            cls._tryton_icons.remove((icon['id'], icon['name']))
+            del cls._name2id[icon['name']]
 
-ICONFACTORY = TrytonIconFactory()
-ICONFACTORY.add_default()
+    @classmethod
+    def get_pixbuf(cls, iconname, size=Gtk.IconSize.MENU, color=None):
+        cls.register_icon(iconname)
+        if iconname not in cls._pixbufs[size]:
+            if iconname in cls._icons:
+                data = cls._icons[iconname]
+            elif iconname in cls._local_icons:
+                path = cls._local_icons[iconname]
+                with open(path, 'rb') as fp:
+                    data = fp.read()
+            else:
+                logger.error("Unknown icon %s" % iconname)
+                return
+            if color is None:
+                color = CONFIG['icon.color']
+            try:
+                ET.register_namespace('', 'http://www.w3.org/2000/svg')
+                root = ET.fromstring(data)
+                root.attrib['fill'] = color
+                data = ET.tostring(root)
+            except ET.ParseError:
+                pass
+            width = height = {
+                Gtk.IconSize.MENU: 16,
+                Gtk.IconSize.SMALL_TOOLBAR: 16,
+                Gtk.IconSize.LARGE_TOOLBAR: 24,
+                Gtk.IconSize.BUTTON: 16,
+                Gtk.IconSize.DND: 12,
+                Gtk.IconSize.DIALOG: 48,
+                }.get(size)
+            cls._pixbufs[size][iconname] = data2pixbuf(data, width, height)
+        return cls._pixbufs[size][iconname]
+
+    @classmethod
+    def get_image(cls, iconname, size=Gtk.IconSize.BUTTON, color=None):
+        pixbuf = cls.get_pixbuf(iconname, size, color)
+        image = Gtk.Image()
+        image.set_from_pixbuf(pixbuf)
+        return image
+
+
+IconFactory.load_local_icons()
 
 
 class ModelAccess(object):
@@ -162,6 +197,7 @@ class ModelAccess(object):
         self._access.update(access)
         return self._access[model]
 
+
 MODELACCESS = ModelAccess()
 
 
@@ -178,6 +214,7 @@ class ModelHistory(object):
 
     def __contains__(self, model):
         return model in self._models
+
 
 MODELHISTORY = ModelHistory()
 
@@ -225,6 +262,7 @@ class ViewSearch(object):
                 del self.searches[model][i]
                 break
 
+
 VIEW_SEARCH = ViewSearch()
 
 
@@ -242,6 +280,7 @@ def find_in_path(name):
     return name
 
 
+<<<<<<< HEAD
 def request_server(server_widget):
     result = False
     parent = get_toplevel_window()
@@ -305,37 +344,19 @@ def request_server(server_widget):
 
 
 def get_toplevel_window():
-    for window in gtk.window_list_toplevels():
-        if window.is_active() and window.props.type == gtk.WINDOW_TOPLEVEL:
-            return window
     from tryton.gui.main import Main
-    return Main.get_main().window
+    return Main().get_active_window()
 
 
 def get_sensible_widget(window):
     from tryton.gui.main import Main
-    main = Main.get_main()
+    main = Main()
     if main and window == main.window:
         focus_widget = window.get_focus()
         page = main.get_page()
         if page and focus_widget and focus_widget.is_ancestor(page.widget):
             return page.widget
     return window
-
-
-def center_window(window, parent, sensible):
-    sensible_allocation = sensible.get_allocation()
-    if hasattr(sensible.get_window(), 'get_root_coords'):
-        x, y = sensible.get_window().get_root_coords(
-            sensible_allocation.x, sensible_allocation.y)
-    else:
-        x, y = sensible.get_window().get_origin()
-        x += sensible_allocation.x
-        y += sensible_allocation.y
-    window_allocation = window.get_allocation()
-    x = x + int((sensible_allocation.width - window_allocation.width) / 2)
-    y = y + int((sensible_allocation.height - window_allocation.height) / 2)
-    window.move(x, y)
 
 
 def selection(title, values, alwaysask=False):
@@ -348,10 +369,8 @@ def selection(title, values, alwaysask=False):
     parent = get_toplevel_window()
     dialog = gtk.Dialog(_('Selection'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-    cancel_button = dialog.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
-    cancel_button.set_always_show_image(True)
-    ok_button = dialog.add_button('gtk-ok', gtk.RESPONSE_OK)
-    ok_button.set_always_show_image(True)
+    dialog.add_button(set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+    dialog.add_button(set_underline(_("OK")), gtk.RESPONSE_OK)
     dialog.set_icon(TRYTON_ICON)
     dialog.set_default_response(gtk.RESPONSE_OK)
     dialog.set_default_size(400, 400)
@@ -406,11 +425,11 @@ def file_selection(title, filename='',
         filters=None):
     parent = get_toplevel_window()
     if action == gtk.FILE_CHOOSER_ACTION_OPEN:
-        buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-            gtk.STOCK_OPEN, gtk.RESPONSE_OK)
+        buttons = (set_underline(_("Cancel")), gtk.RESPONSE_CANCEL,
+            set_underline(_("Select")), gtk.RESPONSE_OK)
     else:
-        buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-            gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        buttons = (set_underline(_("Cancel")), gtk.RESPONSE_CANCEL,
+            set_underline(_("Save")), gtk.RESPONSE_OK)
     win = gtk.FileChooserDialog(title, None, action, buttons)
     win.set_transient_for(parent)
     win.set_icon(TRYTON_ICON)
@@ -447,19 +466,13 @@ def file_selection(title, filename='',
         win.set_preview_widget(img_preview)
         win.connect('update-preview', update_preview_cb, img_preview)
 
-    if os.name == 'nt':
-        encoding = 'utf-8'
-    else:
-        encoding = sys.getfilesystemencoding()
     button = win.run()
     if button != gtk.RESPONSE_OK:
         result = None
     elif not multi:
         result = win.get_filename()
-        if result:
-            result = str(result, encoding)
     else:
-        result = [str(path, encoding) for path in win.get_filenames()]
+        result = win.get_filenames()
     parent.present()
     win.destroy()
     return result
@@ -472,12 +485,27 @@ _slugify_hyphenate_re = re.compile(r'[-\s]+')
 def slugify(value):
     if not isinstance(value, str):
         value = str(value)
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicodedata.normalize('NFKD', value)
     value = str(_slugify_strip_re.sub('', value).strip())
     return _slugify_hyphenate_re.sub('-', value)
 
 
-def file_open(filename, type, print_p=False):
+def file_write(filename, data):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    dtemp = tempfile.mkdtemp(prefix='tryton_')
+    if not isinstance(filename, str):
+        name, ext = filename
+    else:
+        name, ext = os.path.splitext(filename)
+    filename = ''.join([slugify(name), os.extsep, slugify(ext)])
+    filepath = os.path.join(dtemp, filename)
+    with open(filepath, 'wb') as fp:
+        fp.write(data)
+    return filepath
+
+
+def file_open(filename, type=None, print_p=False):
     def save():
         save_name = file_selection(_('Save As...'),
                 action=gtk.FILE_CHOOSER_ACTION_SAVE)
@@ -544,30 +572,18 @@ def mailto(to=None, cc=None, bcc=None, subject=None, body=None,
     # http://www.faqs.org/rfcs/rfc2368.html
     url = "mailto:"
     if to:
-        if isinstance(to, str):
-            to = to.encode('utf-8')
         url += urllib.parse.quote(to.strip(), "@,")
     url += '?'
     if cc:
-        if isinstance(cc, str):
-            cc = cc.encode('utf-8')
         url += "&cc=" + urllib.parse.quote(cc, "@,")
     if bcc:
-        if isinstance(bcc, str):
-            bcc = bcc.encode('utf-8')
         url += "&bcc=" + urllib.parse.quote(bcc, "@,")
     if subject:
-        if isinstance(subject, str):
-            subject = subject.encode('utf-8')
         url += "&subject=" + urllib.parse.quote(subject, "")
     if body:
-        if isinstance(body, str):
-            body = body.encode('utf-8')
         body = "\r\n".join(body.splitlines())
         url += "&body=" + urllib.parse.quote(body, "")
     if attachment:
-        if isinstance(attachment, str):
-            attachment = attachment.encode('utf-8')
         url += "&attachment=" + urllib.parse.quote(attachment, "")
     webbrowser.open(url, new=1)
 
@@ -580,17 +596,24 @@ class UniqueDialog(object):
     def build_dialog(self, *args):
         raise NotImplementedError
 
-    def __call__(self, *args):
+    def process_response(self, response):
+        return response
+
+    def __call__(self, *args, **kwargs):
         if self.running:
             return
 
-        parent = get_toplevel_window()
-        dialog = self.build_dialog(parent, *args)
+        parent = kwargs.pop('parent', None)
+        if not parent:
+            parent = get_toplevel_window()
+        dialog = self.build_dialog(parent, *args, **kwargs)
         dialog.set_icon(TRYTON_ICON)
         self.running = True
         dialog.show_all()
         response = dialog.run()
-        parent.present()
+        response = self.process_response(response)
+        if parent:
+            parent.present()
         dialog.destroy()
         self.running = False
         return response
@@ -598,26 +621,28 @@ class UniqueDialog(object):
 
 class MessageDialog(UniqueDialog):
 
-    def build_dialog(self, parent, message, msg_type):
+    def build_dialog(self, parent, message, msg_type=gtk.MESSAGE_INFO,
+            buttons=gtk.BUTTONS_OK, secondary=None):
         dialog = gtk.MessageDialog(parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, msg_type,
-            gtk.BUTTONS_OK, message)
+            buttons, message)
+        if secondary:
+            dialog.format_secondary_text(secondary)
         return dialog
 
-    def __call__(self, message, msg_type=gtk.MESSAGE_INFO):
-        super(MessageDialog, self).__call__(message, msg_type)
+    def __call__(self, message, *args, **kwargs):
+        return super(MessageDialog, self).__call__(message, *args, **kwargs)
+
 
 message = MessageDialog()
 
 
-class WarningDialog(UniqueDialog):
+class WarningDialog(MessageDialog):
 
-    def build_dialog(self, parent, message, title, buttons=gtk.BUTTONS_OK):
-        dialog = gtk.MessageDialog(parent, gtk.DIALOG_DESTROY_WITH_PARENT,
-            gtk.MESSAGE_WARNING, buttons)
-        dialog.set_markup('<b>%s</b>' % (to_xml(title)))
-        dialog.format_secondary_markup(to_xml(message))
-        return dialog
+    def __call__(self, message, title, buttons=gtk.BUTTONS_OK, **kwargs):
+        return super().__call__(
+            title, gtk.MESSAGE_WARNING, buttons, message, **kwargs)
+
 
 warning = WarningDialog()
 
@@ -631,9 +656,8 @@ class UserWarningDialog(WarningDialog):
     def _set_always(self, toggle):
         self.always = toggle.get_active()
 
-    def build_dialog(self, parent, message, title):
-        dialog = super(UserWarningDialog, self).build_dialog(parent, message,
-            title, gtk.BUTTONS_YES_NO)
+    def build_dialog(self, *args, **kwargs):
+        dialog = super().build_dialog(*args, **kwargs)
         # Disable Warning Automatic By Pass
         # check = gtk.CheckButton(_('Always ignore this warning.'))
         # check.connect_after('toggled', self._set_always)
@@ -645,37 +669,27 @@ class UserWarningDialog(WarningDialog):
         dialog.vbox.pack_start(label, True, True)
         return dialog
 
-    def __call__(self, message, title):
-        response = super(UserWarningDialog, self).__call__(message, title)
+    def process_response(self, response):
         if response == gtk.RESPONSE_YES:
             if self.always:
                 return 'always'
             return 'ok'
         return 'cancel'
 
+    def __call__(self, message, title):
+        return super().__call__(message, title, gtk.BUTTONS_YES_NO)
+
+
 userwarning = UserWarningDialog()
 
 
-class ConfirmationDialog(UniqueDialog):
+class ConfirmationDialog(MessageDialog):
 
-    def build_dialog(self, parent, message):
-        dialog = gtk.Dialog(_('Confirmation'), parent, gtk.DIALOG_MODAL
-                | gtk.DIALOG_DESTROY_WITH_PARENT | gtk.WIN_POS_CENTER_ON_PARENT
-                | gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
-        hbox = gtk.HBox()
-        image = gtk.Image()
-        image.set_from_stock('tryton-dialog-information',
-                gtk.ICON_SIZE_DIALOG)
-        image.set_padding(15, 15)
-        hbox.pack_start(image, False, False)
-        label = gtk.Label('%s' % (to_xml(message)))
-        hbox.pack_start(label, True, True)
-        dialog.vbox.pack_start(hbox)
-        return dialog
+    def __call__(self, message, *args, **kwargs):
+        return super().__call__(message, gtk.MESSAGE_QUESTION, *args, **kwargs)
 
 
-class SurDialog(ConfirmationDialog):
-
+<<<<<<< HEAD
     def build_dialog(self, parent, message):
         dialog = super(SurDialog, self).build_dialog(parent, message)
         cancel_button = dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
@@ -685,10 +699,14 @@ class SurDialog(ConfirmationDialog):
         dialog.set_default(ok_button)
         dialog.set_default_response(gtk.RESPONSE_OK)
         return dialog
+=======
+class SurDialog(ConfirmationDialog):
+>>>>>>> origin/5.0
 
     def __call__(self, message):
-        response = super(SurDialog, self).__call__(message)
-        return response == gtk.RESPONSE_OK
+        response = super().__call__(message, buttons=gtk.BUTTONS_YES_NO)
+        return response == gtk.RESPONSE_YES
+
 
 sur = SurDialog()
 
@@ -701,6 +719,7 @@ class Sur3BDialog(ConfirmationDialog):
         gtk.RESPONSE_CANCEL: 'cancel'
     }
 
+<<<<<<< HEAD
     def build_dialog(self, parent, message):
         dialog = super(Sur3BDialog, self).build_dialog(parent, message)
         cancel_button = dialog.add_button("gtk-cancel", gtk.RESPONSE_CANCEL)
@@ -710,18 +729,25 @@ class Sur3BDialog(ConfirmationDialog):
         yes_button = dialog.add_button("gtk-yes", gtk.RESPONSE_YES)
         yes_button.set_always_show_image(True)
         dialog.set_default(yes_button)
+=======
+    def build_dialog(self, *args, **kwargs):
+        dialog = super().build_dialog(*args, **kwargs)
+        dialog.add_button(set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        dialog.add_button(set_underline(_("No")), gtk.RESPONSE_NO)
+        dialog.add_button(set_underline(_("Yes")), gtk.RESPONSE_YES)
+>>>>>>> origin/5.0
         dialog.set_default_response(gtk.RESPONSE_YES)
         return dialog
 
     def __call__(self, message):
-        response = super(Sur3BDialog, self).__call__(message)
+        response = super().__call__(message, buttons=gtk.BUTTONS_NONE)
         return self.response_mapping.get(response, 'cancel')
+
 
 sur_3b = Sur3BDialog()
 
 
-class AskDialog(UniqueDialog):
-
+<<<<<<< HEAD
     def build_dialog(self, parent, question, visibility):
         win = gtk.Dialog(CONFIG['client.title'], parent,
                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
@@ -730,39 +756,30 @@ class AskDialog(UniqueDialog):
         ok_button = win.add_button('gtk-ok', gtk.RESPONSE_OK)
         ok_button.set_always_show_image(True)
         win.set_default_response(gtk.RESPONSE_OK)
+=======
+class AskDialog(MessageDialog):
+>>>>>>> origin/5.0
 
-        hbox = gtk.HBox()
-        image = gtk.Image()
-        image.set_from_stock('tryton-dialog-information',
-                gtk.ICON_SIZE_DIALOG)
-        hbox.pack_start(image)
-        vbox = gtk.VBox()
-        vbox.pack_start(gtk.Label(question))
+    def build_dialog(self, *args, **kwargs):
+        visibility = kwargs.pop('visibility')
+        dialog = super().build_dialog(*args, **kwargs)
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        box = dialog.get_message_area()
         self.entry = gtk.Entry()
         self.entry.set_activates_default(True)
         self.entry.set_visibility(visibility)
-        vbox.pack_start(self.entry)
-        hbox.pack_start(vbox)
-        win.vbox.pack_start(hbox)
-        return win
+        box.pack_start(self.entry)
+        return dialog
+
+    def process_response(self, response):
+        if response == gtk.RESPONSE_OK:
+            return self.entry.get_text()
 
     def __call__(self, question, visibility=True):
-        if self.running:
-            return
+        return super().__call__(
+            question, gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_OK_CANCEL,
+            visibility=visibility)
 
-        parent = get_toplevel_window()
-        dialog = self.build_dialog(parent, question, visibility=visibility)
-        dialog.set_icon(TRYTON_ICON)
-        self.running = True
-        dialog.show_all()
-        response = dialog.run()
-        result = None
-        if response == gtk.RESPONSE_OK:
-            result = self.entry.get_text()
-        parent.present()
-        dialog.destroy()
-        self.running = False
-        return result
 
 ask = AskDialog()
 
@@ -770,10 +787,24 @@ ask = AskDialog()
 class ConcurrencyDialog(UniqueDialog):
 
     def build_dialog(self, parent, resource, obj_id, context):
-        dialog = gtk.Dialog(_('Concurrency Exception'), parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT |
-            gtk.WIN_POS_CENTER_ON_PARENT | gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+        tooltips = Tooltips()
+        dialog = gtk.MessageDialog(parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_QUESTION, gtk.BUTTONS_NONE,
+            _('Concurrency Exception'))
+        dialog.format_secondary_text(
+            _('This record has been modified while you were editing it.'))
+        cancel_button = dialog.add_button(
+            set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        tooltips.set_tip(cancel_button, _('Cancel saving'))
+        compare_button = dialog.add_button(
+            set_underline(_("Compare")), gtk.RESPONSE_APPLY)
+        tooltips.set_tip(compare_button, _('See the modified version'))
+        write_button = dialog.add_button(
+            set_underline(_("Write Anyway")), gtk.RESPONSE_OK)
+        tooltips.set_tip(write_button, _('Save your current version'))
         dialog.set_default_response(gtk.RESPONSE_CANCEL)
+<<<<<<< HEAD
         hbox = gtk.HBox()
         image = gtk.Image()
         image.set_from_stock('tryton-dialog-information',
@@ -805,6 +836,8 @@ class ConcurrencyDialog(UniqueDialog):
         write_button.set_image(image)
         write_button.set_always_show_image(True)
         dialog.add_action_widget(write_button, gtk.RESPONSE_OK)
+=======
+>>>>>>> origin/5.0
         return dialog
 
     def __call__(self, resource, obj_id, context):
@@ -822,32 +855,31 @@ class ConcurrencyDialog(UniqueDialog):
                 mode=['form', 'tree'])
         return False
 
+
 concurrency = ConcurrencyDialog()
 
 
 class ErrorDialog(UniqueDialog):
 
     def build_dialog(self, parent, title, details):
-        dialog = gtk.Dialog(_('Error'), parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+        dialog = gtk.MessageDialog(parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_ERROR, gtk.BUTTONS_NONE,
+            _('Application Error'))
+        dialog.set_default_size(600, 400)
 
+<<<<<<< HEAD
         but_send = gtk.Button(_('Report Bug'))
         dialog.add_action_widget(but_send, gtk.RESPONSE_OK)
         close_button = dialog.add_button("gtk-close", gtk.RESPONSE_CANCEL)
         close_button.set_always_show_image(True)
+=======
+        dialog.add_button(set_underline(_("Report Bug")), gtk.RESPONSE_OK)
+        dialog.add_button(set_underline(_("Close")), gtk.RESPONSE_CANCEL)
+>>>>>>> origin/5.0
         dialog.set_default_response(gtk.RESPONSE_CANCEL)
 
-        vbox = gtk.VBox()
-        label_title = gtk.Label()
-        label_title.set_markup('<b>' + _('Application Error.') + '</b>')
-        label_title.set_padding(-1, 5)
-        vbox.pack_start(label_title, False, False)
-        vbox.pack_start(gtk.HSeparator(), False, False)
-
-        hbox = gtk.HBox()
-        image = gtk.Image()
-        image.set_from_stock('tryton-dialog-error', gtk.ICON_SIZE_DIALOG)
-        hbox.pack_start(image, False, False)
+        vbox = dialog.vbox
 
         scrolledwindow = gtk.ScrolledWindow()
         scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
@@ -871,29 +903,21 @@ class ErrorDialog(UniqueDialog):
         textview.set_editable(False)
         textview.set_sensitive(True)
         textview.modify_font(pango.FontDescription("monospace"))
-        box.pack_start(textview, False, False)
+        box.pack_start(textview, True, True)
 
         viewport.add(box)
         scrolledwindow.add(viewport)
-        hbox.pack_start(scrolledwindow)
+        vbox.pack_start(scrolledwindow, expand=True, fill=True)
 
-        vbox.pack_start(hbox)
-
-        button_roundup = gtk.Button()
-        button_roundup.set_relief(gtk.RELIEF_NONE)
-        label_roundup = gtk.Label()
-        label_roundup.set_markup(_('To report bugs you must have an account'
-            ' on <u>%s</u>') % CONFIG['roundup.url'])
-        label_roundup.set_alignment(1, 0.5)
-        label_roundup.set_padding(20, 5)
-
-        button_roundup.connect('clicked',
+        button_roundup = Gtk.LinkButton.new_with_label(
+            CONFIG['roundup.url'],
+            _('To report bugs you must have an account on %s') %
+            CONFIG['roundup.url'])
+        button_roundup.set_alignment(0, 0.5)
+        button_roundup.connect('activate-link',
                 lambda widget: webbrowser.open(CONFIG['roundup.url'], new=2))
-        button_roundup.add(label_roundup)
         vbox.pack_start(button_roundup, False, False)
 
-        dialog.vbox.pack_start(vbox)
-        dialog.set_default_size(600, 400)
         return dialog
 
     def __call__(self, title, details):
@@ -906,6 +930,7 @@ class ErrorDialog(UniqueDialog):
         if response == gtk.RESPONSE_OK:
             send_bugtracker(title, details)
 
+
 error = ErrorDialog()
 
 
@@ -914,18 +939,23 @@ def send_bugtracker(title, msg):
     parent = get_toplevel_window()
     win = gtk.Dialog(_('Bug Tracker'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+<<<<<<< HEAD
     cancel_button = win.add_button('gtk-cancel', gtk.RESPONSE_CANCEL)
     cancel_button.set_always_show_image(True)
     ok_button = win.add_button('gtk-ok', gtk.RESPONSE_OK)
     ok_button.set_always_show_image(True)
+=======
+    win.add_button(set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+    win.add_button(set_underline(_("OK")), gtk.RESPONSE_OK)
+>>>>>>> origin/5.0
     win.set_icon(TRYTON_ICON)
     win.set_default_response(gtk.RESPONSE_OK)
 
     hbox = gtk.HBox()
-    image = gtk.Image()
-    image.set_from_stock('tryton-dialog-information',
-            gtk.ICON_SIZE_DIALOG)
-    hbox.pack_start(image, False, False)
+    hbox.pack_start(
+        IconFactory.get_image(
+            'tryton-info', gtk.ICON_SIZE_DIALOG),
+        False, False)
 
     table = gtk.Table(2, 2)
     table.set_col_spacings(3)
@@ -966,6 +996,7 @@ def send_bugtracker(title, msg):
     if response == gtk.RESPONSE_OK:
         try:
             msg = msg.encode('ascii', 'replace')
+            title = title.encode('ascii', 'replace')
             protocol = 'http'
             if ssl or hasattr(socket, 'ssl'):
                 protocol = 'https'
@@ -974,9 +1005,9 @@ def send_bugtracker(title, msg):
                 ('%s://%s:%s@' + CONFIG['roundup.xmlrpc'])
                 % (protocol, quote(user), quote(password)), allow_none=True)
             if hashlib:
-                msg_md5 = hashlib.md5(msg + '\n' + title).hexdigest()
+                msg_md5 = hashlib.md5(msg + b'\n' + title).hexdigest()
             else:
-                msg_md5 = md5.new(msg + '\n' + title).hexdigest()
+                msg_md5 = md5.new(msg + b'\n' + title).hexdigest()
             if not title:
                 title = '[no title]'
             issue_id = None
@@ -1021,6 +1052,7 @@ def send_bugtracker(title, msg):
             message(_('Exception:') + '\n' + tb_s, msg_type=gtk.MESSAGE_ERROR)
 
 
+<<<<<<< HEAD
 class SentryDialog(UniqueDialog):
 
     def build_dialog(self, parent, sentry_id):
@@ -1058,6 +1090,8 @@ class SentryDialog(UniqueDialog):
 
 sentry = SentryDialog()
 
+=======
+>>>>>>> origin/5.0
 def check_version(box, version=__version__):
     def info_bar_response(info_bar, response, box, url):
         if response == Gtk.ResponseType.ACCEPT:
@@ -1084,7 +1118,12 @@ def check_version(box, version=__version__):
 
     logger.info(_("Check URL: %s"), url)
     try:
+<<<<<<< HEAD
         urllib.request.urlopen(HeadRequest(url), timeout=5, cafile=rpc._CA_CERTS)
+=======
+        urllib.request.urlopen(
+            HeadRequest(url), timeout=5, cafile=rpc._CA_CERTS)
+>>>>>>> origin/5.0
     except (urllib.error.HTTPError, socket.timeout):
         return True
     except Exception:
@@ -1107,6 +1146,7 @@ def check_version(box, version=__version__):
 def to_xml(string):
     return string.replace('&', '&amp;'
         ).replace('<', '&lt;').replace('>', '&gt;')
+
 
 PLOCK = Lock()
 
@@ -1138,10 +1178,10 @@ def process_exception(exception, *args, **kwargs):
                     return rpc_execute(*args)
             else:
                 message(_('Concurrency Exception'), msg_type=gtk.MESSAGE_ERROR)
-        elif (exception.faultCode.startswith('403')
-                or exception.faultCode.startswith('401')):
+        elif exception.faultCode == str(HTTPStatus.UNAUTHORIZED.value):
             from tryton.gui.main import Main
             if PLOCK.acquire(False):
+<<<<<<< HEAD
                 language = CONFIG['client.lang']
                 func = lambda parameters: rpc.login(
                     rpc._HOST, rpc._PORT, rpc._DATABASE, rpc._USERNAME,
@@ -1151,6 +1191,13 @@ def process_exception(exception, *args, **kwargs):
                 except TrytonError as exception:
                     if exception.faultCode == 'QueryCanceled':
                         Main.get_main().sig_quit()
+=======
+                try:
+                    Login()
+                except TrytonError as exception:
+                    if exception.faultCode == 'QueryCanceled':
+                        Main().sig_quit()
+>>>>>>> origin/5.0
                     raise
                 finally:
                     PLOCK.release()
@@ -1164,13 +1211,17 @@ def process_exception(exception, *args, **kwargs):
 
 
 class Login(object):
-    def __init__(self, func):
+    def __init__(self, func=rpc.login):
         parameters = {}
         while True:
             try:
                 func(parameters)
             except TrytonServerError as exception:
+<<<<<<< HEAD
                 if exception.faultCode.startswith('403'):
+=======
+                if exception.faultCode == str(HTTPStatus.UNAUTHORIZED.value):
+>>>>>>> origin/5.0
                     parameters.clear()
                     continue
                 if exception.faultCode != 'LoginException':
@@ -1185,12 +1236,20 @@ class Login(object):
                 return
 
     @classmethod
-    def get_char(self, message):
+    def get_char(cls, message):
         return ask(message)
 
     @classmethod
-    def get_password(self, message):
+    def get_password(cls, message):
         return ask(message, visibility=False)
+
+
+class Logout:
+    def __init__(self):
+        try:
+            rpc.logout()
+        except TrytonServerError:
+            pass
 
 
 def node_attributes(node):
@@ -1328,7 +1387,7 @@ def RPCExecute(*args, **kwargs):
 
 def RPCContextReload(callback=None):
     def update(context):
-        rpc.CONTEXT.clear()
+        rpc.context_reset()
         try:
             rpc.CONTEXT.update(context())
         except RPCException:
@@ -1360,6 +1419,7 @@ class Tooltips(object):
         if self._tooltips:
             self._tooltips.disable()
 
+<<<<<<< HEAD
 FORMAT_ERROR = "Wrong key format [type_]style_value: "
 
 # Color values: min = 0 max = 65535
@@ -1382,6 +1442,8 @@ COLOR_RGB = {
     'white': [65535, 65535, 65535],
     'black': [0, 0, 0]
 }
+=======
+>>>>>>> origin/5.0
 
 COLOR_SCHEMES = {
     'red': '#cf1d1d',
@@ -1474,45 +1536,35 @@ def resize_pixbuf(pixbuf, width, height):
         gtk.gdk.INTERP_BILINEAR)
 
 
-def _data2pixbuf(data):
+def _data2pixbuf(data, width=None, height=None):
     loader = gtk.gdk.PixbufLoader()
+<<<<<<< HEAD
     loader.set_size(100, 100)
     loader.write(bytes(data))
+=======
+    if width and height:
+        loader.set_size(width, height)
+    loader.write(data)
+>>>>>>> origin/5.0
     loader.close()
     return loader.get_pixbuf()
 
-BIG_IMAGE_SIZE = 10 ** 6
-with open(os.path.join(PIXMAPS_DIR, 'tryton-noimage.png'), 'rb') as no_image:
-    NO_IMG_PIXBUF = _data2pixbuf(no_image.read())
 
-
-def data2pixbuf(data):
-    pixbuf = NO_IMG_PIXBUF
+def data2pixbuf(data, width=None, height=None):
     if data:
         try:
-            pixbuf = _data2pixbuf(data)
+            return _data2pixbuf(data, width, height)
         except glib.GError:
             pass
-    return pixbuf
 
 
-def get_label_attributes(readonly, required):
-    "Return the pango attributes applied to a label according to its state"
-    if readonly:
-        style = pango.STYLE_NORMAL
-        weight = pango.WEIGHT_NORMAL
+def apply_label_attributes(label, readonly, required):
+    if not readonly:
+        widget_class(label, 'editable', True)
+        widget_class(label, 'required', required)
     else:
-        style = pango.STYLE_ITALIC
-        if required:
-            weight = pango.WEIGHT_BOLD
-        else:
-            weight = pango.WEIGHT_NORMAL
-    attrlist = pango.AttrList()
-    if hasattr(pango, 'AttrWeight'):
-        attrlist.change(pango.AttrWeight(weight, 0, -1))
-    if hasattr(pango, 'AttrStyle'):
-        attrlist.change(pango.AttrStyle(style, 0, -1))
-    return attrlist
+        widget_class(label, 'editable', False)
+        widget_class(label, 'required', False)
 
 
 def ellipsize(string, length):

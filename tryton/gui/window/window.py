@@ -21,6 +21,12 @@ class Window(object):
     @staticmethod
     def create(model, **attributes):
         from tryton.gui import Main
+        main = Main()
+        if not Window.allow_similar:
+            for other_page in main.pages:
+                if other_page.compare(model, attributes):
+                    main.win_set(other_page)
+                    return
         if model:
             from .form import Form
             win = Form(model, **attributes)
@@ -28,8 +34,7 @@ class Window(object):
             from .board import Board
             win = Board(model, **attributes)
         win.icon = attributes.get('icon')
-        Main.get_main().win_add(win, hide_current=Window.hide_current,
-            allow_similar=Window.allow_similar)
+        main.win_add(win, hide_current=Window.hide_current)
 
     @staticmethod
     def create_wizard(action, data, direct_print=False, email_print=False,
@@ -39,7 +44,7 @@ class Window(object):
         if window:
             win = WizardForm(name=name)
             win.icon = icon
-            Main.get_main().win_add(win, Window.hide_current)
+            Main().win_add(win, Window.hide_current)
         else:
             win = WizardDialog(name=name)
         win.run(action, data, direct_print=direct_print,

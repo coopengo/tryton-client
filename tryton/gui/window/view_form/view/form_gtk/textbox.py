@@ -88,12 +88,9 @@ class TextBox(Widget, TranslateMixin):
             self.widget.set_focus_chain([])
         else:
             self.widget.unset_focus_chain()
-<<<<<<< HEAD
 
     def _color_widget(self):
         return self.textview
-=======
->>>>>>> origin/5.0
 
     @property
     def modified(self):
@@ -117,11 +114,7 @@ class TextBox(Widget, TranslateMixin):
         buf = textview.get_buffer()
         iter_start = buf.get_start_iter()
         iter_end = buf.get_end_iter()
-<<<<<<< HEAD
-        return buf.get_text(iter_start, iter_end, False).decode('utf-8')
-=======
         return buf.get_text(iter_start, iter_end, False)
->>>>>>> origin/5.0
 
     def display(self, record, field):
         super(TextBox, self).display(record, field)

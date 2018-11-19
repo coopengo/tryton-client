@@ -9,11 +9,7 @@ from collections import defaultdict
 from . import View
 from tryton.common.focus import (get_invisible_ancestor, find_focused_child,
     next_focus_widget, find_focusable_child, find_first_focus_widget)
-<<<<<<< HEAD
-from tryton.common import Tooltips, node_attributes, ICONFACTORY
-=======
 from tryton.common import Tooltips, node_attributes, IconFactory
->>>>>>> origin/5.0
 from tryton.common.underline import set_underline
 from tryton.common.button import Button
 from tryton.config import CONFIG
@@ -40,10 +36,8 @@ from .form_gtk.multiselection import MultiSelection
 from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment, Expander)
-<<<<<<< HEAD
 from .form_gtk.sourceeditor import SourceView
-=======
->>>>>>> origin/5.0
+
 
 _ = gettext.gettext
 
@@ -332,16 +326,8 @@ class ViewForm(View):
         label.set_use_underline(True)
 
         if 'icon' in attributes:
-<<<<<<< HEAD
-            ICONFACTORY.register_icon(attributes['icon'])
-            icon = gtk.Image()
-            icon.set_from_stock(
-                attributes['icon'], gtk.ICON_SIZE_SMALL_TOOLBAR)
-            tab_box.pack_start(icon)
-=======
             tab_box.pack_start(IconFactory.get_image(
                     attributes['icon'], gtk.ICON_SIZE_SMALL_TOOLBAR))
->>>>>>> origin/5.0
         tab_box.pack_start(label)
         tab_box.show_all()
 
@@ -514,11 +500,7 @@ class ViewForm(View):
 
     @property
     def modified(self):
-<<<<<<< HEAD
         result = any(w.modified for widgets in self.widgets.values()
-=======
-        return any(w.modified for widgets in self.widgets.values()
->>>>>>> origin/5.0
             for w in widgets)
         if not result:
             return
@@ -547,7 +529,6 @@ class ViewForm(View):
         record = self.screen.current_record
         if record:
             # Force to set fields in record
-<<<<<<< HEAD
             # Get first the lazy one to reduce number of requests
             # PJA: iter only over the fields that need to be loaded
             fields = [(name, record.group.fields.get(name).attrs.get(
@@ -556,17 +537,6 @@ class ViewForm(View):
             fields.sort(key=operator.itemgetter(1), reverse=True)
             record.fields_to_load = self._field_keys
             for field, _ in fields:
-=======
-            # Get first the lazy one from the view to reduce number of requests
-            fields = (
-                (name,
-                    field.attrs.get('loading', 'eager') == 'eager',
-                    len(field.views))
-                for name, field in record.group.fields.items()
-                if self.view_id in field.views)
-            fields = sorted(fields, key=operator.itemgetter(1, 2))
-            for field, _, _ in fields:
->>>>>>> origin/5.0
                 record[field].get(record)
             record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)

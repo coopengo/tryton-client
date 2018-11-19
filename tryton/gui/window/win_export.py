@@ -71,30 +71,6 @@ class WinExport(WinCSV):
                 gobject.TYPE_STRING)
         self.fill_predefwin()
 
-<<<<<<< HEAD
-    def add_buttons(self, box):
-        button_save_export = gtk.Button(
-            _('_Save Export'), stock=None, use_underline=True)
-        button_save_export.set_alignment(0.0, 0.0)
-        img_button = gtk.Image()
-        img_button.set_from_stock('tryton-save', gtk.ICON_SIZE_BUTTON)
-        button_save_export.set_image(img_button)
-        button_save_export.set_always_show_image(True)
-        button_save_export.connect_after('clicked', self.addreplace_predef)
-        box.pack_start(button_save_export, False, False, 0)
-
-        button_del_export = gtk.Button(
-            _('_Delete Export'), stock=None, use_underline=True)
-        button_del_export.set_alignment(0.0, 0.0)
-        img_button = gtk.Image()
-        img_button.set_from_stock('tryton-delete', gtk.ICON_SIZE_BUTTON)
-        button_del_export.set_image(img_button)
-        button_del_export.set_always_show_image(True)
-        button_del_export.connect_after('clicked', self.remove_predef)
-        box.pack_start(button_del_export, False, False, 0)
-
-=======
->>>>>>> origin/5.0
     def add_chooser(self, box):
         hbox_csv_export = gtk.HBox()
         box.pack_start(hbox_csv_export, False, True, 0)
@@ -114,13 +90,9 @@ class WinExport(WinCSV):
 
     def model_populate(self, fields, parent_node=None, prefix_field='',
             prefix_name=''):
-<<<<<<< HEAD
-        key = lambda n_f: n_f[1].get('string') or n_f[0]
-=======
 
         def key(n_f):
             return n_f[1].get('string') or n_f[0]
->>>>>>> origin/5.0
         for name, field in sorted(list(fields.items()), key=key, reverse=True):
 
             string_ = field['string'] or name
@@ -349,12 +321,6 @@ class WinExport(WinCSV):
             for line in data:
                 row = []
                 for val in line:
-<<<<<<< HEAD
-                    if isinstance(type(val), bytes):
-                        val = val.replace('\n', ' ').replace('\t', ' ')
-                        val = val.encode(encoding)
-=======
->>>>>>> origin/5.0
                     row.append(val)
                 writer.writerow(row)
             if popup:

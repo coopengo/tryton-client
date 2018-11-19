@@ -301,12 +301,8 @@ class ViewTree(View):
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
         self.mnemonic_widget = self.treeview
-<<<<<<< HEAD
-
         # ABD set alway expand through attributes
         self.always_expand = self.attributes.get('always_expand', False)
-=======
->>>>>>> origin/5.0
 
         self.parse(xml)
 
@@ -601,7 +597,7 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
-        highlight_sum_ = attributes.get('highlight_sum','0')
+        highlight_sum_ = attributes.get('highlight_sum', '0')
 
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']

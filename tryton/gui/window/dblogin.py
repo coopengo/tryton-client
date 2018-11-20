@@ -7,23 +7,17 @@ import gobject
 import os
 import gettext
 import threading
-<<<<<<< HEAD
 import datetime
-=======
 import logging
 
 from gi.repository import Gtk
->>>>>>> origin/5.0
+
 
 from tryton import __version__
 import tryton.common as common
 from tryton.common.datetime_ import Date
 from tryton.config import CONFIG, TRYTON_ICON, PIXMAPS_DIR, get_config_dir
 import tryton.rpc as rpc
-<<<<<<< HEAD
-from tryton.exceptions import TrytonError
-=======
->>>>>>> origin/5.0
 from tryton.common.underline import set_underline
 
 _ = gettext.gettext
@@ -43,14 +37,8 @@ class DBListEditor(object):
         self.parent = parent
         self.dialog = gtk.Dialog(title=_('Profile Editor'), parent=parent,
             flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-<<<<<<< HEAD
-        self.ok_button = self.dialog.add_button(gtk.STOCK_OK,
-            gtk.RESPONSE_ACCEPT)
-        self.ok_button.set_always_show_image(True)
-=======
         self.ok_button = self.dialog.add_button(
             set_underline(_("Close")), gtk.RESPONSE_CLOSE)
->>>>>>> origin/5.0
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dialog.set_icon(TRYTON_ICON)
 
@@ -69,20 +57,6 @@ class DBListEditor(object):
         scroll = gtk.ScrolledWindow()
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.add(self.profile_tree)
-<<<<<<< HEAD
-        self.add_button = gtk.Button(_('_Add'), use_underline=True)
-        self.add_button.connect('clicked', self.profile_create)
-        add_image = gtk.Image()
-        add_image.set_from_stock('gtk-add', gtk.ICON_SIZE_BUTTON)
-        self.add_button.set_image(add_image)
-        self.add_button.set_always_show_image(True)
-        self.remove_button = gtk.Button(_('_Remove'), use_underline=True)
-        self.remove_button.connect('clicked', self.profile_delete)
-        remove_image = gtk.Image()
-        remove_image.set_from_stock('gtk-remove', gtk.ICON_SIZE_BUTTON)
-        self.remove_button.set_image(remove_image)
-        self.remove_button.set_always_show_image(True)
-=======
         self.add_button = gtk.Button()
         self.add_button.set_image(common.IconFactory.get_image(
                 'tryton-add', gtk.ICON_SIZE_BUTTON))
@@ -98,7 +72,6 @@ class DBListEditor(object):
         bbox = Gtk.ButtonBox()
         bbox.pack_start(self.remove_button)
         bbox.pack_start(self.add_button)
->>>>>>> origin/5.0
         vbox_profiles.pack_start(scroll, expand=True, fill=True)
         vbox_profiles.pack_start(bbox, expand=False, fill=True)
         hpaned.add1(vbox_profiles)
@@ -138,11 +111,6 @@ class DBListEditor(object):
         self.database_combo.connect('changed', self.dbcombo_changed)
         self.database_progressbar = gtk.ProgressBar()
         self.database_progressbar.set_text(_('Fetching databases list'))
-<<<<<<< HEAD
-        image = gtk.Image()
-        image.set_from_stock('tryton-new', gtk.ICON_SIZE_BUTTON)
-=======
->>>>>>> origin/5.0
         db_box = gtk.VBox(homogeneous=True)
         db_box.pack_start(self.database_entry)
         db_box.pack_start(self.database_combo)
@@ -431,26 +399,12 @@ class DBLogin(object):
 
         tooltips = common.Tooltips()
         button_cancel = gtk.Button(_('_Cancel'), use_underline=True)
-<<<<<<< HEAD
-        img_cancel = gtk.Image()
-        img_cancel.set_from_stock('gtk-cancel', gtk.ICON_SIZE_BUTTON)
-        button_cancel.set_image(img_cancel)
-        button_cancel.set_always_show_image(True)
-=======
->>>>>>> origin/5.0
         tooltips.set_tip(button_cancel,
             _('Cancel connection to the Tryton server'))
         self.dialog.add_action_widget(button_cancel, gtk.RESPONSE_CANCEL)
         self.button_connect = gtk.Button(_('C_onnect'), use_underline=True)
-<<<<<<< HEAD
-        img_connect = gtk.Image()
-        img_connect.set_from_stock('tryton-connect', gtk.ICON_SIZE_BUTTON)
-        self.button_connect.set_image(img_connect)
-        self.button_connect.set_always_show_image(True)
-=======
         self.button_connect.get_style_context().add_class(
             Gtk.STYLE_CLASS_SUGGESTED_ACTION)
->>>>>>> origin/5.0
         self.button_connect.set_can_default(True)
         tooltips.set_tip(self.button_connect, _('Connect the Tryton server'))
         self.dialog.add_action_widget(self.button_connect, gtk.RESPONSE_OK)
@@ -486,11 +440,7 @@ class DBLogin(object):
         self.profile_label.set_alignment(1, 0.5)
         self.profile_label.set_padding(3, 3)
         self.profile_label.set_mnemonic_widget(self.combo_profile)
-<<<<<<< HEAD
-        self.profile_button = gtk.Button(set_underline(_('Manage profiles')),
-=======
         self.profile_button = gtk.Button(set_underline(_('Manage...')),
->>>>>>> origin/5.0
             use_underline=True)
         self.profile_button.connect('clicked', self.profile_manage)
         self.table_main.attach(self.profile_label, 0, 1, 1, 2,
@@ -498,13 +448,6 @@ class DBLogin(object):
         self.table_main.attach(self.combo_profile, 1, 2, 1, 2)
         self.table_main.attach(self.profile_button, 2, 3, 1, 2,
             xoptions=gtk.FILL)
-<<<<<<< HEAD
-        image = gtk.Image()
-        image.set_from_stock('gtk-edit', gtk.ICON_SIZE_BUTTON)
-        self.profile_button.set_image(image)
-        self.profile_button.set_always_show_image(True)
-=======
->>>>>>> origin/5.0
         self.expander = gtk.Expander()
         self.expander.set_label(_('Host / Database information'))
         self.expander.connect('notify::expanded', self.expand_hostspec)
@@ -560,12 +503,6 @@ class DBLogin(object):
 
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
-<<<<<<< HEAD
-        self.profiles = configparser.SafeConfigParser({'port': '8000'})
-        # JCA : Deactivate demo tryton database
-        if os.path.exists(self.profile_cfg):
-            self.profiles.read(self.profile_cfg)
-=======
         self.profiles = configparser.ConfigParser()
         if not os.path.exists(self.profile_cfg):
             short_version = '.'.join(__version__.split('.', 2)[:2])
@@ -579,7 +516,6 @@ class DBLogin(object):
                 self.profiles.read(self.profile_cfg)
             except configparser.ParsingError:
                 logger.error("Fail to parse profiles.cfg", exc_info=True)
->>>>>>> origin/5.0
         for section in self.profiles.sections():
             active = all(self.profiles.has_option(section, option)
                 for option in ('host', 'database'))
@@ -708,19 +644,12 @@ class DBLogin(object):
             if not test:
                 if test is False:
                     common.warning('',
-<<<<<<< HEAD
-                        _('Incompatible version of the server'))
-                else:
-                    common.warning('',
-                        _('Could not connect to the server'))
-=======
                         _('Incompatible version of the server'),
                         parent=self.dialog)
                 else:
                     common.warning('',
                         _('Could not connect to the server'),
                         parent=self.dialog)
->>>>>>> origin/5.0
                 continue
             database = self.entry_database.get_text()
             login = self.entry_login.get_text()
@@ -732,19 +661,11 @@ class DBLogin(object):
             result = (
                 hostname, port, database, self.entry_login.get_text())
 
-<<<<<<< HEAD
         if CONFIG['login.date']:
             date = self.entry_date.props.value
         else:
             date = None
-        self.parent.present()
-        self.dialog.destroy()
-        if response != gtk.RESPONSE_OK:
-            rpc.logout()
-            raise TrytonError('QueryCanceled')
-        return result + (date,)
-=======
+        result = result + (date,)
         self.dialog.destroy()
         self._window.destroy()
         return response == gtk.RESPONSE_OK
->>>>>>> origin/5.0

@@ -2,14 +2,8 @@
 # this repository contains the full copyright notices and license terms.
 "Attachment"
 import os
-<<<<<<< HEAD
-import urllib.request, urllib.parse, urllib.error
-import urllib.parse
-import sys
-=======
 from urllib.request import urlopen
 from urllib.parse import urlparse, unquote
->>>>>>> origin/5.0
 import gettext
 import webbrowser
 from functools import partial
@@ -49,18 +43,10 @@ class Attachment(WinForm):
         data_field = self.screen.group.fields['data']
         name_field = self.screen.group.fields[data_field.attrs['filename']]
         new_record = self.screen.new()
-<<<<<<< HEAD
-        file_name = os.path.basename(urllib.parse.urlparse(uri).path)
-        name_field.set_client(new_record, file_name)
-        uri = urllib.parse.unquote(uri)
-        uri = uri.decode('utf-8').encode(sys.getfilesystemencoding())
-        data_field.set_client(new_record, urllib.request.urlopen(uri).read())
-=======
         uri = unquote(uri)
         file_name = os.path.basename(urlparse(uri).path)
         name_field.set_client(new_record, file_name)
         data_field.set_client(new_record, urlopen(uri).read())
->>>>>>> origin/5.0
         self.screen.display()
 
     def add_file(self, filename):

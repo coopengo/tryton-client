@@ -213,25 +213,12 @@ class TabContent(InfoBar):
         title.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("#000000"))
         title.show()
 
-<<<<<<< HEAD
-        title_menu = gtk.MenuBar()
+        menu = Gtk.MenuButton.new()
         # JCA : Allow to hide tab menu
         if not self.screen.context.get('disable_main_menu', None):
-            title_item = gtk.MenuItem('')
-            title_item.remove(title_item.get_children()[0])
-            menu_image = gtk.Image()
-            menu_image.set_from_stock('tryton-preferences-system',
-                gtk.ICON_SIZE_BUTTON)
-            title_item.add(menu_image)
-            title_item.set_submenu(self.set_menu_form())
-            title_menu.append(title_item)
-        title_menu.show_all()
-=======
-        menu = Gtk.MenuButton.new()
-        menu.set_relief(Gtk.ReliefStyle.NONE)
-        menu.set_popup(self.set_menu_form())
+            menu.set_relief(Gtk.ReliefStyle.NONE)
+            menu.set_popup(self.set_menu_form())
         menu.show()
->>>>>>> origin/5.0
 
         self.status_label = gtk.Label()
         self.status_label.set_padding(5, 4)

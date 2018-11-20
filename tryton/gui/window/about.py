@@ -34,7 +34,6 @@ class About(object):
         self.win = Gtk.AboutDialog()
         self.win.set_transient_for(parent)
         self.win.set_name(CONFIG['client.title'])
-<<<<<<< HEAD
         # MAR : Fix #5107 : Replace tryton references with Coog
         self.win.set_version(__version_coog__)
         self.win.set_comments(_("modularity, scalability and security"))
@@ -45,19 +44,7 @@ class About(object):
         self.win.set_authors(AUTHORS)
         self.win.set_translator_credits(_('translator-credits'))
         self.win.set_logo(GdkPixbuf.Pixbuf.new_from_file(
-                os.path.join(PIXMAPS_DIR, 'tryton.png').encode('utf-8')))
-=======
-        self.win.set_version(__version__)
-        self.win.set_comments(_("modularity, scalability and security"))
-        self.win.set_copyright(COPYRIGHT)
-        self.win.set_license_type(Gtk.License.GPL_3_0)
-        self.win.set_website('http://www.tryton.org/')
-        self.win.set_website_label("Tryton")
-        self.win.set_authors(AUTHORS)
-        self.win.set_translator_credits(_('translator-credits'))
-        self.win.set_logo(GdkPixbuf.Pixbuf.new_from_file(
                 os.path.join(PIXMAPS_DIR, 'tryton.png')))
->>>>>>> origin/5.0
         self.win.run()
         parent.present()
         self.win.destroy()

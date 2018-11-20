@@ -679,10 +679,6 @@ class Form(SignalEvent, TabContent):
             menu.add(menuitem)
 
         kw_plugins = []
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/5.0
         for plugin in plugins.MODULES:
             for plugin_spec in plugin.get_plugins(self.model):
                 name, func = plugin_spec[:2]

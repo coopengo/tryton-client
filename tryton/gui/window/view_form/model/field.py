@@ -15,11 +15,8 @@ import decimal
 from decimal import Decimal
 import math
 from tryton.common import RPCExecute, RPCException
-<<<<<<< HEAD
-=======
 from tryton.pyson import PYSONDecoder
 from tryton.config import CONFIG
->>>>>>> origin/5.0
 
 
 class Field(object):
@@ -64,16 +61,11 @@ class Field(object):
     def validation_domains(self, record, pre_validate=None):
         return concat(*self.domains_get(record, pre_validate))
 
-<<<<<<< HEAD
-    def get_context(self, record):
-        context = record.get_context()
-=======
     def get_context(self, record, record_context=None):
         if record_context is not None:
             context = record_context.copy()
         else:
             context = record.get_context()
->>>>>>> origin/5.0
         context.update(record.expr_eval(self.attrs.get('context', {})))
         return context
 
@@ -952,21 +944,13 @@ class BinaryField(Field):
         result = record.value.get(self.name) or 0
         if isinstance(result, _FileCache):
             result = os.stat(result.path).st_size
-<<<<<<< HEAD
-        elif isinstance(result, (str, bytes, bytearray)):
-=======
         elif isinstance(result, (str, bytes)):
->>>>>>> origin/5.0
             result = len(result)
         return result
 
     def get_data(self, record):
         if not isinstance(record.value.get(self.name),
-<<<<<<< HEAD
-                (str, bytes, bytearray, _FileCache)):
-=======
                 (str, bytes, _FileCache)):
->>>>>>> origin/5.0
             if record.id < 0:
                 return b''
             context = record.get_context()

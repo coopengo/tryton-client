@@ -1,18 +1,10 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-<<<<<<< HEAD
 import logging
-=======
->>>>>>> origin/5.0
 from tryton.signal_event import SignalEvent
-import tryton.common as common
 from tryton.pyson import PYSONDecoder
 from . import field as fields
-<<<<<<< HEAD
-from functools import reduce
-=======
->>>>>>> origin/5.0
-from tryton.common import RPCExecute, RPCException
+from tryton.common import RPCExecute, RPCException, common
 from tryton.config import CONFIG
 
 
@@ -46,7 +38,7 @@ class Record(SignalEvent):
         self.autocompletion = {}
         self.exception = False
         self.destroyed = False
-        self.fields_to_load = []
+        self.fields_to_load = ()
 
     def __getitem__(self, name):
         if name not in self._loaded and self.id >= 0:
@@ -54,20 +46,12 @@ class Record(SignalEvent):
                 self.id: self,
                 }
             if name == '*':
-<<<<<<< HEAD
-                loading = reduce(
-                        lambda x, y: 'eager' if x == y == 'eager' else 'lazy',
-                        (field.attrs.get('loading', 'eager')
-                            for field in self.group.fields.values()),
-                        'eager')
-=======
                 loading = 'eager'
                 views = set()
                 for field in self.group.fields.values():
                     if field.attrs.get('loading', 'eager') == 'lazy':
                         loading = 'lazy'
                     views |= field.views
->>>>>>> origin/5.0
                 # Set a valid name for next loaded check
                 for fname, field in self.group.fields.items():
                     if field.attrs.get('loading', 'eager') == loading:
@@ -78,29 +62,20 @@ class Record(SignalEvent):
                 views = self.group.fields[name].views
 
             if loading == 'eager':
-<<<<<<< HEAD
-                fnames = [fname
-                    for fname, field in self.group.fields.items()
-                    if field.attrs.get('loading', 'eager') == 'eager']
-            else:
-                fnames = list(self.group.fields.keys())
-
-            # PJA: load fields that are required
-            if self.fields_to_load:
-                fnames = [fname for fname in fnames
-                    if fname in self.fields_to_load]
-            fnames = [fname for fname in fnames if fname not in self._loaded]
-=======
                 fields = ((fname, field)
                     for fname, field in self.group.fields.items()
                     if field.attrs.get('loading', 'eager') == 'eager')
             else:
                 fields = self.group.fields.items()
 
+            # PJA: load fields that are required
+            if self.fields_to_load:
+                fields = tuple([field for field in fields
+                        if field in self.fields_to_load])
+
             fnames = [fname for fname, field in fields
                 if fname not in self._loaded
                 and (not views or (views & field.views))]
->>>>>>> origin/5.0
             fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
                     if self.group.fields[fname].attrs['type']
                     in ('many2one', 'one2one', 'reference')))
@@ -152,11 +127,7 @@ class Record(SignalEvent):
             try:
                 values = RPCExecute('model', self.model_name, 'read',
                     list(id2record.keys()), fnames, context=ctx)
-<<<<<<< HEAD
-            except RPCException:
-=======
             except RPCException as exception:
->>>>>>> origin/5.0
                 values = [{'id': x} for x in id2record]
                 default_values = dict((f, None) for f in fnames)
                 for value in values:

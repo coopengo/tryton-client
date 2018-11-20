@@ -6,19 +6,6 @@ import json
 import logging
 import os
 import sys
-<<<<<<< HEAD
-import gettext
-from urllib.parse import urlparse, parse_qsl
-import urllib.request, urllib.parse, urllib.error
-import gobject
-import gtk
-import json
-import webbrowser
-import threading
-import logging
-
-from gi.repository import GLib
-=======
 import threading
 import traceback
 import webbrowser
@@ -27,7 +14,6 @@ from urllib.parse import urlparse, parse_qsl, unquote
 import gobject
 import gtk
 from gi.repository import Gtk, GLib, Gio
->>>>>>> origin/5.0
 
 import tryton.common as common
 import tryton.plugins
@@ -40,30 +26,6 @@ from tryton.common.cellrendererclickablepixbuf import \
 from tryton.config import CONFIG, TRYTON_ICON, get_config_dir
 from tryton.exceptions import TrytonError, TrytonServerUnavailable
 from tryton.gui.window import Window
-<<<<<<< HEAD
-from tryton.gui.window.preference import Preference
-from tryton.gui.window import Limit
-from tryton.gui.window import Email
-from tryton.gui.window.dblogin import DBLogin
-from tryton.gui.window.about import About
-from tryton.gui.window.shortcuts import Shortcuts
-from tryton.common.cellrendererclickablepixbuf import \
-    CellRendererClickablePixbuf
-import tryton.translate as translate
-import tryton.plugins
-from tryton.common.placeholder_entry import PlaceholderEntry
-if os.environ.get('GTKOSXAPPLICATION'):
-    import gtkosx_application
-else:
-    gtkosx_application = None
-try:
-    from gi.repository import GtkSpell
-except ImportError:
-    GtkSpell = None
-
-_ = gettext.gettext
-logger = logging.getLogger(__name__)
-=======
 from tryton.jsonrpc import object_hook
 from tryton.pyson import PYSONDecoder
 
@@ -71,7 +33,6 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 _PRIORITIES = [getattr(Gio.NotificationPriority, p)
     for p in ('LOW', 'NORMAL', 'HIGH', 'URGENT')]
->>>>>>> origin/5.0
 
 
 class Main(Gtk.Application):
@@ -309,14 +270,6 @@ class Main(Gtk.Application):
         self._global_check_timeout_id = None
         self._global_update_timeout_id = None
 
-<<<<<<< HEAD
-        if CONFIG['client.modepda']:
-            self.radiomenuitem_pda.set_active(True)
-        else:
-            self.radiomenuitem_normal.set_active(True)
-
-=======
->>>>>>> origin/5.0
         # Register plugins
         tryton.plugins.register()
 
@@ -409,13 +362,9 @@ class Main(Gtk.Application):
                     result = result()
                 except RPCException:
                     result = []
-<<<<<<< HEAD
-                if search_text != widget.get_text().decode('utf-8'):
+                if search_text != widget.get_text():
                     self._global_update_timeout_id = None
                     self._global_run = False
-=======
-                if search_text != widget.get_text():
->>>>>>> origin/5.0
                     if callback:
                         callback()
                     return False
@@ -463,13 +412,8 @@ class Main(Gtk.Application):
                 return False
 
         def changed(widget):
-<<<<<<< HEAD
-            search_text = widget.get_text().decode('utf-8')
-            check_timeout(widget, search_text)
-=======
             search_text = widget.get_text()
-            gobject.timeout_add(300, update, widget, search_text)
->>>>>>> origin/5.0
+            check_timeout(widget, search_text)
 
         def activate(widget):
             def message():
@@ -484,16 +428,8 @@ class Main(Gtk.Application):
         self.global_search_entry.connect('changed', changed)
         self.global_search_entry.connect('activate', activate)
 
-<<<<<<< HEAD
-    def show_global_search(self):
-        self.pane.get_child1().set_expanded(True)
-        self.global_search_entry.grab_focus()
-
     # ABD: Add possibility to choose the business date
     def set_title(self, value='', date=''):
-=======
-    def set_title(self, value=''):
->>>>>>> origin/5.0
         if CONFIG['login.profile']:
             login_info = CONFIG['login.profile']
         else:
@@ -504,13 +440,8 @@ class Main(Gtk.Application):
         titles = [CONFIG['client.title']]
         if value:
             titles.append(value)
-<<<<<<< HEAD
-        title = ' - '.join(titles) + ' (' + date + ')'
-        self.window.set_title(title)
-=======
-        self.header.set_title(' - '.join(titles))
+        self.header.set_title(' - '.join(titles) + ' (' + date + ')')
         self.header.set_subtitle(login_info)
->>>>>>> origin/5.0
         try:
             style_context = self.header.get_style_context()
         except AttributeError:
@@ -523,307 +454,9 @@ class Main(Gtk.Application):
                 style_context.add_class(
                     'profile-%s' % CONFIG['login.profile'])
 
-<<<<<<< HEAD
-    def _set_menu_connection(self):
-        menu_connection = gtk.Menu()
-
-        imagemenuitem_connect = gtk.ImageMenuItem(_('_Connect...'),
-            self.accel_group)
-        imagemenuitem_connect.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-connect', gtk.ICON_SIZE_MENU)
-        imagemenuitem_connect.set_image(image)
-        imagemenuitem_connect.connect('activate', self.sig_login)
-        imagemenuitem_connect.set_accel_path('<tryton>/Connection/Connect')
-        menu_connection.add(imagemenuitem_connect)
-
-        imagemenuitem_disconnect = gtk.ImageMenuItem(_('_Disconnect'))
-        imagemenuitem_disconnect.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-disconnect', gtk.ICON_SIZE_MENU)
-        imagemenuitem_disconnect.set_image(image)
-        imagemenuitem_disconnect.connect('activate', self.sig_logout)
-        imagemenuitem_disconnect.set_accel_path(
-            '<tryton>/Connection/Disconnect')
-        menu_connection.add(imagemenuitem_disconnect)
-
-        imagemenuitem_close = gtk.ImageMenuItem(_('_Quit...'),
-            self.accel_group)
-        imagemenuitem_close.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-log-out', gtk.ICON_SIZE_MENU)
-        imagemenuitem_close.set_image(image)
-        imagemenuitem_close.connect('activate', self.sig_close)
-        imagemenuitem_close.set_accel_path('<tryton>/Connection/Quit')
-        if self.macapp is None:
-            menu_connection.add(gtk.SeparatorMenuItem())
-            menu_connection.add(imagemenuitem_close)
-        return menu_connection
-
-    def _set_menu_user(self):
-        menu_user = gtk.Menu()
-
-        imagemenuitem_preference = gtk.ImageMenuItem(_('_Preferences...'))
-        imagemenuitem_preference.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-preferences-system-session',
-                gtk.ICON_SIZE_MENU)
-        imagemenuitem_preference.set_image(image)
-        imagemenuitem_preference.connect('activate', self.sig_user_preferences)
-        imagemenuitem_preference.set_accel_path('<tryton>/User/Preferences')
-        menu_user.add(imagemenuitem_preference)
-
-        menu_user.add(gtk.SeparatorMenuItem())
-
-        imagemenuitem_menu = gtk.ImageMenuItem(_('_Menu Reload'),
-            self.accel_group)
-        imagemenuitem_menu.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-start-here', gtk.ICON_SIZE_MENU)
-        imagemenuitem_menu.set_image(image)
-        imagemenuitem_menu.connect('activate', lambda *a: self.sig_win_menu())
-        imagemenuitem_menu.set_accel_path('<tryton>/User/Reload Menu')
-        menu_user.add(imagemenuitem_menu)
-
-        imagemenuitem_menu_toggle = gtk.ImageMenuItem(_('_Menu Toggle'),
-                self.accel_group)
-        imagemenuitem_menu_toggle.set_use_underline(True)
-        imagemenuitem_menu_toggle.connect('activate',
-            lambda *a: self.menu_toggle())
-        imagemenuitem_menu_toggle.set_accel_path('<tryton>/User/Toggle Menu')
-        menu_user.add(imagemenuitem_menu_toggle)
-
-        imagemenuitem_global_search = gtk.ImageMenuItem(_('_Global Search'),
-            self.accel_group)
-        imagemenuitem_global_search.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('gtk-find', gtk.ICON_SIZE_MENU)
-        imagemenuitem_global_search.set_image(image)
-        imagemenuitem_global_search.connect('activate', lambda *a:
-            self.show_global_search())
-        imagemenuitem_global_search.set_accel_path(
-            '<tryton>/User/Global Search')
-        menu_user.add(imagemenuitem_global_search)
-        return menu_user
-
-    def _set_menu_options(self):
-        menu_options = gtk.Menu()
-
-        menuitem_toolbar = gtk.MenuItem(_('_Toolbar'), use_underline=True)
-        menu_options.add(menuitem_toolbar)
-
-        menu_toolbar = gtk.Menu()
-        menu_toolbar.set_accel_group(self.accel_group)
-        menu_toolbar.set_accel_path('<tryton>/Options/Toolbar')
-        menuitem_toolbar.set_submenu(menu_toolbar)
-
-        radiomenuitem_default = gtk.RadioMenuItem(label=_('_Default'),
-            use_underline=True)
-        radiomenuitem_default.connect('activate',
-                lambda x: self.sig_toolbar('default'))
-        radiomenuitem_default.set_accel_path(
-            '<tryton>/Options/Toolbar/Default')
-        menu_toolbar.add(radiomenuitem_default)
-        if (CONFIG['client.toolbar'] or 'both') == 'default':
-            radiomenuitem_default.set_active(True)
-
-        radiomenuitem_both = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Text and Icons'), use_underline=True)
-        radiomenuitem_both.connect('activate',
-                lambda x: self.sig_toolbar('both'))
-        radiomenuitem_both.set_accel_path(
-                '<tryton>/Options/Toolbar/Text and Icons')
-        menu_toolbar.add(radiomenuitem_both)
-        if (CONFIG['client.toolbar'] or 'both') == 'both':
-            radiomenuitem_both.set_active(True)
-
-        radiomenuitem_icons = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Icons'), use_underline=True)
-        radiomenuitem_icons.connect('activate',
-                lambda x: self.sig_toolbar('icons'))
-        radiomenuitem_icons.set_accel_path('<tryton>/Options/Toolbar/Icons')
-        menu_toolbar.add(radiomenuitem_icons)
-        if (CONFIG['client.toolbar'] or 'both') == 'icons':
-            radiomenuitem_icons.set_active(True)
-
-        radiomenuitem_text = gtk.RadioMenuItem(group=radiomenuitem_default,
-                label=_('_Text'), use_underline=True)
-        radiomenuitem_text.connect('activate',
-                lambda x: self.sig_toolbar('text'))
-        radiomenuitem_text.set_accel_path('<tryton>/Options/Toolbar/Text')
-        menu_toolbar.add(radiomenuitem_text)
-        if (CONFIG['client.toolbar'] or 'both') == 'text':
-            radiomenuitem_text.set_active(True)
-
-        menuitem_mode = gtk.MenuItem(_('_Mode'), use_underline=True)
-        menu_options.add(menuitem_mode)
-
-        menu_mode = gtk.Menu()
-        menu_mode.set_accel_group(self.accel_group)
-        menu_mode.set_accel_path('<tryton>/Options/Mode')
-        menuitem_mode.set_submenu(menu_mode)
-
-        radiomenuitem_normal = gtk.RadioMenuItem(label=_('_Normal'),
-            use_underline=True)
-        self.radiomenuitem_normal = radiomenuitem_normal
-        radiomenuitem_normal.connect('activate',
-                lambda x: self.sig_mode_change(False))
-        radiomenuitem_normal.set_accel_path('<tryton>/Options/Mode/Normal')
-        menu_mode.add(radiomenuitem_normal)
-
-        radiomenuitem_pda = gtk.RadioMenuItem(group=radiomenuitem_normal,
-                label=_('_PDA'), use_underline=True)
-        self.radiomenuitem_pda = radiomenuitem_pda
-        radiomenuitem_pda.connect('activate',
-                lambda x: self.sig_mode_change(True))
-        radiomenuitem_pda.set_accel_path('<tryton>/Options/Mode/PDA')
-        menu_mode.add(radiomenuitem_pda)
-
-        menuitem_form = gtk.MenuItem(_('_Form'), use_underline=True)
-        menu_options.add(menuitem_form)
-
-        menu_form = gtk.Menu()
-        menu_form.set_accel_group(self.accel_group)
-        menu_form.set_accel_path('<tryton>/Options/Form')
-        menuitem_form.set_submenu(menu_form)
-
-        checkmenuitem_save_width_height = gtk.CheckMenuItem(
-            _('Save Width/Height'), use_underline=True)
-        checkmenuitem_save_width_height.connect('activate',
-            lambda menuitem: CONFIG.__setitem__('client.save_width_height',
-                menuitem.get_active()))
-        checkmenuitem_save_width_height.set_accel_path(
-            '<tryton>/Options/Form/Save Width Height')
-        menu_form.add(checkmenuitem_save_width_height)
-        if CONFIG['client.save_width_height']:
-            checkmenuitem_save_width_height.set_active(True)
-
-        checkmenuitem_save_tree_state = gtk.CheckMenuItem(
-            _('Save Tree State'), use_underline=True)
-        checkmenuitem_save_tree_state.connect('activate',
-            lambda menuitem: CONFIG.__setitem__(
-                'client.save_tree_state',
-                menuitem.get_active()))
-        checkmenuitem_save_tree_state.set_accel_path(
-            '<tryton>/Options/Form/Save Tree State')
-        menu_form.add(checkmenuitem_save_tree_state)
-        if CONFIG['client.save_tree_state']:
-            checkmenuitem_save_tree_state.set_active(True)
-
-        checkmenuitem_fast_tabbing = gtk.CheckMenuItem(
-            _('Fast Tabbing'), use_underline=True)
-        checkmenuitem_fast_tabbing.connect('activate',
-            lambda menuitem: CONFIG.__setitem__('client.fast_tabbing',
-                menuitem.get_active()))
-        checkmenuitem_fast_tabbing.set_accel_path(
-            '<tryton>/Options/Form/Fast Tabbing')
-        menu_form.add(checkmenuitem_fast_tabbing)
-        checkmenuitem_fast_tabbing.set_active(CONFIG['client.fast_tabbing'])
-
-        if GtkSpell:
-            checkmenuitem_spellcheck = gtk.CheckMenuItem(_('Spell Checking'),
-                use_underline=True)
-            checkmenuitem_spellcheck.connect('activate',
-                    lambda menuitem: CONFIG.__setitem__('client.spellcheck',
-                        menuitem.get_active()))
-            checkmenuitem_spellcheck.set_accel_path(
-                    '<tryton>/Options/Form/Spell Checking')
-            menu_form.add(checkmenuitem_spellcheck)
-            if CONFIG['client.spellcheck']:
-                checkmenuitem_spellcheck.set_active(True)
-
-        imagemenuitem_win_prev = gtk.ImageMenuItem(_('_Previous Tab'),
-            self.accel_group)
-        imagemenuitem_win_prev.set_use_underline(True)
-        imagemenuitem_win_prev.connect('activate', self.sig_win_prev)
-        imagemenuitem_win_prev.set_accel_path('<tryton>/Form/Previous Tab')
-        menu_form.add(imagemenuitem_win_prev)
-
-        imagemenuitem_win_next = gtk.ImageMenuItem(_('_Next Tab'),
-            self.accel_group)
-        imagemenuitem_win_next.set_use_underline(True)
-        imagemenuitem_win_next.connect('activate', self.sig_win_next)
-        imagemenuitem_win_next.set_accel_path('<tryton>/Form/Next Tab')
-        menu_form.add(imagemenuitem_win_next)
-
-        menuitem_limit = gtk.MenuItem(_('Search Limit...'), use_underline=True)
-        self.menuitem_limit = menuitem_limit
-        menuitem_limit.connect('activate', self.sig_limit)
-        menuitem_limit.set_accel_path('<tryton>/Options/Search Limit')
-        menu_options.add(menuitem_limit)
-
-        menuitem_email = gtk.MenuItem(_('_Email...'), use_underline=True)
-        self.menuitem_email = menuitem_email
-        menuitem_email.connect('activate', self.sig_email)
-        menuitem_email.set_accel_path('<tryton>/Options/Email')
-        menu_options.add(menuitem_email)
-
-        def activate_check_version(menuitem):
-            active = menuitem.get_active()
-            CONFIG['client.check_version'] = active
-            if active:
-                common.check_version(self.info)
-        checkmenu_check_version = gtk.CheckMenuItem(
-            _("Check Version"), use_underline=True)
-        checkmenu_check_version.set_active(
-            bool(CONFIG['client.check_version']))
-        checkmenu_check_version.connect('activate', activate_check_version)
-        checkmenu_check_version.set_accel_path(
-            '<tryton>/Options/Check Version')
-        menu_options.add(checkmenu_check_version)
-
-        menu_options.add(gtk.SeparatorMenuItem())
-
-        imagemenuitem_opt_save = gtk.ImageMenuItem(_('_Save Options'))
-        imagemenuitem_opt_save.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-save', gtk.ICON_SIZE_MENU)
-        imagemenuitem_opt_save.set_image(image)
-        imagemenuitem_opt_save.connect('activate', lambda x: CONFIG.save())
-        imagemenuitem_opt_save.set_accel_path('<tryton>/Options/Save Options')
-        menu_options.add(imagemenuitem_opt_save)
-        return menu_options
-
-    def _set_menu_help(self):
-        menu_help = gtk.Menu()
-
-        imagemenuitem_shortcuts = gtk.ImageMenuItem(
-            _('_Keyboard Shortcuts...'))
-        imagemenuitem_shortcuts.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('tryton-help', gtk.ICON_SIZE_MENU)
-        imagemenuitem_shortcuts.set_image(image)
-        imagemenuitem_shortcuts.connect('activate', self.sig_shortcuts)
-        imagemenuitem_shortcuts.set_accel_path(
-            '<tryton>/Help/Keyboard Shortcuts')
-        menu_help.add(imagemenuitem_shortcuts)
-
-        imagemenuitem_about = gtk.ImageMenuItem(_('_About...'))
-        imagemenuitem_about.set_use_underline(True)
-        image = gtk.Image()
-        image.set_from_stock('gtk-about', gtk.ICON_SIZE_MENU)
-        imagemenuitem_about.set_image(image)
-        imagemenuitem_about.connect('activate', self.sig_about)
-        imagemenuitem_about.set_accel_path('<tryton>/Help/About')
-        self.aboutitem = imagemenuitem_about
-        if self.macapp is None:
-            menu_help.add(gtk.SeparatorMenuItem())
-            menu_help.add(imagemenuitem_about)
-
-        return menu_help
-
-    @staticmethod
-    def get_main():
-        return _MAIN[0]
-
-    def favorite_set(self):
-        if not self.menu_screen:
-            return False
-=======
     def favorite_set(self, *args):
         if self.menu_favorite.get_children():
             return True
->>>>>>> origin/5.0
 
         def _action_favorite(widget, id_):
             event = gtk.get_current_event()
@@ -864,24 +497,8 @@ class Main(Gtk.Application):
         return True
 
     def favorite_unset(self):
-<<<<<<< HEAD
-        had_submenu = self.menuitem_favorite.get_submenu()
-        self.menuitem_favorite.set_submenu(None)
-        # Set a submenu to get keyboard shortcut working
-        self.menuitem_favorite.set_submenu(gtk.Menu())
-
-        if self.macapp and had_submenu:
-            # As the select event is not managed by the mac menu,
-            # it is done using a timeout
-            gobject.timeout_add(1000, lambda: not self.favorite_set())
-
-    def sig_mode_change(self, pda_mode=False):
-        CONFIG['client.modepda'] = pda_mode
-        return
-=======
         for child in self.menu_favorite.get_children():
             self.menu_favorite.remove(child)
->>>>>>> origin/5.0
 
     def on_change_toolbar(self, action, value):
         action.set_state(value)
@@ -974,42 +591,6 @@ class Main(Gtk.Application):
         self._sig_remove_book(widget,
             self.notebook.get_nth_page(self.notebook.get_current_page()))
 
-<<<<<<< HEAD
-    def sig_login(self, widget=None):
-        if not self.sig_logout(widget):
-            return
-        language = CONFIG['client.lang']
-        try:
-            host, port, database, username, date = DBLogin().run()
-        except TrytonError as exception:
-            if exception.faultCode == 'QueryCanceled':
-                return
-            raise
-        # ABD: Add date and set_date parameters to login function (ca093423)
-        func = lambda parameters: rpc.login(
-            host, port, database, username, parameters, language, date, True)
-        self.set_title()  # Adds username/profile while password is asked
-        try:
-            common.Login(func)
-        except TrytonError as exception:
-            if exception.faultCode == 'QueryCanceled':
-                return
-            raise
-        except TrytonServerError as exception:
-            if exception.faultCode.startswith('404'):
-                return self.sig_login()
-            raise
-        self.get_preferences()
-        self.favorite_unset()
-        self.menuitem_favorite.set_sensitive(True)
-        self.menuitem_user.set_sensitive(True)
-        if CONFIG.arguments:
-            url = CONFIG.arguments.pop()
-            self.open_url(url)
-        return True
-
-=======
->>>>>>> origin/5.0
     def close_pages(self):
         if self.notebook.get_n_pages():
             if not common.sur(
@@ -1027,27 +608,8 @@ class Main(Gtk.Application):
                 res = False
         if self.menu_screen:
             self.menu_screen.save_tree_state()
-<<<<<<< HEAD
-            self.menu_screen.destroy()
-            self.menu_screen = None
-        self.menu_expander_clear()
-        return True
-
-    def sig_logout(self, widget=None):
-        try:
-            if not self.close_pages():
-                return False
-        except TrytonServerUnavailable:
-            pass
-        self.set_title()
-        self.favorite_unset()
-        self.menuitem_favorite.set_sensitive(False)
-        self.menuitem_user.set_sensitive(False)
-        rpc.logout()
-=======
         if self.menu.get_visible():
             CONFIG['menu.pane'] = self.pane.get_position()
->>>>>>> origin/5.0
         return True
 
     def about(self):
@@ -1070,14 +632,6 @@ class Main(Gtk.Application):
             if self.menu_screen:
                 self.menu_screen.set_cursor()
 
-<<<<<<< HEAD
-    def on_paned_button_press_event(self, widget, event):
-        if widget == self.pane:
-            expander = self.pane.get_child1()
-            if expander and not expander.get_expanded():
-                self.menu_toggle()
-        return False
-=======
     def menu_row_activate(self):
         screen = self.menu_screen
         record_id = (screen.current_record.id
@@ -1087,7 +641,6 @@ class Main(Gtk.Application):
                 'model': screen.model_name,
                 'id': record_id,
                 }, warning=False)
->>>>>>> origin/5.0
 
     def menu_row_activate(self):
         screen = self.menu_screen
@@ -1336,20 +889,9 @@ class Main(Gtk.Application):
         if not urlp.scheme == 'tryton':
             return
         urlp = urlparse('http' + url[6:])
-<<<<<<< HEAD
-        hostname = common.get_hostname(urlp.netloc)
-        port = common.get_port(urlp.netloc)
-        database, path = list(map(urllib.parse.unquote,
-            (urlp.path[1:].split('/', 1) + [''])[:2]))
-        if (not path or
-                hostname != rpc._HOST or
-                int(port) != rpc._PORT or
-                database != rpc._DATABASE):
-=======
         database, path = list(map(unquote,
             (urlp.path[1:].split('/', 1) + [''])[:2]))
         if not path:
->>>>>>> origin/5.0
             return
         type_, path = (path.split('/', 1) + [''])[:2]
         params = {}

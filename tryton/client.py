@@ -43,7 +43,9 @@ def main():
     screen = Gdk.Screen.get_default()
     style_context = Gtk.StyleContext()
     provider = Gtk.CssProvider()
-    provider.load_from_data(CSS)
+    # the line below injects CSS with higher priority than the custom theme
+    # -> it overrides Coog theme behavior
+    # provider.load_from_data(CSS)
     style_context.add_provider_for_screen(
         screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     theme_path = os.path.join(get_config_dir(), 'theme.css')

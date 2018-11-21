@@ -106,8 +106,6 @@ button:backdrop {
     text-shadow: 0 1px alpha (shade (@button_bg_color, 1.25), 0.2);
 }
 
-
-
 button.destructive-action:backdrop {
     color: alpha (white, 0.75);
     background-color: shade (@error_bg_color, 1.2);
@@ -166,7 +164,6 @@ button:disabled:backdrop:hover {
     color: @backdrop_fg_color;
     text-shadow: 0 1px alpha (shade (@button_bg_color, 1.25), 0.2);
 }
-
 
 button:checked {
     background-image: -gtk-gradient (linear, left top, left bottom,
@@ -236,7 +233,6 @@ button:checked:disabled:backdrop {
     border-image-source: -gtk-scaled(url("assets/backdrop-button-active-disabled.png"),
                                      url("assets/backdrop-button-active-disabled@2.png"));
 }
-
 
 button separator {
     color: shade(@bg_color, 1.30);
@@ -412,7 +408,6 @@ treeview.view:backdrop header button {
                                      from (shade (@shape_color, 1.8)),
                                      to (shade (@shape_color, 1.85)));
 }
-
 
 treeview.view header button:hover {
     background-image: -gtk-gradient (linear, left top, left bottom,
@@ -1158,7 +1153,6 @@ notebook header.right tab:checked {
     margin: 0;
 }
 
-
 /* Draw a focus ring around labels in tabs */
 notebook tab label {
     border: 2px solid transparent;
@@ -1212,7 +1206,6 @@ paned separator {
   padding-left: 0;
   padding-right: 0;
 }
-
 
 /*************************
  * progressbar and scale *
@@ -1357,7 +1350,6 @@ levelbar block.filled.low:backdrop {
     background-image: none;
 }
 
-
 levelbar.horizontal.discrete block.filled {
     margin: 0 1px;
 }
@@ -1412,7 +1404,6 @@ scale.horizontal trough {
     border-radius: 6px;
  }
 
-
 scale trough,
 scale.vertical trough {
     min-width: 3px;
@@ -1445,7 +1436,6 @@ scale.horizontal trough:disabled,
 scale.vertical trough:disabled {
     box-shadow: none;
 }
-
 
 scale trough:disabled {
     background-image: -gtk-gradient (linear, left top, left bottom,
@@ -2585,7 +2575,6 @@ window.csd.unity-csd.maximized .titlebar,
                                      color-stop (0.1, @panel_darker_color),
                                      to (@maximized_header_color));
 }
-
 
 .maximized .menubar:not(:backdrop),
 .maximized menubar:not(:backdrop) {

@@ -24,6 +24,10 @@ entry {
     border-image:none;
 }
 
+.required entry {
+    border-color: @shape_color;
+}
+
 *.readonly spinbutton,
 *.readonly entry,
 *.readonly spinbutton:focus,
@@ -294,7 +298,6 @@ switch:active:disabled slider {
     border-image: -gtk-scaled(url("assets/switch-button-on-disabled.png"),url("assets/switch-button-on-disabled@2.png")) 9 11 9 11 / 9px 11px 9px 11px stretch;
 }
 
-
 progressbar trough progress,
 .progressbar,
 progressbar row,
@@ -322,7 +325,6 @@ progressbar row:selected:focus:backdrop {
 progressbar.vertical:backdrop trough progress {
     border-image: url("assets/progressbar-vertical-fill-backdrop.png") 6 5 6 5 / 6px 5px 6px 5px stretch;
 }
-
 
 scale trough {
     border-image: -gtk-scaled(url("assets/scale-horizontal-trough.png"),url("assets/scale-horizontal-trough@2.png")) 2 6 2 6 / 2px 6px 2px 6px stretch;

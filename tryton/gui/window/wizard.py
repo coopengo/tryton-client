@@ -4,7 +4,6 @@ import logging
 import gettext
 
 import gtk
-import gobject
 import pango
 
 from gi.repository import Gtk
@@ -408,12 +407,8 @@ class WizardDialog(Wizard, NoModal):
         return True
 
     def show(self):
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.dia.set_default_size(
-            sensible_allocation.width, sensible_allocation.height)
+        self.dia.set_default_size(200, -1)
         self.dia.show()
-        gobject.idle_add(
-            common.center_window, self.dia, self.parent, self.sensible_widget)
 
     def hide(self):
         self.dia.hide()

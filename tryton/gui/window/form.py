@@ -612,7 +612,7 @@ class Form(SignalEvent, TabContent):
                 icon = 'tryton-executable'
 
             # Fix for #8825
-            common.ICONFACTORY.register_icon(icon)
+            common.IconFactory.register_icon(icon)
             qbutton = gtk.ToolButton(icon)
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',

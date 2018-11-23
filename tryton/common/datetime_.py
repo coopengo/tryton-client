@@ -37,7 +37,7 @@ def date_parse(text, format_='%x'):
     try:
         return parse(text, dayfirst=dayfirst, yearfirst=yearfirst,
             ignoretz=True)
-    except:
+    except Exception:
         return datetime.datetime.now()
 
 
@@ -83,7 +83,7 @@ class Date(gtk.Entry):
         self.__cal_popup.set_events(
             self.__cal_popup.get_events() | gtk.gdk.KEY_PRESS_MASK)
         self.__cal_popup.set_resizable(False)
-        self.__cal_popup.connect('delete-event', self.cqal_popup_closed)
+        self.__cal_popup.connect('delete-event', self.cal_popup_closed)
         self.__cal_popup.connect('key-press-event', self.cal_popup_key_pressed)
         self.__cal_popup.connect('button-press-event',
             self.cal_popup_button_pressed)

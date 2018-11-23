@@ -21,13 +21,12 @@ from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
-from tryton.pyson import PYSONDecoder
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
-
+from tryton.pyson import PYSONDecoder
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -69,9 +68,9 @@ class Screen(SignalEvent):
         self.tree_states = collections.defaultdict(
             lambda: collections.defaultdict(lambda: None))
         self.tree_states_done = set()
-        self.__current_record = None
         self.__group = None
         self.new_group(context or {})
+        self.__current_record = None
         self.current_record = None
         self.screen_container = ScreenContainer(attributes.get('tab_domain'))
         self.screen_container.alternate_view = attributes.get(
@@ -382,21 +381,20 @@ class Screen(SignalEvent):
         self.parent_name = group.parent_name
         if self.parent:
             self.filter_widget = None
+        if len(group):
+            self.current_record = group[0]
+        else:
+            self.current_record = None
         self.__group.signal_connect(self, 'group-cleared', self._group_cleared)
         self.__group.signal_connect(self, 'group-list-changed',
                 self._group_list_changed)
         self.__group.signal_connect(self, 'record-modified',
             self._record_modified)
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
-        self.__group.add_fields(fields, signal=False)
+        self.__group.add_fields(fields)
         for name, views in fields_views.items():
             self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
-        if len(group):
-            self.current_record = group[0]
-            self._group_list_changed(self.__group, 'record-changed')
-        else:
-            self.current_record = None
 
     group = property(__get_group, __set_group)
 
@@ -430,7 +428,6 @@ class Screen(SignalEvent):
         return self.__current_record
 
     def __set_current_record(self, record):
-        changed = self.__current_record != record
         self.__current_record = record
         if record:
             try:
@@ -442,8 +439,6 @@ class Screen(SignalEvent):
             pos = None
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
-        if changed:
-            self.signal('current-record-changed')
         attachment_count = 0
         if record and record.attachment_count > 0:
             attachment_count = record.attachment_count
@@ -539,6 +534,8 @@ class Screen(SignalEvent):
                 self.__current_view = ((self.__current_view + 1)
                         % len(self.views))
             if not view_type and view_id is None:
+                break
+            if view_type and not view_id and not len(self.view_to_load):
                 break
         self.screen_container.set(self.current_view.widget)
         self.display()
@@ -802,7 +799,6 @@ class Screen(SignalEvent):
                 and not view.attributes.get('tree_state', False)):
             # Mark as done to not set later when the view_type change
             self.tree_states_done.add(id(view))
-            return
         parent = self.parent.id if self.parent else None
         if parent is not None and parent < 0:
             return

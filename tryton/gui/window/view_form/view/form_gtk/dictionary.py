@@ -510,13 +510,12 @@ class DictWidget(Widget):
         if not self.attrs.get('no_command', 0.0):
             remove_but = self._new_remove_btn()
             self.tooltips.set_tip(remove_but, _('Remove "%s"') %
-                self.keys[key]['string'])
+                key_schema['string'])
             self.table.attach(remove_but, 2, 3, n_rows - 1, n_rows,
                 xoptions=gtk.FILL, yoptions=False, xpadding=2)
             remove_but.connect('clicked', self._sig_remove, key)
             remove_but.show_all()
             self.rows[key] = [label, alignment, remove_but]
-            self.buttons[key] = remove_but
         else:
             self.rows[key] = [label, alignment]
 

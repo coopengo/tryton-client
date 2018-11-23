@@ -3,8 +3,9 @@
 import logging
 from tryton.signal_event import SignalEvent
 from tryton.pyson import PYSONDecoder
+import tryton.common as common
 from . import field as fields
-from tryton.common import RPCExecute, RPCException, common
+from tryton.common import RPCExecute, RPCException
 from tryton.config import CONFIG
 
 

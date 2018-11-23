@@ -21,7 +21,6 @@ from tryton.common.entry_position import reset_position
 from tryton.common.underline import set_underline
 from tryton.common.domain_inversion import eval_domain
 from tryton.common.widget_style import widget_class
-from tryton.common.placeholder_entry import PlaceholderEntry
 from tryton.pyson import PYSONDecoder
 
 _ = gettext.gettext
@@ -348,7 +347,7 @@ class DictWidget(Widget):
         if not attrs.get('no_command', 0.0):
             hbox = gtk.HBox()
             hbox.set_border_width(2)
-            self.wid_text = PlaceholderEntry()
+            self.wid_text = gtk.Entry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.props.width_chars = 13
             self.wid_text.connect('activate', self._sig_activate)

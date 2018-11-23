@@ -131,7 +131,7 @@ class JSONUnmarshaller(object):
         return json.loads(''.join(self.data), object_hook=object_hook)
 
 
-class Transport(xmlrpc.client.Transport, xmlrpc.client.SafeTransport):
+class Transport(xmlrpc.client.SafeTransport):
 
     accept_gzip_encoding = True
     encode_threshold = 1400  # common MTU

@@ -662,10 +662,7 @@ class DBLogin(object):
                 hostname, port, database, self.entry_login.get_text())
 
         if CONFIG['login.date']:
-            date = self.entry_date.props.value
-        else:
-            date = None
-        result = result + (date,)
+            CONFIG['login.date'] = self.entry_date.props.value
         self.dialog.destroy()
         self._window.destroy()
         return response == gtk.RESPONSE_OK

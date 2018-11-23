@@ -39,7 +39,6 @@ class Record(SignalEvent):
         self.autocompletion = {}
         self.exception = False
         self.destroyed = False
-        self.fields_to_load = ()
 
     def __getitem__(self, name):
         if name not in self._loaded and self.id >= 0:
@@ -68,11 +67,6 @@ class Record(SignalEvent):
                     if field.attrs.get('loading', 'eager') == 'eager')
             else:
                 fields = self.group.fields.items()
-
-            # PJA: load fields that are required
-            if self.fields_to_load:
-                fields = tuple([field for field in fields
-                        if field in self.fields_to_load])
 
             fnames = [fname for fname, field in fields
                 if fname not in self._loaded

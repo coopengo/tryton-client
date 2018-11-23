@@ -735,7 +735,7 @@ class O2MField(Field):
                 force_remove=False)
 
         if value and (value.get('add') or value.get('update', [])):
-            record.value[self.name].add_fields(fields, signal=False)
+            record.value[self.name].add_fields(fields)
             for index, vals in value.get('add', []):
                 new_record = record.value[self.name].new(default=False)
                 record.value[self.name].add(new_record, index, signal=False)

@@ -343,11 +343,11 @@ class DictWidget(Widget):
         self.table.set_border_width(0)
         vbox.pack_start(self.table, expand=True, fill=True)
 
+        hbox = gtk.HBox()
+        hbox.set_border_width(2)
+        self.wid_text = gtk.Entry()
         # JCA: Specific
         if not attrs.get('no_command', 0.0):
-            hbox = gtk.HBox()
-            hbox.set_border_width(2)
-            self.wid_text = gtk.Entry()
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.props.width_chars = 13
             self.wid_text.connect('activate', self._sig_activate)

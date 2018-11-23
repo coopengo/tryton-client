@@ -68,9 +68,9 @@ class Screen(SignalEvent):
         self.tree_states = collections.defaultdict(
             lambda: collections.defaultdict(lambda: None))
         self.tree_states_done = set()
+        self.__current_record = None
         self.__group = None
         self.new_group(context or {})
-        self.__current_record = None
         self.current_record = None
         self.screen_container = ScreenContainer(attributes.get('tab_domain'))
         self.screen_container.alternate_view = attributes.get(
@@ -434,9 +434,14 @@ class Screen(SignalEvent):
                 pos = self.group.index(record) + self.offset + 1
             except ValueError:
                 # XXX offset?
-                pos = record.get_index_path()
+                # JMO: get_index_path returns a tuple
+                # the comparison (">=1")  in _sig_label worked in python2
+                # but not anymore
+                # pos = record.get_index_path()
+                pos = -1
         else:
             pos = None
+        print(pos)
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
         attachment_count = 0

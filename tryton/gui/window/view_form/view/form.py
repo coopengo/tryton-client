@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import operator
-import logging
 import gtk
 import gettext
 from collections import defaultdict
@@ -500,17 +499,8 @@ class ViewForm(View):
 
     @property
     def modified(self):
-        result = any(w.modified for widgets in self.widgets.values()
+        return any(w.modified for widgets in self.widgets.values()
             for w in widgets)
-        if not result:
-            return
-        for widgets in self.widgets.values():
-            for w in widgets:
-                if not w.modified:
-                    continue
-                logging.getLogger('root').debug('Widget %s.%s modified' % (
-                        w.model_name, w.field_name))
-        return result
 
     def get_buttons(self):
         return [b for b in self.state_widgets if isinstance(b, gtk.Button)]
@@ -529,16 +519,16 @@ class ViewForm(View):
         record = self.screen.current_record
         if record:
             # Force to set fields in record
-            # Get first the lazy one to reduce number of requests
-            # PJA: iter only over the fields that need to be loaded
-            fields = [(name, record.group.fields.get(name).attrs.get(
-                        'loading', 'eager'))
-                for name in self._field_keys]
-            fields.sort(key=operator.itemgetter(1), reverse=True)
-            record.fields_to_load = self._field_keys
-            for field, _ in fields:
+            # Get first the lazy one from the view to reduce number of requests
+            fields = (
+                (name,
+                    field.attrs.get('loading', 'eager') == 'eager',
+                    len(field.views))
+                for name, field in record.group.fields.items()
+                if self.view_id in field.views)
+            fields = sorted(fields, key=operator.itemgetter(1, 2))
+            for field, _, _ in fields:
                 record[field].get(record)
-            record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)
         for name, widgets in self.widgets.items():
             field = None

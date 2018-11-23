@@ -512,7 +512,9 @@ class One2Many(Widget):
         win.show()
 
     def _sig_label(self, screen, signal_data):
+        print(signal_data)
         self._position = signal_data[0]
+        print(self._position)
         self._length = signal_data[1]
         if self._position >= 1:
             name = str(self._position)

@@ -443,7 +443,7 @@ class Group(SignalEvent, list):
             return None
         return self[self.current_idx]
 
-    def add_fields(self, fields, signal=True):
+    def add_fields(self, fields):
         to_add = {}
         for name, attr in fields.items():
             if name not in self.fields:

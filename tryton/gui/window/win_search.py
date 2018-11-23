@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
-import gobject
 import gettext
 
 import tryton.common as common
@@ -113,12 +112,7 @@ class WinSearch(NoModal):
         NoModal.destroy(self)
 
     def show(self):
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.resize(
-            sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        gobject.idle_add(
-            common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):
         self.win.hide()
@@ -138,8 +132,7 @@ class WinSearch(NoModal):
                 view_ids=view_ids, views_preload=self.views_preload)
 
             def callback(result):
-                # JMO : TODO : see if that diff from tryton is needed
-                if result and screen.save_current():
+                if result:
                     record = screen.current_record
                     res = [(record.id, record.value.get('rec_name', ''))]
                     self.callback(res)

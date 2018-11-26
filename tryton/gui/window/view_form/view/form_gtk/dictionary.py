@@ -8,6 +8,7 @@ import locale
 import decimal
 import gettext
 from decimal import Decimal
+from collections import OrderedDict
 
 from .widget import Widget
 from tryton.gui.window.win_search import WinSearch
@@ -536,7 +537,25 @@ class DictWidget(Widget):
         if new_key_names:
             field.add_keys(list(new_key_names), self.record)
         decoder = PYSONDecoder()
-        for key, val in sorted(value.items()):
+
+        # ABDC: Allow dictschema to be ordered by a sequence
+        value_ordered = OrderedDict()
+        use_sequence = any(
+            x[1].get('sequence_order', None) for x in field.keys.items())
+        if use_sequence:
+            for skey, svalues in sorted(field.keys.items(),
+                    key=lambda x: x[1]['sequence_order']):
+                if skey not in value:
+                    continue
+                value_ordered[skey] = value[skey]
+
+        def _loop_order_hook():
+            if use_sequence:
+                return value_ordered.iteritems()
+            else:
+                return ((key, val) for key, val in sorted(value.items()))
+
+        for key, val in _loop_order_hook():
             if key not in field.keys:
                 continue
             if key not in self.fields:

@@ -381,10 +381,6 @@ class Screen(SignalEvent):
         self.parent_name = group.parent_name
         if self.parent:
             self.filter_widget = None
-        if len(group):
-            self.current_record = group[0]
-        else:
-            self.current_record = None
         self.__group.signal_connect(self, 'group-cleared', self._group_cleared)
         self.__group.signal_connect(self, 'group-list-changed',
                 self._group_list_changed)
@@ -395,6 +391,11 @@ class Screen(SignalEvent):
         for name, views in fields_views.items():
             self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
+        if len(group):
+            self.current_record = group[0]
+            self._group_list_changed(self.__group, 'record-changed')
+        else:
+            self.current_record = None
 
     group = property(__get_group, __set_group)
 
@@ -428,6 +429,8 @@ class Screen(SignalEvent):
         return self.__current_record
 
     def __set_current_record(self, record):
+        # Coog Specific for multimixed view
+        changed = self.__current_record != record
         self.__current_record = record
         if record:
             try:
@@ -443,6 +446,9 @@ class Screen(SignalEvent):
             pos = None
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
+        # Coog Specific for multimixed view
+        if changed:
+            self.signal('current-record-changed')
         attachment_count = 0
         if record and record.attachment_count > 0:
             attachment_count = record.attachment_count

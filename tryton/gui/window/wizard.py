@@ -328,7 +328,6 @@ class WizardDialog(Wizard, NoModal):
         Main().add_window(self.dia)
         self.dia.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dia.set_icon(TRYTON_ICON)
-        self.dia.set_decorated(False)
         self.dia.set_deletable(False)
         self.dia.connect('delete-event', lambda *a: True)
         self.dia.connect('close', self.close)

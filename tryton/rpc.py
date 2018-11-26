@@ -113,8 +113,6 @@ def logout():
     global CONNECTION, _USER
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
-    if IPCServer.instance:
-        IPCServer.instance.stop()
     if CONNECTION is not None:
         try:
             logging.getLogger(__name__).info('common.db.logout()')

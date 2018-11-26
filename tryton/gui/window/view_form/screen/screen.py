@@ -441,7 +441,6 @@ class Screen(SignalEvent):
                 pos = -1
         else:
             pos = None
-        print(pos)
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
         attachment_count = 0

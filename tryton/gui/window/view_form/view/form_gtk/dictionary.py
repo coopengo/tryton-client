@@ -551,7 +551,7 @@ class DictWidget(Widget):
 
         def _loop_order_hook():
             if use_sequence:
-                return value_ordered.iteritems()
+                return value_ordered.items()
             else:
                 return ((key, val) for key, val in sorted(value.items()))
 

@@ -567,6 +567,8 @@ class One2Many(Widget):
                 fields = dict((name, field.attrs) for name, field in
                     widget.screen.group.fields.items())
                 record.group.load_fields(fields)
+                for field_name in fields.keys():
+                    record[field_name].get(record)
             widget.screen.current_record = record
             widget.display(widget.record, widget.field)
 

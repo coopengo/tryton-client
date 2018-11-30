@@ -613,7 +613,10 @@ class Form(SignalEvent, TabContent):
 
             # Fix for #8825
             common.IconFactory.register_icon(icon)
-            qbutton = gtk.ToolButton(icon)
+            qbutton = gtk.ToolButton()
+            qbutton.set_icon_widget(
+                common.IconFactory.get_image(
+                    icon, gtk.ICON_SIZE_LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
                 lambda b: self._action(quick_action, 'quick_actions'))

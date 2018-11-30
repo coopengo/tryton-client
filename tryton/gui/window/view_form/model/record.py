@@ -2,10 +2,9 @@
 # this repository contains the full copyright notices and license terms.
 import logging
 from tryton.signal_event import SignalEvent
-import tryton.common as common
 from tryton.pyson import PYSONDecoder
-import field as fields
-from functools import reduce
+import tryton.common as common
+from . import field as fields
 from tryton.common import RPCExecute, RPCException
 from tryton.config import CONFIG
 
@@ -40,7 +39,6 @@ class Record(SignalEvent):
         self.autocompletion = {}
         self.exception = False
         self.destroyed = False
-        self.fields_to_load = []
 
     def __getitem__(self, name):
         if name not in self._loaded and self.id >= 0:
@@ -48,31 +46,31 @@ class Record(SignalEvent):
                 self.id: self,
                 }
             if name == '*':
-                loading = reduce(
-                        lambda x, y: 'eager' if x == y == 'eager' else 'lazy',
-                        (field.attrs.get('loading', 'eager')
-                            for field in self.group.fields.itervalues()),
-                        'eager')
+                loading = 'eager'
+                views = set()
+                for field in self.group.fields.values():
+                    if field.attrs.get('loading', 'eager') == 'lazy':
+                        loading = 'lazy'
+                    views |= field.views
                 # Set a valid name for next loaded check
-                for fname, field in self.group.fields.iteritems():
+                for fname, field in self.group.fields.items():
                     if field.attrs.get('loading', 'eager') == loading:
                         name = fname
                         break
             else:
                 loading = self.group.fields[name].attrs.get('loading', 'eager')
+                views = self.group.fields[name].views
 
             if loading == 'eager':
-                fnames = [fname
-                    for fname, field in self.group.fields.iteritems()
-                    if field.attrs.get('loading', 'eager') == 'eager']
+                fields = ((fname, field)
+                    for fname, field in self.group.fields.items()
+                    if field.attrs.get('loading', 'eager') == 'eager')
             else:
-                fnames = self.group.fields.keys()
+                fields = self.group.fields.items()
 
-            # PJA: load fields that are required
-            if self.fields_to_load:
-                fnames = [fname for fname in fnames
-                    if fname in self.fields_to_load]
-            fnames = [fname for fname in fnames if fname not in self._loaded]
+            fnames = [fname for fname, field in fields
+                if fname not in self._loaded
+                and (not views or (views & field.views))]
             fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
                     if self.group.fields[fname].attrs['type']
                     in ('many2one', 'one2one', 'reference')))
@@ -118,20 +116,20 @@ class Record(SignalEvent):
 
             ctx = record_context.copy()
             ctx.update(dict(('%s.%s' % (self.model_name, fname), 'size')
-                    for fname, field in self.group.fields.iteritems()
+                    for fname, field in self.group.fields.items()
                     if field.attrs['type'] == 'binary' and fname in fnames))
             exception = None
             try:
                 values = RPCExecute('model', self.model_name, 'read',
-                    id2record.keys(), fnames, context=ctx)
-            except RPCException:
+                    list(id2record.keys()), fnames, context=ctx)
+            except RPCException as exception:
                 values = [{'id': x} for x in id2record]
                 default_values = dict((f, None) for f in fnames)
                 for value in values:
                     value.update(default_values)
                 self.exception = True
             id2value = dict((value['id'], value) for value in values)
-            for id, record in id2record.iteritems():
+            for id, record in id2record.items():
                 if not record.exception:
                     record.exception = bool(exception)
                 value = id2value.get(id)
@@ -267,7 +265,7 @@ class Record(SignalEvent):
 
     def get(self):
         value = {}
-        for name, field in self.group.fields.iteritems():
+        for name, field in self.group.fields.items():
             if (field.attrs.get('readonly')
                     and not isinstance(field, fields.O2MField)):
                 continue
@@ -281,7 +279,7 @@ class Record(SignalEvent):
 
     def get_eval(self):
         value = {}
-        for name, field in self.group.fields.iteritems():
+        for name, field in self.group.fields.items():
             if name not in self._loaded and self.id >= 0:
                 continue
             value[name] = field.get_eval(self)
@@ -290,7 +288,7 @@ class Record(SignalEvent):
 
     def get_on_change_value(self, skip=None):
         value = {}
-        for name, field in self.group.fields.iteritems():
+        for name, field in self.group.fields.items():
             if skip and name in skip:
                 continue
             if (self.id >= 0
@@ -309,7 +307,7 @@ class Record(SignalEvent):
 
     def get_timestamp(self):
         result = {self.model_name + ',' + str(self.id): self._timestamp}
-        for name, field in self.group.fields.iteritems():
+        for name, field in self.group.fields.items():
             if name in self._loaded:
                 result.update(field.get_timestamp(self))
         return result
@@ -358,39 +356,13 @@ class Record(SignalEvent):
             self.parent.save(force_reload=force_reload)
         return self.id
 
-    @staticmethod
-    def delete(records):
-        if not records:
-            return
-        record = records[0]
-        root_group = record.group.root_group
-        assert all(r.model_name == record.model_name for r in records)
-        assert all(r.group.root_group == root_group for r in records)
-        records = [r for r in records if r.id >= 0]
-        ctx = {}
-        ctx['_timestamp'] = {}
-        for rec in records:
-            ctx['_timestamp'].update(rec.get_timestamp())
-        record_ids = set(r.id for r in records)
-        reload_ids = set(root_group.on_write_ids(list(record_ids)))
-        reload_ids -= record_ids
-        reload_ids = list(reload_ids)
-        try:
-            RPCExecute('model', record.model_name, 'delete', list(record_ids),
-                context=ctx)
-        except RPCException:
-            return False
-        if reload_ids:
-            root_group.reload(reload_ids)
-        return True
-
     def default_get(self, rec_name=None):
         if len(self.group.fields):
             context = self.get_context()
             context.setdefault('default_rec_name', rec_name)
             try:
                 vals = RPCExecute('model', self.model_name, 'default_get',
-                    self.group.fields.keys(), context=context)
+                    list(self.group.fields.keys()), context=context)
             except RPCException:
                 return
             if (self.parent
@@ -418,7 +390,7 @@ class Record(SignalEvent):
         elif fields is None:
             self._check_load()
         res = True
-        for field_name, field in self.group.fields.iteritems():
+        for field_name, field in self.group.fields.items():
             if fields is not None and field_name not in fields:
                 continue
             if field.attrs.get('readonly'):
@@ -431,7 +403,7 @@ class Record(SignalEvent):
 
     def _get_invalid_fields(self):
         fields = {}
-        for fname, field in self.group.fields.iteritems():
+        for fname, field in self.group.fields.items():
             invalid = field.get_state_attrs(self).get('invalid')
             if invalid:
                 fields[fname] = invalid
@@ -444,7 +416,7 @@ class Record(SignalEvent):
 
     def set_default(self, val, signal=True, validate=True):
         fieldnames = []
-        for fieldname, value in val.items():
+        for fieldname, value in list(val.items()):
             if fieldname not in self.group.fields:
                 continue
             if fieldname == self.group.exclude_field:
@@ -469,7 +441,7 @@ class Record(SignalEvent):
     def set(self, val, signal=True, validate=True):
         later = {}
         fieldnames = []
-        for fieldname, value in val.iteritems():
+        for fieldname, value in val.items():
             if fieldname == '_timestamp':
                 # Always keep the older timestamp
                 if not self._timestamp:
@@ -492,7 +464,7 @@ class Record(SignalEvent):
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
             fieldnames.append(fieldname)
-        for fieldname, value in later.iteritems():
+        for fieldname, value in later.items():
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
         if validate:
@@ -501,7 +473,7 @@ class Record(SignalEvent):
             self.signal('record-changed')
 
     def set_on_change(self, values):
-        for fieldname, value in values.items():
+        for fieldname, value in list(values.items()):
             if fieldname not in self.group.fields:
                 continue
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
@@ -534,7 +506,7 @@ class Record(SignalEvent):
         self.signal('record-changed')
 
     def expr_eval(self, expr):
-        if not isinstance(expr, basestring):
+        if not isinstance(expr, str):
             return expr
         if not expr:
             return
@@ -625,7 +597,7 @@ class Record(SignalEvent):
             self.group.fields[fieldname].set_on_change(self, result)
 
     def autocomplete_with(self, field_name):
-        for fieldname, fieldinfo in self.group.fields.iteritems():
+        for fieldname, fieldinfo in self.group.fields.items():
             autocomplete = fieldinfo.attrs.get('autocomplete', [])
             if field_name not in autocomplete:
                 continue
@@ -645,7 +617,7 @@ class Record(SignalEvent):
 
     def set_field_context(self):
         from .group import Group
-        for name, field in self.group.fields.iteritems():
+        for name, field in self.group.fields.items():
             value = self.value.get(name)
             if not isinstance(value, Group):
                 continue
@@ -697,7 +669,7 @@ class Record(SignalEvent):
         return clicks
 
     def destroy(self):
-        for v in self.value.itervalues():
+        for v in self.value.values():
             if hasattr(v, 'destroy'):
                 v.destroy()
         super(Record, self).destroy()

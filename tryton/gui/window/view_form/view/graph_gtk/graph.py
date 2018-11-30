@@ -127,7 +127,7 @@ class Graph(gtk.DrawingArea):
         self.drawGraph(cx, width, height)
         self.drawAxis(cx, width, height)
         self.drawLegend(cx, width, height)
-        surface.write_to_png(filename.encode('utf-8'))
+        surface.write_to_png(filename)
 
         self.queue_draw()
 
@@ -176,7 +176,7 @@ class Graph(gtk.DrawingArea):
             base = 1
         else:
             base = 10 ** int(math.log(self.yrange, 10))
-        for i in xrange(int(self.yrange / base) + 1):
+        for i in range(int(self.yrange / base) + 1):
             val = int(self.minyval / base) * base + i * base
             h = (val - self.minyval) * self.yscale
             label = locale.format('%.2f', val, True)
@@ -186,7 +186,7 @@ class Graph(gtk.DrawingArea):
     def XLabels(self):
         xlabels = []
         i = 0.0
-        keys = self.datas.keys()
+        keys = list(self.datas.keys())
         keys.sort()
         for key in keys:
             if self.xrange == 0:
@@ -439,14 +439,14 @@ class Graph(gtk.DrawingArea):
         else:
             self.xscale = 1.0 / self.xrange
 
-        if not self.datas.values():
+        if not list(self.datas.values()):
             self.maxyval = 0.0
             self.minyval = 0.0
         else:
-            self.maxyval = max([reduce(lambda x, y: max(x, y), x.values())
-                    for x in self.datas.values()])
-            self.minyval = min([reduce(lambda x, y: min(x, y), x.values())
-                    for x in self.datas.values()])
+            self.maxyval = max([reduce(lambda x, y: max(x, y), list(x.values()))
+                    for x in list(self.datas.values())])
+            self.minyval = min([reduce(lambda x, y: min(x, y), list(x.values()))
+                    for x in list(self.datas.values())])
         if self.minyval > 0:
             self.minyval = 0.0
 

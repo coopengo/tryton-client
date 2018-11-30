@@ -1,15 +1,21 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-import httplib
+import http.client
 import logging
 import socket
 import ssl
 import os
+try:
+    from http import HTTPStatus
+except ImportError:
+    from http import client as HTTPStatus
+
 from functools import partial
+
+from tryton import bus
 from tryton.jsonrpc import ServerProxy, ServerPool, Fault
 from tryton.fingerprints import Fingerprints
 from tryton.config import get_config_dir
-from tryton.ipc import Server as IPCServer
 from tryton.exceptions import TrytonServerError, TrytonServerUnavailable
 from tryton.config import CONFIG
 
@@ -35,6 +41,14 @@ ServerPool = partial(ServerPool, fingerprints=_FINGERPRINTS,
     ca_certs=_CA_CERTS)
 
 
+def context_reset():
+    CONTEXT.clear()
+    CONTEXT['client'] = bus.ID
+
+
+context_reset()
+
+
 def db_list(host, port):
     try:
         connection = ServerProxy(host, port)
@@ -42,12 +56,11 @@ def db_list(host, port):
         result = connection.common.db.list()
         logging.getLogger(__name__).debug(repr(result))
         return result
-    except Fault, exception:
-        if exception.faultCode == 'AccessDenied':
-            logging.getLogger(__name__).debug('AccessDenied')
+    except Fault as exception:
+        logging.getLogger(__name__).debug(exception.faultCode)
+        if exception.faultCode == str(HTTPStatus.FORBIDDEN.value):
             return []
         else:
-            logging.getLogger(__name__).debug(repr(None))
             return None
 
 
@@ -59,60 +72,61 @@ def server_version(host, port):
         result = connection.common.server.version()
         logging.getLogger(__name__).debug(repr(result))
         return result
-    except (Fault, socket.error, ssl.SSLError, ssl.CertificateError), e:
+    except (Fault, socket.error, ssl.SSLError, ssl.CertificateError) as e:
         logging.getLogger(__name__).error(e)
         return None
 
 
 # ABD: Add date and set_date parameters to login function (ca093423)
-def login(host, port, database, username, parameters, language=None, date=None,
-        set_date=None):
+def login(parameters):
+    from tryton import common
     global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
-    connection = ServerProxy(host, port, database)
+    host = CONFIG['login.host']
+    hostname = common.get_hostname(host)
+    port = common.get_port(host)
+    database = CONFIG['login.db']
+    username = CONFIG['login.login']
+    language = CONFIG['client.lang']
+    date = CONFIG['login.date']
+    connection = ServerProxy(hostname, port, database)
     logging.getLogger(__name__).info('common.db.login(%s, %s, %s)'
         % (username, 'x' * 10, language))
-    if set_date:
-        _CLIENT_DATE = date
     result = connection.common.db.login(username, parameters, language)
     logging.getLogger(__name__).debug(repr(result))
     _USER = result[0]
-    _USERNAME = username
     session = ':'.join(map(str, [username] + result))
     if CONNECTION is not None:
         CONNECTION.close()
-    CONNECTION = ServerPool(host, port, database, session=session)
+    CONNECTION = ServerPool(hostname, port, database, session=session)
     _HOST = host
     _PORT = port
     _DATABASE = database
+    _USERNAME = ''
+    _CLIENT_DATE = date
     _VIEW_CACHE = {}
     _TOOLBAR_CACHE = {}
     _KEYWORD_CACHE = {}
-    IPCServer(host, port, database).run()
+
+    bus.listen(CONNECTION)
 
 
 def logout():
-    global CONNECTION, _USER, _USERNAME, _HOST, _PORT, _DATABASE
+    global CONNECTION, _USER
     global _VIEW_CACHE, _TOOLBAR_CACHE, _KEYWORD_CACHE
     global _CLIENT_DATE
-    if IPCServer.instance:
-        IPCServer.instance.stop()
     if CONNECTION is not None:
         try:
             logging.getLogger(__name__).info('common.db.logout()')
             with CONNECTION() as conn:
                 conn.common.db.logout()
-        except (Fault, socket.error, httplib.CannotSendRequest):
+        except (Fault, socket.error, http.client.CannotSendRequest):
             pass
         CONNECTION.close()
         CONNECTION = None
     _CLIENT_DATE = None
     _USER = None
-    _USERNAME = ''
-    _HOST = ''
-    _PORT = None
-    _DATABASE = ''
     _VIEW_CACHE = {}
     _TOOLBAR_CACHE = {}
     _KEYWORD_CACHE = {}
@@ -144,7 +158,7 @@ def _execute(blocking, *args):
         logging.getLogger(__name__).info('%s%s' % (name, args))
         with CONNECTION() as conn:
             result = getattr(conn, name)(*args)
-    except (httplib.CannotSendRequest, socket.error), exception:
+    except (http.client.CannotSendRequest, socket.error) as exception:
         raise TrytonServerUnavailable(*exception.args)
     if not CONFIG['dev']:
         if key and method == 'fields_view_get':

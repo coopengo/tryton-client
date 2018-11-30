@@ -19,7 +19,7 @@ class NoModal(object):
 
     def register(self):
         from tryton.gui.main import Main
-        main = Main.get_main()
+        main = Main()
         self.page = main.get_page()
         if not self.page:
             self.page = main
@@ -27,6 +27,8 @@ class NoModal(object):
         self.sensible_widget.props.sensitive = False
 
     def destroy(self):
+        if not self.page:
+            return
         self.page.dialogs.remove(self)
         # Test if the parent is not already destroyed
         if self.parent not in gtk.window_list_toplevels():

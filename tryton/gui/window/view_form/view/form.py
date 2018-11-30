@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import operator
-import logging
 import gtk
 import gettext
 from collections import defaultdict
@@ -9,7 +8,7 @@ from collections import defaultdict
 from . import View
 from tryton.common.focus import (get_invisible_ancestor, find_focused_child,
     next_focus_widget, find_focusable_child, find_first_focus_widget)
-from tryton.common import Tooltips, node_attributes, ICONFACTORY
+from tryton.common import Tooltips, node_attributes, IconFactory
 from tryton.common.underline import set_underline
 from tryton.common.button import Button
 from tryton.config import CONFIG
@@ -37,6 +36,7 @@ from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
     Notebook, Alignment, Expander)
 from .form_gtk.sourceeditor import SourceView
+
 
 _ = gettext.gettext
 
@@ -181,7 +181,7 @@ class ViewForm(View):
         vp = gtk.Viewport()
         vp.set_shadow_type(gtk.SHADOW_NONE)
         vp.add(container.table)
-        scroll = gtk.ScrolledWindow()
+        self.scroll = scroll = gtk.ScrolledWindow()
         scroll.add(vp)
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.set_placement(gtk.CORNER_TOP_LEFT)
@@ -325,11 +325,8 @@ class ViewForm(View):
         label.set_use_underline(True)
 
         if 'icon' in attributes:
-            ICONFACTORY.register_icon(attributes['icon'])
-            icon = gtk.Image()
-            icon.set_from_stock(
-                attributes['icon'], gtk.ICON_SIZE_SMALL_TOOLBAR)
-            tab_box.pack_start(icon)
+            tab_box.pack_start(IconFactory.get_image(
+                    attributes['icon'], gtk.ICON_SIZE_SMALL_TOOLBAR))
         tab_box.pack_start(label)
         tab_box.show_all()
 
@@ -435,6 +432,7 @@ class ViewForm(View):
         'date': Date,
         'datetime': DateTime,
         'time': Time,
+        'timestamp': DateTime,
         'float': Float,
         'numeric': Float,
         'integer': Integer,
@@ -469,13 +467,13 @@ class ViewForm(View):
         return cls.WIDGETS[name]
 
     def get_fields(self):
-        return self.widgets.keys()
+        return list(self.widgets.keys())
 
     def __getitem__(self, name):
         return self.widgets[name][0]
 
     def destroy(self):
-        for widget_name in self.widgets.keys():
+        for widget_name in list(self.widgets.keys()):
             for widget in self.widgets[widget_name]:
                 widget.destroy()
         self.widget.destroy()
@@ -483,7 +481,7 @@ class ViewForm(View):
     def set_value(self, focused_widget=False):
         record = self.screen.current_record
         if record:
-            for name, widgets in self.widgets.iteritems():
+            for name, widgets in self.widgets.items():
                 if name in record.group.fields:
                     field = record.group.fields[name]
                     for widget in widgets:
@@ -501,17 +499,8 @@ class ViewForm(View):
 
     @property
     def modified(self):
-        result = any(w.modified for widgets in self.widgets.itervalues()
+        return any(w.modified for widgets in self.widgets.values()
             for w in widgets)
-        if not result:
-            return
-        for widgets in self.widgets.itervalues():
-            for w in widgets:
-                if not w.modified:
-                    continue
-                logging.getLogger('root').debug('Widget %s.%s modified' % (
-                        w.model_name, w.field_name))
-        return result
 
     def get_buttons(self):
         return [b for b in self.state_widgets if isinstance(b, gtk.Button)]
@@ -519,7 +508,7 @@ class ViewForm(View):
     def reset(self):
         record = self.screen.current_record
         if record:
-            for name, widgets in self.widgets.iteritems():
+            for name, widgets in self.widgets.items():
                 field = record.group.fields.get(name)
                 if field and 'invalid' in field.get_state_attrs(record):
                     for widget in widgets:
@@ -530,18 +519,18 @@ class ViewForm(View):
         record = self.screen.current_record
         if record:
             # Force to set fields in record
-            # Get first the lazy one to reduce number of requests
-            # PJA: iter only over the fields that need to be loaded
-            fields = [(name, record.group.fields.get(name).attrs.get(
-                        'loading', 'eager'))
-                for name in self._field_keys]
-            fields.sort(key=operator.itemgetter(1), reverse=True)
-            record.fields_to_load = self._field_keys
-            for field, _ in fields:
+            # Get first the lazy one from the view to reduce number of requests
+            fields = (
+                (name,
+                    field.attrs.get('loading', 'eager') == 'eager',
+                    len(field.views))
+                for name, field in record.group.fields.items()
+                if self.view_id in field.views)
+            fields = sorted(fields, key=operator.itemgetter(1, 2))
+            for field, _, _ in fields:
                 record[field].get(record)
-            record.fields_to_load = []
         focused_widget = find_focused_child(self.widget)
-        for name, widgets in self.widgets.iteritems():
+        for name, widgets in self.widgets.items():
             field = None
             if record:
                 field = record.group.fields.get(name)

@@ -8,6 +8,7 @@ import locale
 import gettext
 import ast
 import logging
+import pango
 from functools import wraps
 from collections import defaultdict
 
@@ -17,7 +18,6 @@ from tryton.gui.window import Window
 from tryton.common.popup_menu import populate
 from tryton.common import RPCExecute, RPCException, node_attributes, Tooltips
 from tryton.common import domain_inversion, simplify, unique_value
-from tryton.common.widget_style import widget_class
 from tryton.pyson import PYSONDecoder
 from tryton.common import COLOR_RGB, FORMAT_ERROR
 import tryton.common as common
@@ -149,26 +149,13 @@ class AdaptModelGroup(gtk.GenericTreeModel):
         group.move(record, 0)
 
     def sort(self, ids):
-        ids2pos = {}
-        pos = 0
+        old_idx = {record.id: i for i, record in enumerate(self.group)}
+        new_idx = {id_: i for i, id_ in enumerate(ids)}
+        self.group.sort(key=lambda r: new_idx.get(r.id))
         new_order = []
-        for record in self.group:
-            ids2pos[record.id] = pos
-            new_order.append(pos)
-            pos += 1
-        pos = 0
-        for obj_id in ids:
-            try:
-                old_pos = ids2pos[obj_id]
-                if old_pos != pos:
-                    new_order[old_pos] = pos
-                pos += 1
-            except KeyError:
-                continue
-        self.group.sort(lambda x, y:
-            cmp(new_order[ids2pos[x.id]], new_order[ids2pos[y.id]]))
         prev = None
         for record in self.group:
+            new_order.append(old_idx.get(record.id))
             if prev:
                 prev.next[id(self.group)] = record
             prev = record
@@ -303,7 +290,6 @@ class ViewTree(View):
             self.treeview = TreeView(self)
             grid_lines = gtk.TREE_VIEW_GRID_LINES_VERTICAL
         self.mnemonic_widget = self.treeview
-
         # ABD set alway expand through attributes
         self.always_expand = self.attributes.get('always_expand', False)
 
@@ -329,7 +315,7 @@ class ViewTree(View):
         self.set_drag_and_drop()
 
         self.widget = gtk.VBox()
-        scroll = gtk.ScrolledWindow()
+        self.scroll = scroll = gtk.ScrolledWindow()
         scroll.add(self.treeview)
         scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scroll.set_placement(gtk.CORNER_TOP_LEFT)
@@ -508,7 +494,7 @@ class ViewTree(View):
         if not getattr(attrs, 'states', None):
             return
         states = ast.literal_eval(attrs['states'])
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -516,7 +502,7 @@ class ViewTree(View):
                 continue
             if key[0] == 'label':
                 key = key[1:]
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -530,10 +516,7 @@ class ViewTree(View):
         if field and self.editable:
             required = field.attrs.get('required')
             readonly = field.attrs.get('readonly')
-            attrlist = common.get_label_attributes(readonly, required)
-            label.set_attributes(attrlist)
-            widget_class(label, 'readonly', readonly)
-            widget_class(label, 'required', required)
+            common.apply_label_attributes(label, readonly, required)
         label.show()
         help = None
         if field and field.attrs.get('help'):
@@ -603,7 +586,7 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
-        highlight_sum_ = attributes.get('highlight_sum','0')
+        highlight_sum_ = attributes.get('highlight_sum', '0')
 
         if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
             text = _(':') + attributes['sum']
@@ -635,7 +618,7 @@ class ViewTree(View):
                 column.arrow.set(gtk.ARROW_NONE, gtk.SHADOW_NONE)
         model = self.treeview.get_model()
         unsaved_records = [x for x in model.group if x.id < 0]
-        search_string = self.screen.screen_container.get_text() or u''
+        search_string = self.screen.screen_container.get_text() or ''
         if (self.screen.search_count == len(model)
                 or unsaved_records
                 or self.screen.parent):
@@ -835,8 +818,7 @@ class ViewTree(View):
         treeselection.selected_foreach(_func_sel_get, data)
         if not data:
             return
-        data = str(data[0])
-        selection.set(selection.get_target(), 8, data)
+        selection.set(selection.get_target(), 8, data[0].encode('utf-8'))
         return True
 
     def drag_data_received(self, treeview, context, x, y, selection,
@@ -1017,7 +999,7 @@ class ViewTree(View):
         if last_col and last_col.name in fields:
             del fields[last_col.name]
 
-        if fields and any(fields.itervalues()):
+        if fields and any(fields.values()):
             model_name = self.screen.model_name
             try:
                 RPCExecute('model', 'ir.ui.view_tree_width', 'set_width',
@@ -1216,9 +1198,9 @@ class ViewTree(View):
                 text1 = ''
                 text2 = '-'
             if highlight_sum_ == "1":
-                label.set_markup( text1 + '<b>' + text2 + '</b>' )
+                label.set_markup(text1 + '<b>' + text2 + '</b>')
             else:
-                label.set_markup( text1 + text2 )
+                label.set_markup(text1 + text2)
 
     def set_cursor(self, new=False, reset_view=True):
         self.treeview.grab_focus()

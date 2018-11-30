@@ -8,11 +8,11 @@ import datetime
 import calendar
 import json
 import collections
-import urllib
-import urlparse
+import urllib.parse
 import xml.dom.minidom
 import gettext
 import logging
+from operator import itemgetter
 
 import gtk
 
@@ -21,13 +21,12 @@ from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
 from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
-from tryton.pyson import PYSONDecoder
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
-import tryton.rpc as rpc
+from tryton.pyson import PYSONDecoder
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -170,7 +169,7 @@ class Screen(SignalEvent):
             view_tree = self.fields_view_tree[view_id]
 
         fields = copy.deepcopy(view_tree['fields'])
-        for name, props in fields.iteritems():
+        for name, props in fields.items():
             if props['type'] not in ('selection', 'reference'):
                 continue
             if isinstance(props['selection'], (tuple, list)):
@@ -202,11 +201,6 @@ class Screen(SignalEvent):
         else:
             self.screen_container.but_active.hide()
 
-        if 'active' in view_tree['fields']:
-            self.screen_container.but_active.show()
-        else:
-            self.screen_container.but_active.hide()
-
         # Add common fields
         for name, string, type_ in (
                 ('id', _('ID'), 'integer'),
@@ -217,7 +211,7 @@ class Screen(SignalEvent):
                 ):
             if name not in fields:
                 fields[name] = {
-                    'string': string.decode('utf-8'),
+                    'string': string,
                     'name': name,
                     'type': type_,
                     }
@@ -239,7 +233,7 @@ class Screen(SignalEvent):
                     props['selection'])
         except RPCException:
             selection = []
-        selection.sort(lambda x, y: cmp(x[1], y[1]))
+        selection.sort(key=itemgetter(1))
         return selection
 
     def search_prev(self, search_string):
@@ -306,7 +300,7 @@ class Screen(SignalEvent):
         return bool(ids)
 
     def get_domain(self):
-        if not self.domain or not isinstance(self.domain, basestring):
+        if not self.domain or not isinstance(self.domain, str):
             return self.domain
         decoder = PYSONDecoder(self.context)
         return decoder.decode(self.domain)
@@ -375,10 +369,12 @@ class Screen(SignalEvent):
 
     def __set_group(self, group):
         fields = {}
+        fields_views = {}
         if self.group is not None:
             self.group.signal_unconnect(self)
-            for name, field in self.group.fields.iteritems():
+            for name, field in self.group.fields.items():
                 fields[name] = field.attrs
+                fields_views[name] = field.views
         self.tree_states_done.clear()
         self.__group = group
         self.parent = group.parent
@@ -391,7 +387,9 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'record-modified',
             self._record_modified)
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
-        self.__group.add_fields(fields, signal=False)
+        self.__group.add_fields(fields)
+        for name, views in fields_views.items():
+            self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
         if len(group):
             self.current_record = group[0]
@@ -431,6 +429,7 @@ class Screen(SignalEvent):
         return self.__current_record
 
     def __set_current_record(self, record):
+        # Coog Specific for multimixed view
         changed = self.__current_record != record
         self.__current_record = record
         if record:
@@ -438,11 +437,16 @@ class Screen(SignalEvent):
                 pos = self.group.index(record) + self.offset + 1
             except ValueError:
                 # XXX offset?
-                pos = record.get_index_path()
+                # JMO: get_index_path returns a tuple
+                # the comparison (">=1")  in _sig_label worked in python2
+                # but not anymore
+                # pos = record.get_index_path()
+                pos = -1
         else:
             pos = None
         self.signal('record-message', (pos or 0, len(self.group) + self.offset,
             self.search_count, record and record.id))
+        # Coog Specific for multimixed view
         if changed:
             self.signal('current-record-changed')
         attachment_count = 0
@@ -503,6 +507,8 @@ class Screen(SignalEvent):
         return len(self.views) + len(self.view_to_load)
 
     def switch_view(self, view_type=None, view_id=None):
+        if view_id is not None:
+            view_id = int(view_id)
         if self.current_view:
             self.current_view.set_value()
             if (self.current_record and
@@ -515,21 +521,32 @@ class Screen(SignalEvent):
                 self.set_cursor()
                 self.current_view.display()
                 return
-        if not view_type or self.current_view.view_type != view_type:
-            for i in xrange(self.number_of_views):
-                if len(self.view_to_load):
-                    self.load_view_to_load()
-                    self.__current_view = len(self.views) - 1
-                else:
-                    self.__current_view = ((self.__current_view + 1)
-                            % len(self.views))
-                if view_id:
-                    if self.current_view.view_id == view_id:
-                        break
-                elif not view_type:
-                    break
-                elif self.current_view.view_type == view_type:
-                    break
+
+        def found():
+            if not self.current_view:
+                return False
+            elif not view_type and view_id is None:
+                return False
+            elif view_id is not None:
+                return self.current_view.view_id == view_id
+            else:
+                return self.current_view.view_type == view_type
+        while not found():
+            if len(self.view_to_load):
+                self.load_view_to_load()
+                self.__current_view = len(self.views) - 1
+            elif (view_id is not None
+                    and view_id not in {v.view_id for v in self.views}):
+                self.add_view_id(view_id, view_type)
+                self.__current_view = len(self.views) - 1
+                break
+            else:
+                self.__current_view = ((self.__current_view + 1)
+                        % len(self.views))
+            if not view_type and view_id is None:
+                break
+            if view_type and not view_id and not len(self.view_to_load):
+                break
         self.screen_container.set(self.current_view.widget)
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
@@ -580,12 +597,14 @@ class Screen(SignalEvent):
                 fields[field]['loading'] = \
                     self.group.fields[field].attrs['loading']
         self.group.add_fields(fields)
+        for field in fields:
+            self.group.fields[field].views.add(view_id)
         view = View.parse(self, xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
         view.view_id = view_id
         self.views.append(view)
         # PJA: set list of fields to use on the view
-        view._field_keys = fields.keys()
+        view._field_keys = list(fields.keys())
 
         return view
 
@@ -790,7 +809,6 @@ class Screen(SignalEvent):
                 and not view.attributes.get('tree_state', False)):
             # Mark as done to not set later when the view_type change
             self.tree_states_done.add(id(view))
-            return
         parent = self.parent.id if self.parent else None
         if parent is not None and parent < 0:
             return
@@ -841,13 +859,11 @@ class Screen(SignalEvent):
         self.tree_states_done.add(id(view))
 
     def save_tree_state(self, store=True):
-        if not CONFIG['client.save_tree_state']:
-            return
         parent = self.parent.id if self.parent else None
         timestamp = self.parent._timestamp if self.parent else None
         for view in self.views:
             if view.view_type == 'form':
-                for widgets in view.widgets.itervalues():
+                for widgets in view.widgets.values():
                     for widget in widgets:
                         if hasattr(widget, 'screen'):
                             widget.screen.save_tree_state(store)
@@ -863,7 +879,9 @@ class Screen(SignalEvent):
                 selected_paths = view.get_selected_paths()
                 self.tree_states[parent][view.children_field] = (
                     timestamp, paths, selected_paths)
-                if store and view.attributes.get('tree_state', False):
+                if (store
+                        and int(view.attributes.get('tree_state', False))
+                        and CONFIG['client.save_tree_state']):
                     json_domain = self.get_tree_domain(parent)
                     json_paths = json.dumps(paths, separators=(',', ':'))
                     json_selected_path = json.dumps(
@@ -913,12 +931,10 @@ class Screen(SignalEvent):
         if self.views:
             self.search_active(self.current_view.view_type
                 in ('tree', 'graph', 'calendar'))
-
             # PJA: we are greedy people
             #  for view in self.views:
             #      view.display()
             self.current_view.display()
-
             self.current_view.widget.set_sensitive(
                 bool(self.group
                     or (self.current_view.view_type != 'form')
@@ -1068,7 +1084,7 @@ class Screen(SignalEvent):
             record = self.current_record
         domain_string = _('"%s" is not valid according to its domain')
         domain_parser = DomainParser(
-            {n: f.attrs for n, f in record.group.fields.iteritems()})
+            {n: f.attrs for n, f in record.group.fields.items()})
         fields = []
         for field, invalid in sorted(record.invalid_fields.items()):
             string = record.group.fields[field].attrs['string']
@@ -1175,7 +1191,7 @@ class Screen(SignalEvent):
             action_id, action = None, action
 
         self.reload(ids, written=True)
-        if isinstance(action, basestring):
+        if isinstance(action, str):
             self.client_action(action)
         if action_id:
             Action.execute(action_id, {
@@ -1210,10 +1226,9 @@ class Screen(SignalEvent):
             self.display_prev()
         elif action == 'close':
             from tryton.gui import Main
-            Main.get_main().sig_win_close()
+            Main().sig_win_close()
         elif action.startswith('switch'):
-            _, view_type = action.split(None, 1)
-            self.switch_view(view_type=view_type)
+            self.switch_view(*action.split(None, 2)[1:])
         elif action.startswith('toggle'):
             # PJA: handle a custom action to toggle views
             _, view_id = action.split(':')
@@ -1224,7 +1239,7 @@ class Screen(SignalEvent):
                 self.search_filter()
         elif action == 'reload menu':
             from tryton.gui import Main
-            RPCContextReload(Main.get_main().sig_win_menu)
+            RPCContextReload(Main().sig_win_menu)
         elif action == 'reload context':
             RPCContextReload()
 
@@ -1243,7 +1258,7 @@ class Screen(SignalEvent):
         if name:
             query_string.append(
                 ('name', json.dumps(name, separators=(',', ':'))))
-        path = [rpc._DATABASE, 'model', self.model_name]
+        path = [CONFIG['login.db'], 'model', self.model_name]
         view_ids = [v.view_id for v in self.views] + self.view_ids
         if self.current_view.view_type != 'form':
             search_string = self.screen_container.get_text()
@@ -1259,7 +1274,7 @@ class Screen(SignalEvent):
         if view_ids:
             query_string.append(('views', json.dumps(
                         view_ids, separators=(',', ':'))))
-        query_string = urllib.urlencode(query_string)
-        return urlparse.urlunparse(('tryton',
-                '%s:%s' % (rpc._HOST, rpc._PORT),
+        query_string = urllib.parse.urlencode(query_string)
+        return urllib.parse.urlunparse(('tryton',
+                CONFIG['login.host'],
                 '/'.join(path), query_string, '', ''))

@@ -1,13 +1,15 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import gtk
-import gobject
 import gettext
+
 import tryton.common as common
-from tryton.gui.window.view_form.screen import Screen
+from tryton.common.underline import set_underline
 from tryton.config import TRYTON_ICON
-from tryton.gui.window.win_form import WinForm
+from tryton.gui import Main
 from tryton.gui.window.nomodal import NoModal
+from tryton.gui.window.view_form.screen import Screen
+from tryton.gui.window.win_form import WinForm
 
 _ = gettext.gettext
 
@@ -33,26 +35,42 @@ class WinSearch(NoModal):
 
         self.win = gtk.Dialog(_('Search'), self.parent,
             gtk.DIALOG_DESTROY_WITH_PARENT)
+        Main().add_window(self.win)
         self.win.set_icon(TRYTON_ICON)
-        self.win.set_decorated(False)
         self.win.set_default_response(gtk.RESPONSE_APPLY)
         self.win.connect('response', self.response)
+
+        parent_allocation = self.parent.get_allocation()
+        width, height = parent_allocation.width, parent_allocation.height
+        if self.parent != self.sensible_widget:
+            width = max(width - 150, 0)
+        self.win.set_default_size(min(600, width), min(400, height))
 
         self.accel_group = gtk.AccelGroup()
         self.win.add_accel_group(self.accel_group)
 
-        self.but_cancel = self.win.add_button(gtk.STOCK_CANCEL,
-            gtk.RESPONSE_CANCEL)
+        self.but_cancel = self.win.add_button(
+            set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        self.but_cancel.set_image(common.IconFactory.get_image(
+                'tryton-cancel', gtk.ICON_SIZE_BUTTON))
         self.but_cancel.set_always_show_image(True)
-        self.but_find = self.win.add_button(gtk.STOCK_FIND, gtk.RESPONSE_APPLY)
+        self.but_find = self.win.add_button(
+            set_underline(_("Search")), gtk.RESPONSE_APPLY)
+        self.but_find.set_image(common.IconFactory.get_image(
+                'tryton-search', gtk.ICON_SIZE_BUTTON))
         self.but_find.set_always_show_image(True)
         if new and common.MODELACCESS[model]['create']:
-            self.but_new = self.win.add_button(gtk.STOCK_NEW,
-                gtk.RESPONSE_ACCEPT)
+            self.but_new = self.win.add_button(
+                set_underline(_("New")), gtk.RESPONSE_ACCEPT)
+            self.but_new.set_image(common.IconFactory.get_image(
+                    'tryton-create', gtk.ICON_SIZE_BUTTON))
             self.but_new.set_always_show_image(True)
             self.but_new.set_accel_path('<tryton>/Form/New', self.accel_group)
 
-        self.but_ok = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        self.but_ok = self.win.add_button(
+            set_underline(_("OK")), gtk.RESPONSE_OK)
+        self.but_ok.set_image(common.IconFactory.get_image(
+                'tryton-ok', gtk.ICON_SIZE_BUTTON))
         self.but_ok.set_always_show_image(True)
         self.but_ok.add_accelerator('clicked', self.accel_group,
                 gtk.keysyms.Return, gtk.gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
@@ -61,9 +79,6 @@ class WinSearch(NoModal):
         hbox.show()
         self.win.vbox.pack_start(hbox, expand=False, fill=True)
         self.win.vbox.pack_start(gtk.HSeparator(), expand=False, fill=True)
-        scrollwindow = gtk.ScrolledWindow()
-        scrollwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.win.vbox.pack_start(scrollwindow, expand=True, fill=True)
 
         self.screen = Screen(model, domain=domain, mode=['tree'], order=order,
             context=context, view_ids=view_ids, views_preload=views_preload,
@@ -78,13 +93,8 @@ class WinSearch(NoModal):
             sel.set_mode(gtk.SELECTION_SINGLE)
         else:
             sel.set_mode(gtk.SELECTION_MULTIPLE)
-        viewport = gtk.Viewport()
-        viewport.set_shadow_type(gtk.SHADOW_NONE)
-        viewport.add(self.screen.widget)
+        self.win.vbox.pack_start(self.screen.widget, expand=True, fill=True)
         self.screen.widget.show()
-        viewport.show()
-        scrollwindow.add(viewport)
-        scrollwindow.show()
 
         self.model_name = model
 
@@ -101,12 +111,7 @@ class WinSearch(NoModal):
         NoModal.destroy(self)
 
     def show(self):
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.resize(
-            sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        gobject.idle_add(
-            common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):
         self.win.hide()
@@ -126,8 +131,7 @@ class WinSearch(NoModal):
                 view_ids=view_ids, views_preload=self.views_preload)
 
             def callback(result):
-                # JMO : TODO : see if that diff from tryton is needed
-                if result and screen.save_current():
+                if result:
                     record = screen.current_record
                     res = [(record.id, record.value.get('rec_name', ''))]
                     self.callback(res)

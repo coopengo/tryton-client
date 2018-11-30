@@ -1,17 +1,20 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 
 from setuptools import setup, find_packages
+import io
 import os
 import re
 
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return io.open(
+        os.path.join(os.path.dirname(__file__), fname),
+        'r', encoding='utf-8').read()
+
 
 args = {}
-
 try:
     from babel.messages import frontend as babel
 
@@ -46,6 +49,7 @@ def get_version():
     return re.search('__version_coog__ = "([0-9.]*)"', init).group(1)
 
 name = 'Coog'
+
 version = get_version()
 
 dist = setup(name=name,
@@ -84,18 +88,21 @@ dist = setup(name=name,
         'Natural Language :: Spanish',
         'Natural Language :: Japanese',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Office/Business',
         ],
     platforms='any',
     license='GPL-3',
+    python_requires='>=3.4',
     install_requires=[
         # "py-gobject3",
         "python-dateutil",
         ],
     extras_require={
-        'cdecimal': ['cdecimal'],
-        'calendar': ['GooCalendar'],
+        'calendar': ['GooCalendar>=0.4'],
         },
     zip_safe=False,
     **args

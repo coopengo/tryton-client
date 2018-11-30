@@ -5,7 +5,6 @@ import pango
 import logging
 
 import tryton.common as common
-from tryton.common.widget_style import widget_class
 
 
 class StateMixin(object):
@@ -46,13 +45,8 @@ class Label(StateMixin, gtk.Label):
         required = ((field and field.attrs.get('required'))
                 or state_changes.get('required'))
         readonly = ((field and field.attrs.get('readonly'))
-                or state_changes.get('readonly'))
-        attrlist = common.get_label_attributes(readonly, required)
-        if field is not None:
-            self._format_set(record, field, attrlist)
-        self.set_attributes(attrlist)
-        widget_class(self, 'readonly', readonly)
-        widget_class(self, 'required', required)
+                or state_changes.get('readonly', not bool(field)))
+        common.apply_label_attributes(self, readonly, required)
 
     def _set_background(self, value, attrlist):
         if value not in common.COLOR_RGB:
@@ -86,7 +80,7 @@ class Label(StateMixin, gtk.Label):
         states = record.expr_eval(self.attrs.get('states', {})).copy()
         states.update(attrs)
 
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -94,7 +88,7 @@ class Label(StateMixin, gtk.Label):
                 continue
             if key[0] == 'label':
                 key = key[1:]
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -116,8 +110,8 @@ class Image(StateMixin, gtk.Image):
         if name in record.group.fields:
             field = record.group.fields[name]
             name = field.get(record)
-        common.ICONFACTORY.register_icon(name)
-        self.set_from_stock(name, gtk.ICON_SIZE_DIALOG)
+        self.set_from_pixbuf(common.IconFactory.get_pixbuf(
+                name, gtk.ICON_SIZE_DIALOG))
 
 
 class Frame(StateMixin, gtk.Frame):
@@ -148,7 +142,7 @@ class Notebook(StateMixin, gtk.Notebook):
         else:
             state_changes = {}
         if state_changes.get('readonly', self.attrs.get('readonly')):
-            for widgets in self.widgets.itervalues():
+            for widgets in self.widgets.values():
                 for widget in widgets:
                     widget._readonly_set(True)
 

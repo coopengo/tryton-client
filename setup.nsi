@@ -5,6 +5,10 @@
 !ifndef VERSION
     !error "Missing VERSION! Specify it with '/DVERSION=<VERSION>'"
 !endif
+;Check series
+!ifndef SERIES
+    !error "Missing SERIES! Specify if with '/DSERIES=<SERIES>'"
+!endif
 
 ;Include Modern UI
 !include "MUI.nsh"
@@ -14,6 +18,7 @@ Name "Coog ${VERSION}"
 OutFile "coog-setup-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
+Unicode true
 
 ;Default installation folder
 InstallDir "$PROGRAMFILES\coog-${VERSION}"
@@ -67,8 +72,6 @@ Var STARTMENU_FOLDER
 !include "slovenian.nsh"
 !insertmacro MUI_LANGUAGE "Spanish"
 !include "spanish.nsh"
-!insertmacro MUI_LANGUAGE "Russian"
-!include "russian.nsh"
 
 ;Reserve Files
 
@@ -80,9 +83,20 @@ Var STARTMENU_FOLDER
 ;Installer Sections
 Function .onInit
     ClearErrors
-    ReadRegStr $0 HKCU "Software\coog-${VERSION}" ""
-    IfErrors DoInstall 0
-        MessageBox MB_OK "$(PreviousInstall)"
+    ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}" "UninstallString"
+    StrCmp $0 "" DoInstall
+
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(PreviousInstall)" /SD IDOK IDOK Uninstall
+    Quit
+
+    Uninstall:
+        ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}" "InstallLocation"
+        ClearErrors
+        StrCpy $2 "/S"
+        IfSilent +2
+        StrCpy $2 ""
+        ExecWait '$0 $2 _?=$1'
+        IfErrors 0 DoInstall
         Quit
     DoInstall:
 FunctionEnd
@@ -110,12 +124,12 @@ SectionIn 1 2 RO
     WriteRegStr HKCR "coog\shell\open\command" "" '$INSTDIR\coog.exe "%1"'
 
     ;Write the installation path into the registry
-    WriteRegStr HKCU "Software\coog-${VERSION}" "" $INSTDIR
-    WriteRegStr HKLM "Software\coog-${VERSION}" "" $INSTDIR
+    WriteRegStr HKLM "Software\coog-${SERIES}" "" $INSTDIR
 
     ;Write the uninstall keys for Windows
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "DisplayName" "Coog ${VERSION} (remove only)"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}" "UninstallString" "$INSTDIR\uninstall.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}" "DisplayName" "Coog ${VERSION} (remove only)"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}" "UninstallString" "$INSTDIR\uninstall.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}" "InstallLocation" "$INSTDIR"
 
     ;Create the uninstaller
     WriteUninstaller uninstall.exe
@@ -129,8 +143,8 @@ SectionIn 1 2
 
         CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
         CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Coog-${VERSION}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
-        CreateShortCut "$DESKTOP\Coog-${VERSION}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Coog-${SERIES}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
+        CreateShortCut "$DESKTOP\Coog-${SERIES}.lnk" "$INSTDIR\coog.exe" "" "$INSTDIR\coog.exe" 0
 
     !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -147,18 +161,17 @@ Section "Uninstall"
     RMDIR /r "$INSTDIR"
 
     ;remove registry keys
-    DeleteRegKey HKCU "Software\coog-${VERSION}"
-    DeleteRegKey HKLM "Software\coog-${VERSION}"
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${VERSION}"
+    DeleteRegKey HKLM "Software\Coog-${SERIES}"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\coog-${SERIES}"
 
     SetShellVarContext all
-    Delete "$DESKTOP\Coog-${VERSION}.lnk"
+    Delete "$DESKTOP\Coog-${SERIES}.lnk"
 
     !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
 
     StrCmp $MUI_TEMP "" noshortcuts
         Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
-        Delete "$SMPROGRAMS\$MUI_TEMP\Coog-${VERSION}.lnk"
+        Delete "$SMPROGRAMS\$MUI_TEMP\Coog-${SERIES}.lnk"
         RMDir "$SMPROGRAMS\$MUI_TEMP"
     noshortcuts:
 

@@ -108,7 +108,7 @@ class SourceView(Widget):
         self.sourceview.set_show_line_marks(True)
 
         tag_table = self.sourcebuffer.get_tag_table()
-        for mark_type, (priority, stock_id) in MARKS.items():
+        for mark_type, (priority, stock_id) in list(MARKS.items()):
             mark_attrs = gtksourceview.MarkAttributes()
             mark_attrs.set_icon_name(stock_id)
             self.sourceview.set_mark_attributes(mark_type,
@@ -331,7 +331,7 @@ class SourceView(Widget):
         begin, end = self.sourcebuffer.get_bounds()
         tag_table = self.sourcebuffer.get_tag_table()
         self.sourcebuffer.remove_source_marks(begin, end)
-        for tagname in ERROR2COLOR.values():
+        for tagname in list(ERROR2COLOR.values()):
             tag = tag_table.lookup(tagname)
             self.sourcebuffer.remove_tag(tag, begin, end)
         errors = check_code(self.get_code())
@@ -348,7 +348,7 @@ class SourceView(Widget):
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
             line = self.sourcebuffer.props.text.split('\n')[line_nbr -
-                1].decode('utf-8')
+                1]
             line_start = self.sourcebuffer.get_iter_at_line_offset(
                 line_nbr - 1, 0)
             line_end = self.sourcebuffer.get_iter_at_line_offset(
@@ -392,7 +392,7 @@ class SourceView(Widget):
                 chars -= 1
             start = sourcebuffer.get_iter_at_line_offset(line, 0)
             end = sourcebuffer.get_iter_at_line_offset(line, chars)
-            for error_type in MARKS.keys():
+            for error_type in list(MARKS.keys()):
                 sourcebuffer.remove_source_marks(start, end, error_type)
                 tag = tag_table.lookup(error_type)
                 sourcebuffer.remove_tag(tag, start, end)

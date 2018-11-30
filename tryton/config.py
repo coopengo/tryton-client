@@ -1,7 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 "Options"
-import ConfigParser
+import configparser
 import optparse
 import os
 import gettext
@@ -10,7 +10,6 @@ import sys
 import locale
 import gtk
 
-from tryton.exceptions import TrytonError
 from tryton import __version__
 
 _ = gettext.gettext
@@ -19,14 +18,16 @@ _ = gettext.gettext
 def get_config_dir():
     if os.name == 'nt':
         appdata = os.environ['APPDATA']
-        if not isinstance(appdata, unicode):
-            appdata = unicode(appdata, sys.getfilesystemencoding())
+        if not isinstance(appdata, str):
+            appdata = str(appdata, sys.getfilesystemencoding())
         return os.path.join(appdata, '.config', 'tryton',
                 __version__.rsplit('.', 1)[0])
     return os.path.join(os.environ['HOME'], '.config', 'tryton',
             __version__.rsplit('.', 1)[0])
+
+
 if not os.path.isdir(get_config_dir()):
-    os.makedirs(get_config_dir(), 0700)
+    os.makedirs(get_config_dir(), 0o700)
 
 
 class ConfigManager(object):
@@ -50,7 +51,6 @@ class ConfigManager(object):
             'client.default_height': 750,
             'client.modepda': False,
             'client.toolbar': 'default',
-            'client.maximize': False,
             'client.save_width_height': True,
             'client.save_tree_state': False,
             'client.fast_tabbing': True,
@@ -58,15 +58,16 @@ class ConfigManager(object):
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
             'client.email': '',
-            'client.limit': 100,
-            'client.check_version': False,
-            'roundup.url': 'https://support.coopengo.com/',
-            'roundup.xmlrpc': '',
-            'download.url': '',
+            'client.limit': 1000,
+            'client.check_version': True,
+            'client.bus_timeout': 10 * 60,
+            'icon.color': '#3465a4',
+            'image.max_size': 10 ** 6,
+            'roundup.url': 'http://bugs.tryton.org/',
+            'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
+            'download.url': 'https://downloads.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,
-            'menu.expanded': True,
-            'sentry.homepage': 'http://app.getsentry.com',
         }
         self.config = {}
         self.options = {}
@@ -91,12 +92,6 @@ class ConfigManager(object):
         parser.add_option("-s", "--server", dest="host",
                 help=_("specify the server hostname:port"))
         opt, self.arguments = parser.parse_args()
-
-        if len(self.arguments) > 1:
-            raise TrytonError(_('Too much arguments'))
-
-        if opt.config and not os.path.isfile(opt.config):
-            raise TrytonError(_('File "%s" not found') % (opt.config,))
         self.rcfile = opt.config or os.path.join(
             get_config_dir(), 'tryton.conf')
         self.load()
@@ -123,15 +118,16 @@ class ConfigManager(object):
 
     def save(self):
         try:
-            configparser = ConfigParser.ConfigParser()
-            for entry in self.config.keys():
+            parser = configparser.ConfigParser()
+            for entry in list(self.config.keys()):
                 if not len(entry.split('.')) == 2:
                     continue
                 section, name = entry.split('.')
-                if not configparser.has_section(section):
-                    configparser.add_section(section)
-                configparser.set(section, name, self.config[entry])
-            configparser.write(open(self.rcfile, 'wb'))
+                if not parser.has_section(section):
+                    parser.add_section(section)
+                parser.set(section, name, str(self.config[entry]))
+            with open(self.rcfile, 'w') as fp:
+                parser.write(fp)
         except IOError:
             logging.getLogger(__name__).warn(
                 _('Unable to write config file %s.')
@@ -140,10 +136,10 @@ class ConfigManager(object):
         return True
 
     def load(self):
-        configparser = ConfigParser.ConfigParser()
-        configparser.read([self.rcfile])
-        for section in configparser.sections():
-            for (name, value) in configparser.items(section):
+        parser = configparser.ConfigParser()
+        parser.read([self.rcfile])
+        for section in parser.sections():
+            for (name, value) in parser.items(section):
                 if value.lower() == 'true':
                     value = True
                 elif value.lower() == 'false':
@@ -164,8 +160,9 @@ class ConfigManager(object):
         return self.options.get(key, self.config.get(key,
             self.defaults.get(key)))
 
+
 CONFIG = ConfigManager()
-CURRENT_DIR = u''
+CURRENT_DIR = ''
 if not hasattr(sys, 'frozen'):
     try:
         CURRENT_DIR = os.path.dirname(__file__)
@@ -173,8 +170,8 @@ if not hasattr(sys, 'frozen'):
         pass
 else:
     CURRENT_DIR = os.path.dirname(sys.executable)
-if not isinstance(CURRENT_DIR, unicode):
-    CURRENT_DIR = unicode(CURRENT_DIR, sys.getfilesystemencoding())
+if not isinstance(CURRENT_DIR, str):
+    CURRENT_DIR = str(CURRENT_DIR, sys.getfilesystemencoding())
 
 PIXMAPS_DIR = os.path.join(CURRENT_DIR, 'data', 'pixmaps', 'tryton')
 if not os.path.isdir(PIXMAPS_DIR):
@@ -184,4 +181,4 @@ if not os.path.isdir(PIXMAPS_DIR):
         'tryton', 'data/pixmaps/tryton')
 
 TRYTON_ICON = gtk.gdk.pixbuf_new_from_file(
-    os.path.join(PIXMAPS_DIR, 'tryton-icon.png').encode('utf-8'))
+    os.path.join(PIXMAPS_DIR, 'tryton-icon.png'))

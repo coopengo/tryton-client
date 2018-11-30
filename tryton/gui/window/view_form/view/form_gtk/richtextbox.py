@@ -6,7 +6,7 @@ from weakref import WeakKeyDictionary
 import gtk
 
 from .textbox import TextBox
-from tryton.common import get_toplevel_window
+from tryton.common import get_toplevel_window, IconFactory
 from tryton.common.htmltextbuffer import (serialize, deserialize,
     setup_tags, normalize_markup, remove_tags, register_foreground,
     FAMILIES, SIZE2SCALE, MIME, use_serialize_func)
@@ -37,7 +37,10 @@ class RichTextBox(TextBox):
         tag_widgets = self.tag_widgets[textview] = {}
 
         for icon in ['bold', 'italic', 'underline']:
-            button = gtk.ToggleToolButton('gtk-%s' % icon)
+            button = gtk.ToggleToolButton()
+            button.set_icon_widget(IconFactory.get_image(
+                    'tryton-format-%s' % icon,
+                    gtk.ICON_SIZE_SMALL_TOOLBAR))
             button.connect('toggled', self.toggle_props, icon, textview)
             toolbar.insert(button, -1)
             tag_widgets[icon] = button
@@ -65,16 +68,11 @@ class RichTextBox(TextBox):
         toolbar.insert(gtk.SeparatorToolItem(), -1)
 
         button = None
-        for icon in ['left', 'center', 'right', 'fill']:
-            name = icon
-            if icon == 'fill':
-                name = 'justify'
-            stock_id = 'gtk-justify-%s' % icon
-            if hasattr(gtk.RadioToolButton, 'new_with_stock_from_widget'):
-                button = gtk.RadioToolButton.new_with_stock_from_widget(
-                    button, stock_id)
-            else:
-                button = gtk.RadioToolButton(button, stock_id)
+        for name in ['left', 'center', 'right', 'justify']:
+            icon = 'tryton-format-align-%s' % name
+            button = gtk.RadioToolButton.new_from_widget(button)
+            button.set_icon_widget(IconFactory.get_image(
+                    icon, gtk.ICON_SIZE_SMALL_TOOLBAR))
             button.set_active(icon == 'left')
             button.connect(
                 'toggled', self.toggle_justification, name, textview)
@@ -87,7 +85,11 @@ class RichTextBox(TextBox):
                 ('foreground', _('Foreground')),
                 # TODO ('background', _('Background')),
                 ]:
-            button = gtk.ToolButton('tryton-text-%s' % icon)
+            button = gtk.ToolButton()
+            if icon == 'foreground':
+                button.set_icon_widget(IconFactory.get_image(
+                        'tryton-format-color-text',
+                        gtk.ICON_SIZE_SMALL_TOOLBAR))
             button.set_label(label)
             button.connect('clicked', self.toggle_color, icon, textview)
             toolbar.insert(button, -1)
@@ -135,7 +137,6 @@ class RichTextBox(TextBox):
     def modified(self):
         if self.record and self.field:
             value = normalize_markup(self.field.get_client(self.record) or '')
-            value = value.decode('utf-8')
             return value != self.get_value()
         return False
 
@@ -261,7 +262,7 @@ class RichTextBox(TextBox):
         start.backward_chars(length)
         end = iter_.copy()
         # Apply tags activated from toolbar
-        for name, widget in self.tag_widgets[textview].iteritems():
+        for name, widget in self.tag_widgets[textview].items():
             self._apply_tool(text_buffer, name, widget, start, end)
 
     def _apply_tool(self, text_buffer, name, tool, start, end):

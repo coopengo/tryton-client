@@ -5,13 +5,14 @@ import gobject
 import gettext
 import pango
 
-from tryton.common import COLORS
-import tryton.common as common
-from tryton.gui.window.nomodal import NoModal
-from tryton.common import TRYTON_ICON
-from tryton.common import RPCExecute, RPCException
 from tryton.common import FORMAT_ERROR
+import tryton.common as common
+from tryton.common import RPCExecute, RPCException
+from tryton.common import TRYTON_ICON
+from tryton.common.underline import set_underline
 from tryton.common.widget_style import widget_class
+from tryton.gui import Main
+from tryton.gui.window.nomodal import NoModal
 
 _ = gettext.gettext
 
@@ -64,6 +65,14 @@ class Widget(object):
         return self.widget
 
     def _invisible_widget(self):
+        return self.widget
+
+    @property
+    def _invalid_widget(self):
+        return self.widget
+
+    @property
+    def _required_widget(self):
         return self.widget
 
     @property
@@ -134,7 +143,7 @@ class Widget(object):
             get('states', {}))
         states = record.expr_eval(self.attrs.get('states', {})).copy()
         states.update(attrs)
-        for attr in states.keys():
+        for attr in list(states.keys()):
             if not states[attr]:
                 continue
             key = attr.split('_')
@@ -142,7 +151,7 @@ class Widget(object):
                 key = key[1:]
             if key[0] == 'label':
                 continue
-            if isinstance(states[attr], basestring):
+            if isinstance(states[attr], str):
                 key.append(states[attr])
             if key[0] in functions:
                 if len(key) != 2:
@@ -178,10 +187,10 @@ class Widget(object):
         widget_class(self.widget, 'readonly', readonly)
         self._required_set(not readonly and states.get('required', False))
         widget_class(
-            self.widget, 'required',
+            self._required_widget, 'required',
             not readonly and states.get('required', False))
         invalid = states.get('invalid', False)
-        widget_class(self.widget, 'invalid', not readonly and invalid)
+        widget_class(self._invalid_widget, 'invalid', not readonly and invalid)
         self.invisible_set(self.attrs.get(
                 'invisible', states.get('invisible', False)))
 
@@ -196,18 +205,25 @@ class TranslateDialog(NoModal):
         self.widget = widget
         self.win = gtk.Dialog(_('Translation'), self.parent,
             gtk.DIALOG_DESTROY_WITH_PARENT)
+        Main().add_window(self.win)
         self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.win.set_icon(TRYTON_ICON)
-        self.win.set_decorated(False)
         self.win.connect('response', self.response)
+        parent_allocation = self.parent.get_allocation()
+        self.win.set_default_size(-1, min(400, parent_allocation.height))
 
         self.accel_group = gtk.AccelGroup()
         self.win.add_accel_group(self.accel_group)
 
         cancel_button = self.win.add_button(
-            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+            set_underline(_("Cancel")), gtk.RESPONSE_CANCEL)
+        cancel_button.set_image(common.IconFactory.get_image(
+                    'tryton-cancel', gtk.ICON_SIZE_BUTTON))
         cancel_button.set_always_show_image(True)
-        ok_button = self.win.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+        ok_button = self.win.add_button(
+            set_underline(_("OK")), gtk.RESPONSE_OK)
+        ok_button.set_image(common.IconFactory.get_image(
+                'tryton-ok', gtk.ICON_SIZE_BUTTON))
         ok_button.set_always_show_image(True)
         ok_button.add_accelerator(
             'clicked', self.accel_group, gtk.keysyms.Return,
@@ -276,15 +292,10 @@ class TranslateDialog(NoModal):
         viewport.set_shadow_type(gtk.SHADOW_NONE)
         viewport.add(vbox)
         scrolledwindow = gtk.ScrolledWindow()
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        scrolledwindow.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         scrolledwindow.set_shadow_type(gtk.SHADOW_NONE)
         scrolledwindow.add(viewport)
         self.win.vbox.pack_start(scrolledwindow, True, True)
-
-        # JCA Specific: Lower by 5%
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.set_default_size(int(sensible_allocation.width * 0.95),
-            int(sensible_allocation.height * 0.95))
         self.win.show_all()
 
         self.register()
@@ -296,7 +307,7 @@ class TranslateDialog(NoModal):
 
     def response(self, win, response):
         if response == gtk.RESPONSE_OK:
-            for code, widget in self.widgets.iteritems():
+            for code, widget in self.widgets.items():
                 widget, editing, fuzzy = widget
                 if not editing.get_active():
                     continue
@@ -336,9 +347,8 @@ class TranslateMixin:
 
     def translate_button(self):
         button = gtk.Button()
-        img = gtk.Image()
-        img.set_from_stock('tryton-locale', gtk.ICON_SIZE_SMALL_TOOLBAR)
-        button.set_image(img)
+        button.set_image(common.IconFactory.get_image(
+                'tryton-translate', gtk.ICON_SIZE_SMALL_TOOLBAR))
         button.set_relief(gtk.RELIEF_NONE)
         button.connect('clicked', self.translate)
         return button

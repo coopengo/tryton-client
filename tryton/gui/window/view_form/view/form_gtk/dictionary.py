@@ -344,16 +344,17 @@ class DictWidget(Widget):
         self.table.set_border_width(0)
         vbox.pack_start(self.table, expand=True, fill=True)
 
+        no_command = attrs.get('no_command', 0.0)
         hbox = gtk.HBox()
         hbox.set_border_width(2)
         self.wid_text = gtk.Entry()
-        # JCA: Specific
-        if not attrs.get('no_command', 0.0):
+        # JCA: specific
+        if not no_command:
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.props.width_chars = 13
             self.wid_text.connect('activate', self._sig_activate)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
-
+            label.set_mnemonic_widget(self.wid_text)
             if int(self.attrs.get('completion', 1)):
                 self.wid_completion = get_completion(search=False,
                     create=False)
@@ -366,20 +367,17 @@ class DictWidget(Widget):
 
             self.but_add = gtk.Button()
             self.but_add.connect('clicked', self._sig_add)
-            img_add = gtk.Image()
-            img_add.set_from_stock(
-                'tryton-list-add', gtk.ICON_SIZE_SMALL_TOOLBAR)
-            img_add.set_alignment(0.5, 0.5)
-            self.but_add.add(img_add)
+            self.but_add.add(IconFactory.get_image(
+                    'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
             self.but_add.set_relief(gtk.RELIEF_NONE)
             hbox.pack_start(self.but_add, expand=False, fill=False)
-
             hbox.set_focus_chain([self.wid_text])
-            vbox.pack_start(hbox, expand=True, fill=True)
+        vbox.pack_start(hbox, expand=True, fill=True)
 
-            self.tooltips = Tooltips()
+        self.tooltips = Tooltips()
+        if not no_command:
             self.tooltips.set_tip(self.but_add, _('Add value'))
-            self.tooltips.enable()
+        self.tooltips.enable()
 
         self._readonly = False
         self._record_id = None
@@ -429,7 +427,7 @@ class DictWidget(Widget):
 
     def _sig_remove(self, button, key, modified=True):
         del self.fields[key]
-        if not self.attrs.get('no_command', 0.0):
+        if not self.attrs.get('no_command', 0.0) and self.buttons.get(key):
             del self.buttons[key]
         for widget in self.rows[key]:
             self.table.remove(widget)

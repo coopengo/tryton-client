@@ -542,13 +542,8 @@ class ScreenContainer(object):
             self.search_window.set_type_hint(
                 gtk.gdk.WINDOW_TYPE_HINT_POPUP_MENU)
             self.search_window.set_destroy_with_parent(True)
-            self.search_window.set_title('coog')
             self.search_window.set_decorated(False)
-            # set_deletable is False on tryton master repo
-            # But this is not working on each graphical environnement
-            # Further more, setting theses windows deletable does not seems
-            # to bring any trouble.
-            self.search_window.set_deletable(True)
+            self.search_window.set_deletable(False)
             self.search_window.connect('delete-event', window_hide)
             self.search_window.connect('key-press-event', key_press)
             self.search_window.connect('focus-out-event', window_hide)

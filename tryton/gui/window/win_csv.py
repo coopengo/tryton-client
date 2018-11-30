@@ -42,7 +42,6 @@ class WinCSV(NoModal):
         Main().add_window(self.dialog)
         self.dialog.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.dialog.set_icon(TRYTON_ICON)
-        self.dialog.set_decorated(False)
         self.dialog.connect('response', self.response)
 
         dialog_vbox = gtk.VBox()

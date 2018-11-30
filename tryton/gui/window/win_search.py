@@ -37,7 +37,6 @@ class WinSearch(NoModal):
             gtk.DIALOG_DESTROY_WITH_PARENT)
         Main().add_window(self.win)
         self.win.set_icon(TRYTON_ICON)
-        self.win.set_decorated(False)
         self.win.set_default_response(gtk.RESPONSE_APPLY)
         self.win.connect('response', self.response)
 

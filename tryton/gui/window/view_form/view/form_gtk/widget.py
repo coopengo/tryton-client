@@ -208,7 +208,6 @@ class TranslateDialog(NoModal):
         Main().add_window(self.win)
         self.win.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.win.set_icon(TRYTON_ICON)
-        self.win.set_decorated(False)
         self.win.connect('response', self.response)
         parent_allocation = self.parent.get_allocation()
         self.win.set_default_size(-1, min(400, parent_allocation.height))

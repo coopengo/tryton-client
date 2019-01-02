@@ -198,6 +198,9 @@ class Record(SignalEvent):
             group._context.update(self.group._context)
         else:
             fields = children_definitions[group.model_name].copy()
+            # Force every field of the multi-model to be eager-loaded
+            for field_def in fields.values():
+                field_def['loading'] = 'eager'
             group.load_fields(fields)
         return group
 

@@ -61,8 +61,15 @@ class DictEntry(object):
 class DictBooleanEntry(DictEntry):
 
     def create_widget(self):
+        '''
+        Issue is the fact that on_change is not called on boolean
+        Toggled is called programmaticaly (when setting value
+        and in TP when modifying the boolean via UI).
+        However we don't want to call on_change, that means we don't want to
+        call set_value when the value is set programmatically.
+        '''
         widget = gtk.CheckButton()
-        widget.connect('toggled', self.parent_widget.send_modified)
+        self._toggle_connector = widget.connect('toggled', self.key_pressed)
         widget.connect('focus-out-event', lambda w, e:
             self.parent_widget._focus_out())
         return widget
@@ -71,10 +78,17 @@ class DictBooleanEntry(DictEntry):
         return self.widget.props.active
 
     def set_value(self, value):
+        self.widget.handler_block(self._toggle_connector)
         self.widget.props.active = bool(value)
+        self.widget.handler_unblock(self._toggle_connector)
 
     def set_readonly(self, readonly):
         self.widget.set_sensitive(not readonly)
+
+    def key_pressed(self, *args):
+        self.parent_widget.send_modified(*args)
+        self.parent_widget.set_value(self.parent_widget.record,
+            self.parent_widget.field)
 
 
 class DictSelectionEntry(DictEntry):
@@ -443,11 +457,6 @@ class DictWidget(Widget):
     def get_value(self):
         return dict((key, widget.get_value())
             for key, widget in list(self.fields.items()))
-
-    def send_modified(self, *args):
-        super(DictWidget, self).send_modified(*args)
-        if args and isinstance(args[0], gtk.CheckButton):
-            self.set_value(self.record, self.field)
 
     @property
     def modified(self):

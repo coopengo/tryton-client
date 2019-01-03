@@ -62,7 +62,7 @@ class DictBooleanEntry(DictEntry):
 
     def create_widget(self):
         '''
-        Issue is the fact that on_change is not called on boolean
+        The issue is that on_change is not called when on focus_out for boolean
         Toggled is called programmaticaly (when setting value
         and in TP when modifying the boolean via UI).
         However we don't want to call on_change, that means we don't want to

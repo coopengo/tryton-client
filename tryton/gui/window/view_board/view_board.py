@@ -4,6 +4,9 @@ import gtk
 import gettext
 
 import xml.dom.minidom
+
+from decimal import Decimal
+
 from tryton.gui.window.view_form.view.form import Container
 from tryton.common import node_attributes, IconFactory
 from .action import Action
@@ -40,7 +43,9 @@ class ViewBoard(object):
             for i_field in ('yexpand', 'yfill', 'xexpand', 'xfill', 'colspan',
                     'position'):
                 if i_field in node_attrs:
-                    node_attrs[i_field] = int(node_attrs[i_field])
+                    # MAB: cast float string to Decimal before casting to int
+                    # since we can't cast such strings directly into int
+                    node_attrs[i_field] = int(Decimal(node_attrs[i_field]))
 
             parser = getattr(self, '_parse_%s' % node.tagName)
             parser(node, container, node_attrs)

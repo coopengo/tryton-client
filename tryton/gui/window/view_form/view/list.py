@@ -11,6 +11,7 @@ import logging
 import pango
 from functools import wraps
 from collections import defaultdict
+from decimal import Decimal
 
 from tryton.config import CONFIG
 from tryton.common.cellrendererbutton import CellRendererButton
@@ -350,7 +351,9 @@ class ViewTree(View):
                 node_attrs[b_field] = bool(int(node_attrs[b_field]))
         for i_field in ('width', 'height'):
             if i_field in node_attrs:
-                node_attrs[i_field] = int(node_attrs[i_field])
+                # MAB: cast float string to Decimal before casting to int
+                # since we can't cast such strings directly into int
+                node_attrs[i_field] = int(Decimal(node_attrs[i_field]))
         if 'widget' not in node_attrs:
             node_attrs['widget'] = field.attrs['type']
 

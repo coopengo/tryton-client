@@ -303,7 +303,8 @@ class SourceView(Widget):
         model, iter = treeselection.get_selected()
         if iter:
             func_text = '{translated}({fct_args})'.format(**model[iter][0])
-            selection.set(selection.get_target(), 8, func_text)
+            # MAB: encode function text as bytes instead of str
+            selection.set(selection.get_target(), 8, func_text.encode())
 
     def drag_data_received_data(self, sourceview, context, x, y, selection,
             info, etime):

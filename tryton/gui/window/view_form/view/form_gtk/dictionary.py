@@ -42,6 +42,8 @@ class DictEntry(object):
         widget.connect('key-press-event', self.parent_widget.send_modified)
         widget.connect('focus-out-event',
             lambda w, e: self.parent_widget._focus_out())
+        widget.props.activates_default = True
+        widget.connect('activate', self.parent_widget.sig_activate)
         return widget
 
     def modified(self, value):
@@ -61,15 +63,8 @@ class DictEntry(object):
 class DictBooleanEntry(DictEntry):
 
     def create_widget(self):
-        '''
-        The issue is that on_change is not called when on focus_out for boolean
-        Toggled is called programmaticaly (when setting value
-        and in TP when modifying the boolean via UI).
-        However we don't want to call on_change, that means we don't want to
-        call set_value when the value is set programmatically.
-        '''
         widget = gtk.CheckButton()
-        self._toggle_connector = widget.connect('toggled', self.key_pressed)
+        widget.connect('toggled', self.parent_widget.sig_activate)
         widget.connect('focus-out-event', lambda w, e:
             self.parent_widget._focus_out())
         return widget
@@ -78,17 +73,14 @@ class DictBooleanEntry(DictEntry):
         return self.widget.props.active
 
     def set_value(self, value):
-        self.widget.handler_block(self._toggle_connector)
-        self.widget.props.active = bool(value)
-        self.widget.handler_unblock(self._toggle_connector)
+        self.widget.handler_block_by_func(self.parent_widget.sig_activate)
+        try:
+            self.widget.props.active = bool(value)
+        finally:
+            self.widget.handler_unblock_by_func(self.parent_widget.sig_activate)
 
     def set_readonly(self, readonly):
         self.widget.set_sensitive(not readonly)
-
-    def key_pressed(self, *args):
-        self.parent_widget.send_modified(*args)
-        self.parent_widget.set_value(self.parent_widget.record,
-            self.parent_widget.field)
 
 
 class DictSelectionEntry(DictEntry):

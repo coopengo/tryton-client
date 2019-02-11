@@ -337,12 +337,15 @@ class ServerProxy(xmlrpclib.ServerProxy):
                 raise
             # try one more time
             self.__transport.close()
-            response = self.__transport.request(
-                self.__host,
-                self.__handler,
-                request,
-                verbose=self.__verbose
-                )
+            try:
+                response = self.__transport.request(
+                    self.__host,
+                    self.__handler,
+                    request,
+                    verbose=self.__verbose
+                    )
+            except xmlrpclib.ProtocolError, e:
+                raise Fault(str(e.errcode), e.errmsg)
         except xmlrpclib.ProtocolError, e:
             raise Fault(str(e.errcode), e.errmsg)
         except:

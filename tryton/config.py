@@ -59,7 +59,7 @@ class ConfigManager(object):
             'client.language_direction': 'ltr',
             'client.email': '',
             'client.limit': 1000,
-            'client.check_version': True,
+            'client.check_version': False,
             'client.bus_timeout': 10 * 60,
             'icon.color': '#3465a4',
             'image.max_size': 10 ** 6,

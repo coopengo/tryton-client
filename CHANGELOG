@@ -1,3 +1,6 @@
+* Display unread and total of notes
+* Support badge on icon
+* Use resources method
 * Reduce offset when no search result
 
 Version 5.0.3 - 2018-12-02

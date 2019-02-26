@@ -487,7 +487,7 @@ class Form(SignalEvent, TabContent):
 
     def _record_saved(self, screen, signal_data):
         self.activate_save()
-        self.update_attachment_count()
+        self.refresh_resources()
 
     def modified_save(self):
         self.screen.save_tree_state()
@@ -722,7 +722,7 @@ class Form(SignalEvent, TabContent):
         if not record or record.id < 0:
             return
         win_attach = Attachment(record,
-            lambda: self.update_attachment_count(reload=True))
+            lambda: self.refresh_resources(reload=True))
         if info == 0:
             if selection.get_uris():
                 for uri in selection.get_uris():

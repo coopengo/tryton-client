@@ -19,17 +19,20 @@ deps() {
     pacman -S \
         mingw-w64-i686-librsvg \
         mingw-w64-i686-nsis \
-        mingw-w64-i686-python2 \
-        mingw-w64-i686-python2-setuptools \
-        mingw-w64-i686-python2-pip \
+        mingw-w64-i686-python3 \
+        mingw-w64-i686-python3-setuptools \
+        mingw-w64-i686-python3-pip \
         mingw-w64-i686-gtk3 \
-        mingw-w64-i686-python2-gobject \
         mingw-w64-i686-python3-gobject \
         mingw-w64-gtksourceview3 \
         mingw-w64-i686-gtkglext \
-        mingw-w64-i686-python2-cx_Freeze
+        mingw-w64-i686-python3-cx_Freeze \
+        mingw-w64-i686-gobject-introspection \
+        mingw-w64-i686-goocanvas \
+        mingw-w64-i686-gtksourceview3
 
-    pip install \
+
+    pip3.6 install \
         python-dateutil \
         chardet \
         pyflakes
@@ -45,8 +48,8 @@ clean() {
 build() {
     clean
     local v; v=$(version)
-    python setup-freeze.py install_exe -d dist
-    makensis -DVERSION="$v" setup.nsi
+    python3.6 setup-freeze.py install_exe -d dist
+    makensis -DVERSION="$v" -DSERIES="$v" setup.nsi
     makensis -DVERSION="$v" setup-single.nsi
 }
 

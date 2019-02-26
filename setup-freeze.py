@@ -128,8 +128,7 @@ if os.path.exists(ssl_paths.openssl_capath):
         (ssl_paths.openssl_capath, os.path.join('etc', 'ssl', 'certs')))
 
 version = Popen(
-    'python setup.py --version', stdout=PIPE, shell=True, encoding='utf-8'
-    ).stdout.read()
+    'python setup.py --version', stdout=PIPE, shell=True).stdout.read()
 version = version.strip()
 
 setup(name='tryton',
@@ -140,7 +139,7 @@ setup(name='tryton',
             'include_files': include_files,
             'excludes': ['tkinter'],
             'silent': True,
-            'packages': ['gi''],
+            'packages': ['gi'],
             'includes': ['gi', "gi.overrides.Gtk"],
             'include_msvcr': True,
             'path': sys.path.append("girepository-1.0"),

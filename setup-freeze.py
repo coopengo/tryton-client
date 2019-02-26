@@ -123,7 +123,7 @@ for lib in required_libs:
     include_files.append((path, lib))
 
 version = Popen(
-    'python setup.py --version', stdout=PIPE, shell=True).stdout.read()
+    'python3.6 setup.py --version', stdout=PIPE, shell=True).stdout.read()
 version = version.strip()
 
 setup(name='tryton',

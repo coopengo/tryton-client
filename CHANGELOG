@@ -1,3 +1,7 @@
+* Display unread and total of notes
+* Support badge on icon
+* Use resources method
+* Reduce offset when no search result
 * BUG#10995: Catch error in case of timeout
 
 Version 4.6.5 - 2018-04-03

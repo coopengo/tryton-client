@@ -42,6 +42,7 @@ class Many2Many(Widget):
 
         tooltips = common.Tooltips()
 
+        # ABDC: Specific
         no_command = attrs.get('no_command', 0.0)
 
         self.wid_text = gtk.Entry()

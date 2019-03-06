@@ -42,42 +42,47 @@ class Many2Many(Widget):
 
         tooltips = common.Tooltips()
 
+        no_command = attrs.get('no_command', 0.0)
+
         self.wid_text = gtk.Entry()
-        self.wid_text.set_placeholder_text(_('Search'))
-        self.wid_text.set_property('width_chars', 13)
-        self.focus_out_id = self.wid_text.connect(
-            'focus-out-event', self._focus_out)
-        self.focus_out = True
-        hbox.pack_start(self.wid_text, expand=True, fill=True)
 
-        if int(self.attrs.get('completion', 1)):
-            self.wid_completion = get_completion(
-                create=self.attrs.get('create', True)
-                and common.MODELACCESS[self.attrs['relation']]['create'])
-            self.wid_completion.connect('match-selected',
-                self._completion_match_selected)
-            self.wid_completion.connect('action-activated',
-                self._completion_action_activated)
-            self.wid_text.set_completion(self.wid_completion)
-            self.wid_text.connect('changed', self._update_completion)
-        else:
-            self.wid_completion = None
+        # ABDC: specific
+        if not no_command:
+            self.wid_text.set_placeholder_text(_('Search'))
+            self.wid_text.set_property('width_chars', 13)
+            self.focus_out_id = self.wid_text.connect(
+                'focus-out-event', self._focus_out)
+            self.focus_out = True
+            hbox.pack_start(self.wid_text, expand=True, fill=True)
 
-        self.but_add = gtk.Button()
-        tooltips.set_tip(self.but_add, _('Add existing record'))
-        self.but_add.connect('clicked', self._sig_add)
-        self.but_add.add(common.IconFactory.get_image(
-                'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_add.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_add, expand=False, fill=False)
+            if int(self.attrs.get('completion', 1)):
+                self.wid_completion = get_completion(
+                    create=self.attrs.get('create', True)
+                    and common.MODELACCESS[self.attrs['relation']]['create'])
+                self.wid_completion.connect('match-selected',
+                    self._completion_match_selected)
+                self.wid_completion.connect('action-activated',
+                    self._completion_action_activated)
+                self.wid_text.set_completion(self.wid_completion)
+                self.wid_text.connect('changed', self._update_completion)
+            else:
+                self.wid_completion = None
 
-        self.but_remove = gtk.Button()
-        tooltips.set_tip(self.but_remove, _('Remove selected record <Del>'))
-        self.but_remove.connect('clicked', self._sig_remove)
-        self.but_remove.add(common.IconFactory.get_image(
-                'tryton-remove', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_remove.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_remove, expand=False, fill=False)
+            self.but_add = gtk.Button()
+            tooltips.set_tip(self.but_add, _('Add existing record'))
+            self.but_add.connect('clicked', self._sig_add)
+            self.but_add.add(common.IconFactory.get_image(
+                    'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_add.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_add, expand=False, fill=False)
+
+            self.but_remove = gtk.Button()
+            tooltips.set_tip(self.but_remove, _('Remove selected record <Del>'))
+            self.but_remove.connect('clicked', self._sig_remove)
+            self.but_remove.add(common.IconFactory.get_image(
+                    'tryton-remove', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_remove.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_remove, expand=False, fill=False)
 
         hbox.set_focus_chain([self.wid_text])
 
@@ -230,8 +235,10 @@ class Many2Many(Widget):
     def _readonly_set(self, value):
         self._readonly = value
         self._set_button_sensitive()
-        self.wid_text.set_sensitive(not value)
-        self.wid_text.set_editable(not value)
+        # ABDC: Specific
+        if not self.attrs.get('no_command', 0.0):
+            self.wid_text.set_sensitive(not value)
+            self.wid_text.set_editable(not value)
         self._set_label_state()
 
     def _required_set(self, value):
@@ -251,12 +258,13 @@ class Many2Many(Widget):
         else:
             size_limit = False
 
-        self.but_add.set_sensitive(bool(
-                not self._readonly
-                and not size_limit))
-        self.but_remove.set_sensitive(bool(
-                not self._readonly
-                and self._position))
+        if not self.attrs.get('no_command', 0.0):
+            self.but_add.set_sensitive(bool(
+                    not self._readonly
+                    and not size_limit))
+            self.but_remove.set_sensitive(bool(
+                    not self._readonly
+                    and self._position))
 
     def _sig_label(self, screen, signal_data):
         self._position = signal_data[0]

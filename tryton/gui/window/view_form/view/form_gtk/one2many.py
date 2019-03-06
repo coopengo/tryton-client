@@ -74,13 +74,18 @@ class One2Many(Widget):
 
         hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
+        # ABDC: Specific
+        no_command = attrs.get('no_command', 0.0)
+
         self.focus_out = True
         self.wid_completion = None
         if attrs.get('add_remove'):
 
             self.wid_text = gtk.Entry()
-            self.wid_text.set_placeholder_text(_('Search'))
-            self.wid_text.set_property('width_chars', 13)
+            # ABDC: Specific
+            if not no_command:
+                self.wid_text.set_placeholder_text(_('Search'))
+                self.wid_text.set_property('width_chars', 13)
             self.pid_focus = self.wid_text.connect('focus-out-event',
                 self._focus_out)
             hbox.pack_start(self.wid_text, expand=True, fill=True)
@@ -97,56 +102,60 @@ class One2Many(Widget):
                 self.wid_text.set_completion(self.wid_completion)
                 self.wid_text.connect('changed', self._update_completion)
 
-            self.but_add = gtk.Button()
-            tooltips.set_tip(self.but_add, _('Add existing record'))
-            self.but_add.connect('clicked', self._sig_add)
-            self.but_add.add(common.IconFactory.get_image(
-                    'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
-            self.but_add.set_relief(gtk.RELIEF_NONE)
-            hbox.pack_start(self.but_add, expand=False, fill=False)
+            # ABDC: Specific
+            if not no_command:
+                self.but_add = gtk.Button()
+                tooltips.set_tip(self.but_add, _('Add existing record'))
+                self.but_add.connect('clicked', self._sig_add)
+                self.but_add.add(common.IconFactory.get_image(
+                        'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
+                self.but_add.set_relief(gtk.RELIEF_NONE)
+                hbox.pack_start(self.but_add, expand=False, fill=False)
 
-            self.but_remove = gtk.Button()
-            tooltips.set_tip(self.but_remove,
-                _('Remove selected record'))
-            self.but_remove.connect('clicked', self._sig_remove, True)
-            self.but_remove.add(common.IconFactory.get_image(
-                    'tryton-remove', gtk.ICON_SIZE_SMALL_TOOLBAR))
-            self.but_remove.set_relief(gtk.RELIEF_NONE)
-            hbox.pack_start(self.but_remove, expand=False, fill=False)
+                self.but_remove = gtk.Button()
+                tooltips.set_tip(self.but_remove,
+                    _('Remove selected record'))
+                self.but_remove.connect('clicked', self._sig_remove, True)
+                self.but_remove.add(common.IconFactory.get_image(
+                        'tryton-remove', gtk.ICON_SIZE_SMALL_TOOLBAR))
+                self.but_remove.set_relief(gtk.RELIEF_NONE)
+                hbox.pack_start(self.but_remove, expand=False, fill=False)
 
             hbox.pack_start(gtk.VSeparator(), expand=False, fill=True)
 
-        self.but_new = gtk.Button()
-        tooltips.set_tip(self.but_new, _('Create a new record <F3>'))
-        self.but_new.connect('clicked', self._sig_new)
-        self.but_new.add(common.IconFactory.get_image(
-                'tryton-create', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_new.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_new, expand=False, fill=False)
+        # ABDC: Specific
+        if not no_command:
+            self.but_new = gtk.Button()
+            tooltips.set_tip(self.but_new, _('Create a new record <F3>'))
+            self.but_new.connect('clicked', self._sig_new)
+            self.but_new.add(common.IconFactory.get_image(
+                    'tryton-create', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_new.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_new, expand=False, fill=False)
 
-        self.but_open = gtk.Button()
-        tooltips.set_tip(self.but_open, _('Edit selected record <F2>'))
-        self.but_open.connect('clicked', self._sig_edit)
-        self.but_open.add(common.IconFactory.get_image(
-                'tryton-open', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_open.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_open, expand=False, fill=False)
+            self.but_open = gtk.Button()
+            tooltips.set_tip(self.but_open, _('Edit selected record <F2>'))
+            self.but_open.connect('clicked', self._sig_edit)
+            self.but_open.add(common.IconFactory.get_image(
+                    'tryton-open', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_open.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_open, expand=False, fill=False)
 
-        self.but_del = gtk.Button()
-        tooltips.set_tip(self.but_del, _('Delete selected record <Del>'))
-        self.but_del.connect('clicked', self._sig_remove, False)
-        self.but_del.add(common.IconFactory.get_image(
-                'tryton-delete', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_del.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_del, expand=False, fill=False)
+            self.but_del = gtk.Button()
+            tooltips.set_tip(self.but_del, _('Delete selected record <Del>'))
+            self.but_del.connect('clicked', self._sig_remove, False)
+            self.but_del.add(common.IconFactory.get_image(
+                    'tryton-delete', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_del.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_del, expand=False, fill=False)
 
-        self.but_undel = gtk.Button()
-        tooltips.set_tip(self.but_undel, _('Undelete selected record <Ins>'))
-        self.but_undel.connect('clicked', self._sig_undelete)
-        self.but_undel.add(common.IconFactory.get_image(
-                'tryton-undo', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        self.but_undel.set_relief(gtk.RELIEF_NONE)
-        hbox.pack_start(self.but_undel, expand=False, fill=False)
+            self.but_undel = gtk.Button()
+            tooltips.set_tip(self.but_undel, _('Undelete selected record <Ins>'))
+            self.but_undel.connect('clicked', self._sig_undelete)
+            self.but_undel.add(common.IconFactory.get_image(
+                    'tryton-undo', gtk.ICON_SIZE_SMALL_TOOLBAR))
+            self.but_undel.set_relief(gtk.RELIEF_NONE)
+            hbox.pack_start(self.but_undel, expand=False, fill=False)
 
         if attrs.get('add_remove'):
             hbox.set_focus_chain([self.wid_text])
@@ -277,54 +286,57 @@ class One2Many(Widget):
         has_form = ('form' in (x.view_type for x in self.screen.views)
             or 'form' in self.screen.view_to_load)
 
-        self.but_new.set_sensitive(bool(
-                not self._readonly
-                and self.attrs.get('create', True)
-                and not size_limit
-                and access['create']
-                and (has_form or self.screen.current_view.editable)))
-        self.but_del.set_sensitive(bool(
-                not self._readonly
-                and self.attrs.get('delete', True)
-                and self._position
-                and access['delete']))
-        self.but_undel.set_sensitive(bool(
-                not self._readonly
-                and not size_limit
-                and self._position))
-        self.but_open.set_sensitive(bool(
-                self._position
-                and access['read']
-                and has_form))
-        self.but_next.set_sensitive(bool(
-                self._position
-                and self._position < self._length))
-        self.but_pre.set_sensitive(bool(
-                self._position
-                and self._position > 1))
-        if self.attrs.get('add_remove'):
-            self.but_add.set_sensitive(bool(
+        # ABDC: Specific
+        if not self.attrs.get('no_command', 0.0):
+            self.but_new.set_sensitive(bool(
+                    not self._readonly
+                    and self.attrs.get('create', True)
+                    and not size_limit
+                    and access['create']
+                    and (has_form or self.screen.current_view.editable)))
+            self.but_del.set_sensitive(bool(
+                    not self._readonly
+                    and self.attrs.get('delete', True)
+                    and self._position
+                    and access['delete']))
+            self.but_undel.set_sensitive(bool(
                     not self._readonly
                     and not size_limit
-                    and access['write']
-                    and access['read']))
-            self.but_remove.set_sensitive(bool(
-                    not self._readonly
-                    and self._position
-                    and access['write']
-                    and access['read']))
-            self.wid_text.set_sensitive(self.but_add.get_sensitive())
-            self.wid_text.set_editable(self.but_add.get_sensitive())
+                    and self._position))
+            self.but_open.set_sensitive(bool(
+                    self._position
+                    and access['read']
+                    and has_form))
+            self.but_next.set_sensitive(bool(
+                    self._position
+                    and self._position < self._length))
+            self.but_pre.set_sensitive(bool(
+                    self._position
+                    and self._position > 1))
+            if self.attrs.get('add_remove'):
+                self.but_add.set_sensitive(bool(
+                        not self._readonly
+                        and not size_limit
+                        and access['write']
+                        and access['read']))
+                self.but_remove.set_sensitive(bool(
+                        not self._readonly
+                        and self._position
+                        and access['write']
+                        and access['read']))
+                self.wid_text.set_sensitive(self.but_add.get_sensitive())
+                self.wid_text.set_editable(self.but_add.get_sensitive())
 
         # New button must be added to focus chain to allow keyboard only
         # creation when there is no existing record on form view.
         focus_chain = self.title_box.get_focus_chain() or []
-        if o2m_size == 0 and self.screen.current_view.view_type == 'form':
-            if self.but_new not in focus_chain:
-                focus_chain.append(self.but_new)
-        else:
-            if self.but_new in focus_chain:
-                focus_chain.remove(self.but_new)
+        if not self.attrs.get('no_command', 0.0):
+            if o2m_size == 0 and self.screen.current_view.view_type == 'form':
+                if self.but_new not in focus_chain:
+                    focus_chain.append(self.but_new)
+            else:
+                if self.but_new in focus_chain:
+                    focus_chain.remove(self.but_new)
         self.title_box.set_focus_chain(focus_chain)
 
     def _validate(self):

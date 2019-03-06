@@ -47,27 +47,29 @@ class Many2Many(Widget):
 
         self.wid_text = gtk.Entry()
 
+        self.focus_out_id = self.wid_text.connect(
+            'focus-out-event', self._focus_out)
+
+        if int(self.attrs.get('completion', 1)):
+            self.wid_completion = get_completion(
+                create=self.attrs.get('create', True)
+                and common.MODELACCESS[self.attrs['relation']]['create'])
+            self.wid_completion.connect('match-selected',
+                self._completion_match_selected)
+            self.wid_completion.connect('action-activated',
+                self._completion_action_activated)
+            self.wid_text.set_completion(self.wid_completion)
+            self.wid_text.connect('changed', self._update_completion)
+        else:
+            self.wid_completion = None
+
         # ABDC: specific
         if not no_command:
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
-            self.focus_out_id = self.wid_text.connect(
-                'focus-out-event', self._focus_out)
             self.focus_out = True
             hbox.pack_start(self.wid_text, expand=True, fill=True)
 
-            if int(self.attrs.get('completion', 1)):
-                self.wid_completion = get_completion(
-                    create=self.attrs.get('create', True)
-                    and common.MODELACCESS[self.attrs['relation']]['create'])
-                self.wid_completion.connect('match-selected',
-                    self._completion_match_selected)
-                self.wid_completion.connect('action-activated',
-                    self._completion_action_activated)
-                self.wid_text.set_completion(self.wid_completion)
-                self.wid_text.connect('changed', self._update_completion)
-            else:
-                self.wid_completion = None
 
             self.but_add = gtk.Button()
             tooltips.set_tip(self.but_add, _('Add existing record'))

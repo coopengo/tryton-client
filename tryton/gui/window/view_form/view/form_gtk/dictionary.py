@@ -77,7 +77,8 @@ class DictBooleanEntry(DictEntry):
         try:
             self.widget.props.active = bool(value)
         finally:
-            self.widget.handler_unblock_by_func(self.parent_widget.sig_activate)
+            self.widget.handler_unblock_by_func(
+                self.parent_widget.sig_activate)
 
     def set_readonly(self, readonly):
         self.widget.set_sensitive(not readonly)
@@ -492,10 +493,7 @@ class DictWidget(Widget):
         alignment.add(hbox)
         n_rows = self.table.props.n_rows
         self.table.resize(n_rows + 1, 3)
-        if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
-            text = _(':') + key_schema['string']
-        else:
-            text = key_schema['string'] + _(':')
+        text = key_schema['string'] + _(':')
         label = gtk.Label(set_underline(text))
         label.set_use_underline(True)
         label.set_alignment(1., .5)

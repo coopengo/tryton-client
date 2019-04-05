@@ -183,6 +183,7 @@ class Affix(Cell):
 
 class GenericText(Cell):
     align = 0
+    editable = None
 
     def __init__(self, view, attrs, renderer=None):
         super(GenericText, self).__init__()
@@ -334,6 +335,10 @@ class GenericText(Cell):
             callback()
 
     def editing_started(self, cell, editable, path):
+        def remove(editable):
+            self.editable = None
+        self.editable = editable
+        editable.connect('remove-widget', remove)
         return False
 
     def _get_record_field(self, path):
@@ -1020,8 +1025,6 @@ class Button(object):
     def setter(self, column, cell, store, iter):
         record = store.get_value(iter, 0)
         states = record.expr_eval(self.attrs.get('states', {}))
-        if record.group.readonly or record.readonly:
-            states['readonly'] = True
         invisible = states.get('invisible', False)
         cell.set_property('visible', not invisible)
         readonly = states.get('readonly', False)

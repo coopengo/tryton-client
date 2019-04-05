@@ -46,7 +46,6 @@ try:
 except ImportError:
     ssl = None
 from threading import Lock
-import dateutil.tz
 
 from gi.repository import Gtk
 
@@ -816,7 +815,6 @@ error = ErrorDialog()
 
 
 def send_bugtracker(title, msg):
-    from tryton import rpc
     parent = get_toplevel_window()
     win = gtk.Dialog(_('Bug Tracker'), parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
@@ -856,11 +854,7 @@ def send_bugtracker(title, msg):
 
     win.vbox.pack_start(hbox)
     win.show_all()
-    if rpc._USERNAME:
-        entry_user.set_text(rpc._USERNAME)
-        entry_password.grab_focus()
-    else:
-        entry_user.grab_focus()
+    entry_user.grab_focus()
 
     response = win.run()
     parent.present()
@@ -1046,7 +1040,7 @@ def process_exception(exception, *args, **kwargs):
                     return rpc_execute(*args)
             else:
                 message(_('Concurrency Exception'), msg_type=gtk.MESSAGE_ERROR)
-        elif exception.faultCode == str(HTTPStatus.UNAUTHORIZED.value):
+        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
             from tryton.gui.main import Main
             if PLOCK.acquire(False):
                 try:
@@ -1073,7 +1067,7 @@ class Login(object):
             try:
                 func(parameters)
             except TrytonServerError as exception:
-                if exception.faultCode == str(HTTPStatus.UNAUTHORIZED.value):
+                if exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
                     parameters.clear()
                     continue
                 if exception.faultCode != 'LoginException':
@@ -1328,16 +1322,17 @@ def filter_domain(domain):
 
 
 def timezoned_date(date, reverse=False):
-    lzone = dateutil.tz.tzlocal()
-    szone = dateutil.tz.tzutc()
+    try:
+        from dateutil.tz.win import tzwinlocal as tzlocal
+    except ImportError:
+        from dateutil.tz import tzlocal
+    from dateutil.tz import tzutc
+
+    lzone = tzlocal()
+    szone = tzutc()
     if reverse:
         lzone, szone = szone, lzone
-    try:
-        return (date.replace(tzinfo=szone).astimezone(lzone)
-            .replace(tzinfo=None))
-    except (ValueError, OSError):
-        # https://github.com/dateutil/dateutil/issues/434
-        return date.replace(tzinfo=None)
+    return date.replace(tzinfo=szone).astimezone(lzone).replace(tzinfo=None)
 
 
 def untimezoned_date(date):

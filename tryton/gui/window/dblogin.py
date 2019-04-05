@@ -195,6 +195,7 @@ class DBListEditor(object):
         column = self.profile_tree.get_column(0)
         self.profile_tree.set_cursor(len(model) - 1, column,
             start_editing=True)
+        self.db_cache = None
 
     def profile_delete(self, button):
         self.clear_entries()
@@ -237,14 +238,18 @@ class DBListEditor(object):
     def edit_profilename(self, editable, event, renderer, path):
         newtext = editable.get_text()
         model = self.profile_tree.get_model()
-        oldname = model[path][0]
+        try:
+            oldname = model[path][0]
+        except IndexError:
+            return
         if oldname == newtext == '':
             del model[path]
             return
         elif oldname == newtext or newtext == '':
             return
-        if newtext in self.profiles.sections():
-            del model[path]
+        elif newtext in self.profiles.sections():
+            if not oldname:
+                del model[path]
             return
         elif oldname in self.profiles.sections():
             self.profiles.add_section(newtext)
@@ -562,6 +567,7 @@ class DBLogin(object):
         host = common.get_hostname(netloc)
         port = common.get_port(netloc)
         database = self.entry_database.get_text().strip()
+        login = self.entry_login.get_text()
         for idx, profile_info in enumerate(self.profile_store):
             if not profile_info[1]:
                 continue
@@ -569,11 +575,13 @@ class DBLogin(object):
             try:
                 profile_host = self.profiles.get(profile, 'host')
                 profile_db = self.profiles.get(profile, 'database')
+                profile_login = self.profiles.get(profile, 'username')
             except configparser.NoOptionError:
                 continue
             if (host == common.get_hostname(profile_host)
                     and port == common.get_port(profile_host)
-                    and database == profile_db):
+                    and database == profile_db
+                    and (not login or login == profile_login)):
                 break
         else:
             idx = -1

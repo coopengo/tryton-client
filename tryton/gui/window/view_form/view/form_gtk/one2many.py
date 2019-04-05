@@ -277,6 +277,11 @@ class One2Many(Widget):
         has_form = ('form' in (x.view_type for x in self.screen.views)
             or 'form' in self.screen.view_to_load)
 
+        first = last = False
+        if isinstance(self._position, int):
+            first = self._position <= 1
+            last = self._position >= self._length
+
         self.but_new.set_sensitive(bool(
                 not self._readonly
                 and self.attrs.get('create', True)
@@ -298,10 +303,10 @@ class One2Many(Widget):
                 and has_form))
         self.but_next.set_sensitive(bool(
                 self._position
-                and self._position < self._length))
+                and not last))
         self.but_pre.set_sensitive(bool(
                 self._position
-                and self._position > 1))
+                and not first))
         if self.attrs.get('add_remove'):
             self.but_add.set_sensitive(bool(
                     not self._readonly
@@ -510,7 +515,7 @@ class One2Many(Widget):
     def _sig_label(self, screen, signal_data):
         self._position = signal_data[0]
         self._length = signal_data[1]
-        if self._position >= 1:
+        if self._position:
             name = str(self._position)
         else:
             name = '_'

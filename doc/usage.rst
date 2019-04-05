@@ -436,11 +436,6 @@ increases if lower case or decreases if upper case:
     - `i`: by one minute
     - `s`: by one second
 
-.. warn::
-    Under Windows, the datetime before 1970 are shown in UTC instead of the
-    local timezone.
-..
-
 Search Widget
 ^^^^^^^^^^^^^
 
@@ -590,7 +585,7 @@ Here are the list of custom selectors:
 
 For more information about style option see `GTK+ CSS`_
 
-.. GTK+ CSS:: https://developer.gnome.org/gtk3/stable/chap-css-overview.html
+.. _GTK+ CSS: https://developer.gnome.org/gtk3/stable/chap-css-overview.html
 
 Appendix
 ********

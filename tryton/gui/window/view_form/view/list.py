@@ -151,7 +151,8 @@ class AdaptModelGroup(gtk.GenericTreeModel):
     def sort(self, ids):
         old_idx = {record.id: i for i, record in enumerate(self.group)}
         new_idx = {id_: i for i, id_ in enumerate(ids)}
-        self.group.sort(key=lambda r: new_idx.get(r.id))
+        size = len(self.group)
+        self.group.sort(key=lambda r: new_idx.get(r.id, size))
         new_order = []
         prev = None
         for record in self.group:
@@ -367,7 +368,7 @@ class ViewTree(View):
         widget = Widget(self, node_attrs)
         self.widgets[name].append(widget)
 
-        column = gtk.TreeViewColumn(field.attrs['string'])
+        column = gtk.TreeViewColumn(node_attrs['string'])
         column._type = 'field'
         column.name = name
 
@@ -586,12 +587,10 @@ class ViewTree(View):
     def add_sum(self, attributes):
         if 'sum' not in attributes:
             return
+        # Coog Specific : highlight_sum : cf #8374
         highlight_sum_ = attributes.get('highlight_sum', '0')
 
-        if gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL:
-            text = _(':') + attributes['sum']
-        else:
-            text = attributes['sum'] + _(':')
+        text = attributes['sum'] + _(':')
         label, sum_ = gtk.Label(text), gtk.Label()
 
         hbox = gtk.HBox()
@@ -836,6 +835,7 @@ class ViewTree(View):
             selection_data = selection.get_data()
         if not selection_data:
             return
+        selection_data = selection_data.decode('utf-8')
 
         # Don't received if the treeview was editing because it breaks the
         # internal state of the cursor.

@@ -24,7 +24,7 @@ deps() {
         mingw-w64-i686-python3-pip \
         mingw-w64-i686-gtk3 \
         mingw-w64-i686-python3-gobject \
-        mingw-w64-gtksourceview3 \
+        mingw-w64-i686-gtksourceview3 \
         mingw-w64-i686-gtkglext \
         mingw-w64-i686-python3-cx_Freeze \
         mingw-w64-i686-gobject-introspection \

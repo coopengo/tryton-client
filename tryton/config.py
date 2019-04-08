@@ -61,7 +61,7 @@ class ConfigManager(object):
             'client.limit': 1000,
             'client.check_version': False,
             'client.bus_timeout': 10 * 60,
-            'icon.colors': '#3465a4,#57a639,#cc0000',
+            'icon.colors': '#0094d2,#57a639,#cc0000',
             'image.max_size': 10 ** 6,
             'roundup.url': 'http://bugs.tryton.org/',
             'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',

@@ -2254,6 +2254,7 @@ tooltip.csd decoration,
 }
 */
 
+/* JMO : set a border so that we can resize the main window */
 decoration {
     margin: 10px;
     border-radius: 6px 6px 6px 6px;

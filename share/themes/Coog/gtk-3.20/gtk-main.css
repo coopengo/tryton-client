@@ -35,7 +35,7 @@
 
 @define-color focus_color @selected_fg_color;
 @define-color focus_bg_color @shape_color;
-@define-color hover_color alpha @selected_fg_color;
+@define-color hover_color @selected_fg_color;
 @define-color hover_bg_color shade (@shape_color, 1.5);
 
 @define-color scale_highlight_bg #0094d2;

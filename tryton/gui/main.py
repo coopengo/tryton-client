@@ -1072,7 +1072,7 @@ class Main(Gtk.Application):
 
     def show_notification(self, title, msg, priority=1):
         notification = Gio.Notification.new(title)
-        notification.set_body(msg)
+        notification.set_body('\n'.join(msg))
         notification.set_priority(_PRIORITIES[priority])
         if sys.platform != 'win32' or GLib.glib_version >= (2, 57, 0):
             self.send_notification(None, notification)

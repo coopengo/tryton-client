@@ -113,7 +113,7 @@ button.destructive-action:backdrop {
     background-image: none;
 }
 
-button.not(flat):focus {
+button:not(flat):focus {
     color: @focus_color;
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@focus_bg_color, 1.2)),
@@ -131,7 +131,7 @@ button:hover {
                                      to (shade (@hover_bg_color, 0.8)));
 }
 
-button.not(falt):hover:focus {
+button:not(flat):hover:focus {
     color: @focus_color;
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@focus_bg_color, 1.2)),
@@ -440,7 +440,7 @@ treeview.view header button:last-child {
 }
 
 :not(iconview).view.cell:disabled,
-:not(iconview).view.cell:readonly,
+:not(iconview).view.cell.readonly,
 .content-view.view:disabled {
     background-color: @bg_color;
 }
@@ -919,7 +919,7 @@ menubar menuitem:hover,
  ************/
 menuitem {
     padding: 0px;
-    background: bg_color;
+    background: @bg_color;
     border-radius: 0;
     padding: 3px 5px 3px 5px;
 
@@ -2258,6 +2258,14 @@ tooltip.csd decoration,
     box-shadow: none;
 }
 */
+
+/* JMO : set a border so that we can resize the main window */
+decoration {
+    margin: 10px;
+    border-radius: 6px 6px 6px 6px;
+    box-shadow: 1px 3px 6px @inactive_shadow_color;
+}
+
 popover {
 /* FIXME: we can't reuse the default shadow definition as increasing marging
  *        would break the tip

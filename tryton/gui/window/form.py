@@ -545,7 +545,7 @@ class Form(SignalEvent, TabContent):
             'action': 'tryton-launch',
             'relate': 'tryton-link',
             'email': 'tryton-email',
-            'open': 'tryton-open',
+            'open': 'tryton-print-open',
         }
         for action_type, special_action, action_name, tooltip in (
                 ('action', 'action', _('Action'), _('Launch action')),

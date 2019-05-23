@@ -63,7 +63,7 @@ class ConfigManager(object):
             'client.bus_timeout': 10 * 60,
             'icon.colors': '#0094d2,#57a639,#cc0000',
             'image.max_size': 10 ** 6,
-            'bug.url': 'https://bugs.tryton.org/',
+            'bug.url': 'https://support.coopengo.com/',
             'download.url': 'https://downloads.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,

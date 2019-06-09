@@ -1,3 +1,5 @@
+* Fix crash when opening the translation tools: old code removed (merge error)
+
 Version 1.8
 
 Version 1.6

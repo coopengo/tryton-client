@@ -331,12 +331,7 @@ class TranslateDialog(NoModal):
         NoModal.destroy(self)
 
     def show(self):
-        sensible_allocation = self.sensible_widget.get_allocation()
-        self.win.resize(
-            sensible_allocation.width, sensible_allocation.height)
         self.win.show()
-        gobject.idle_add(
-            common.center_window, self.win, self.parent, self.sensible_widget)
 
     def hide(self):
         self.win.hide()

@@ -434,7 +434,8 @@ treeview.view header button:last-child {
 .view:active,
 .content-view.view:selected,
 .content-view.view:active {
-    background-color: shade (@selected_bg_color, 1.2);
+    background-color: @selected_bg_color;
+    color: @hover_fg_color;
 }
 
 :not(iconview).view.cell:disabled,

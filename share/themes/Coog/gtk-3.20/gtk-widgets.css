@@ -1768,11 +1768,10 @@ button separator:disabled {
     border-right-color: alpha (shade (@bg_color, 1.26), 0.3);
 }
 
+
+menuitem.separator,
 menu separator {
-    margin-left: 5px;
-    margin-right: 5px;
-    border-width: 1px;
-    color: @dark_bg_color;
+    background-color: @dark_borders;
 }
 
 menuitem.separator,

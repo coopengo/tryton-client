@@ -1086,8 +1086,8 @@ notebook header.bottom { border-top-width: 1px; }
 
 notebook header tab {
     background-image: linear-gradient(to bottom,
-                                      shade(@selected_bg_color, 1.075),
-                                      shade(@selected_bg_color, 1));
+                                      shade(@selected_bg_color, 1.9),
+                                      shade(@selected_bg_color, 1.91));
     border-color:@shape_color;
     border-style: solid;
     color:inherit;

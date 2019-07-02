@@ -218,7 +218,8 @@ class GenericText(Cell):
             cell.set_sensitive(not (record.deleted or record.removed))
             if isinstance(cell,
                     (CellRendererText, CellRendererDate, CellRendererCombo)):
-                cell.set_property('strikethrough', record.deleted)
+                cell.set_property('strikethrough',
+                    record.deleted or record.removed)
             cell.set_property('text', text)
             fg_color = self.get_color(record)
             cell.set_property('foreground', fg_color)

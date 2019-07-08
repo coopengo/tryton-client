@@ -7,6 +7,7 @@ from .integer import Integer
 
 class Float(Integer):
     "Float"
+    default_width_chars = 18
 
     def __init__(self, view, attrs):
         super(Float, self).__init__(view, attrs)
@@ -19,7 +20,7 @@ class Float(Integer):
             if digits:
                 self.entry.set_width_chars(sum(digits))
             else:
-                self.entry.set_width_chars(18)
+                self.entry.set_width_chars(self.default_width_chars)
 
     def key_press_event(self, widget, event):
         for name in ('KP_Decimal', 'KP_Separator'):

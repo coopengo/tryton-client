@@ -6,10 +6,10 @@ import locale
 
 class Integer(Char):
     "Integer"
+    default_width_chars = 8
 
     def __init__(self, view, attrs):
         super(Integer, self).__init__(view, attrs)
-        self.entry.set_width_chars(8)
         _, _, padding, pack_type = self.widget.query_child_packing(
             self.entry)
         self.widget.set_child_packing(self.entry, False, False,

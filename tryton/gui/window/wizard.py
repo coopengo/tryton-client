@@ -406,7 +406,23 @@ class WizardDialog(Wizard, NoModal):
         return True
 
     def show(self):
-        self.dia.set_default_size(200, -1)
+        view = self.screen.current_view
+        if view.view_type == 'form':
+            expand = False
+            for name in view.get_fields():
+                for widget in view.widgets[name]:
+                    if widget.expand:
+                        expand = True
+                        break
+                if expand:
+                    break
+        else:
+            expand = True
+        if expand:
+            width, height = self.default_size()
+        else:
+            width, height = -1, -1
+        self.dia.set_default_size(max(200, width), height)
         self.dia.show()
 
     def hide(self):

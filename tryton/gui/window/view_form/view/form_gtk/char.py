@@ -56,7 +56,7 @@ class Char(Widget, TranslateMixin, PopdownMixin):
         entry.set_property('activates_default', True)
         if self.record:
             field_size = self.record.expr_eval(self.attrs.get('size'))
-            entry.set_width_chars(field_size or -1)
+            entry.set_width_chars(field_size or self.default_width_chars)
             entry.set_max_length(field_size or 0)
         return entry
 
@@ -126,10 +126,10 @@ class Char(Widget, TranslateMixin, PopdownMixin):
             size_entry = self.entry
         if record:
             field_size = record.expr_eval(self.attrs.get('size'))
-            size_entry.set_width_chars(field_size or -1)
+            size_entry.set_width_chars(field_size or self.default_width_chars)
             size_entry.set_max_length(field_size or 0)
         else:
-            size_entry.set_width_chars(-1)
+            size_entry.set_width_chars(self.default_width_chars)
             size_entry.set_max_length(0)
 
         value = self.get_client_value(record, field)

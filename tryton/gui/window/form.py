@@ -635,7 +635,7 @@ class Form(SignalEvent, TabContent):
 
         quick_actions = toolbars.get('quick_actions', [])
         if quick_actions:
-            gtktoolbar.insert(gtk.SeparatorToolItem(), -1)
+            gtktoolbar.insert(Gtk.SeparatorToolItem(), -1)
         for quick_action in quick_actions:
             icon = quick_action.get('icon.rec_name')
             if not icon:
@@ -643,10 +643,10 @@ class Form(SignalEvent, TabContent):
 
             # Fix for #8825
             common.IconFactory.register_icon(icon)
-            qbutton = gtk.ToolButton()
+            qbutton = Gtk.ToolButton()
             qbutton.set_icon_widget(
                 common.IconFactory.get_image(
-                    icon, gtk.ICON_SIZE_LARGE_TOOLBAR))
+                    icon, Gtk.IconSize.LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
                 lambda b: self._action(quick_action, 'quick_actions'))

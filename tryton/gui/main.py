@@ -405,7 +405,7 @@ class Main(Gtk.Application):
             # them later if needed
             if self._global_run:
                 if self._global_check_timeout_id:
-                    Glib.source_remove(self._global_check_timeout_id)
+                    GLib.source_remove(self._global_check_timeout_id)
                 self._global_check_timeout_id = GLib.timeout_add(500,
                     check_timeout, widget, search_text)
                 return True

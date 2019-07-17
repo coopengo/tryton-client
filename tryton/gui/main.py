@@ -392,6 +392,25 @@ class Main(Gtk.Application):
                 context=self.menu_screen.context, callback=set_result)
             return False
 
+        def check_timeout(widget, search_text):
+            # This method tries to avoid multiple global_search queries running
+            # concurrently on the server by waiting that one is complete before
+            # sending another. If a query is made while another is already
+            # waiting, it replaces it. Ideally there should be locks on _global
+            # attributes updates, but it does not seem mandatory so we will add
+            # them later if needed
+            if self._global_run:
+                if self._global_check_timeout_id:
+                    GLib.source_remove(self._global_check_timeout_id)
+                self._global_check_timeout_id = GLib.timeout_add(500,
+                    check_timeout, widget, search_text)
+                return True
+            else:
+                self._global_update_timeout_id = GLib.timeout_add(500,
+                    update, widget, search_text)
+                self._global_check_timeout_id = None
+                return False
+
         def changed(widget):
             search_text = widget.get_text()
             GLib.timeout_add(300, update, widget, search_text)

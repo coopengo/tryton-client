@@ -783,12 +783,18 @@ class Form(TabContent):
 
         quick_actions = toolbars.get('quick_actions', [])
         if quick_actions:
-            gtktoolbar.insert(gtk.SeparatorToolItem(), -1)
+            gtktoolbar.insert(Gtk.SeparatorToolItem(), -1)
         for quick_action in quick_actions:
             icon = quick_action.get('icon.rec_name')
             if not icon:
                 icon = 'tryton-executable'
-            qbutton = gtk.ToolButton(icon)
+
+            # Fix for #8825
+            common.IconFactory.register_icon(icon)
+            qbutton = Gtk.ToolButton()
+            qbutton.set_icon_widget(
+                common.IconFactory.get_image(
+                    icon, Gtk.IconSize.LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
                 lambda b: self._action(quick_action, 'quick_actions'))

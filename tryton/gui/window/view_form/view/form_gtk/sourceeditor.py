@@ -151,9 +151,9 @@ class SourceView(Widget):
         error_selection = error_list.get_selection()
         error_selection.connect_after('changed', self.focus_line)
 
-        vbox.pack_start(toolbar, expand=False, fill=True)
-        vbox.pack_start(sc_editor, expand=True, fill=True)
-        vbox.pack_start(sc_error, expand=True, fill=True)
+        vbox.pack_start(toolbar, expand=False, fill=True, padding=0)
+        vbox.pack_start(sc_editor, expand=True, fill=True, padding=0)
+        vbox.pack_start(sc_error, expand=True, fill=True, padding=0)
         vbox.show_all()
 
         self.tree_data_field = attrs.get('context_tree')
@@ -172,9 +172,9 @@ class SourceView(Widget):
             self.treeview.connect('query-tooltip', self.tree_display_tooltip)
             tree_cell = Gtk.CellRendererText()
             tree_col = Gtk.TreeViewColumn('Objects')
-            tree_col.pack_start(tree_cell)
+            tree_col.pack_start(tree_cell, True)
 
-            def cell_setter(column, cell, store, iter):
+            def cell_setter(column, cell, store, iter, data):
                 if not self.treeview.get_realized():
                     return
                 record = store.get_value(iter, 0)
@@ -233,12 +233,12 @@ class SourceView(Widget):
         iter_end = self.sourcebuffer.get_end_iter()
         return self.sourcebuffer.get_text(iter_start, iter_end, False)
 
-    def set_value(self, record, field):
-        field.set_client(record, self.get_value())
+    def set_value(self):
+        self.field.set_client(self.record, self.get_value())
 
-    def display(self, record, field):
-        super(SourceView, self).display(record, field)
-        value = field and field.get_client(record)
+    def display(self):
+        super(SourceView, self).display()
+        value = self.field and self.field.get_client(self.record)
         if not value:
             value = ''
 
@@ -251,10 +251,10 @@ class SourceView(Widget):
             self.error_store.clear()
 
         if self.tree_data_field:
-            if not record:
+            if not self.record:
                 return
-            tree_field = record[self.tree_data_field]
-            json_data = tree_field.get(record)
+            tree_field = self.record[self.tree_data_field]
+            json_data = tree_field.get(self.record)
             if json_data:
                 tree_data = json.loads(json_data)
                 if self.tree_data != tree_data:
@@ -357,8 +357,8 @@ class SourceView(Widget):
         line = self.sourcebuffer.props.text.split('\n')[lineno - 1]
         textiter = self.sourcebuffer.get_iter_at_line_offset(lineno - 1,
             len(line))
-        self.sourceview.scroll_to_iter(textiter, within_margin=0.,
-            use_align=True)
+        self.sourceview.scroll_to_iter(
+            textiter, within_margin=0., use_align=True, xalign=0.5, yalign=0.5)
         self.sourcebuffer.place_cursor(textiter)
         GLib.idle_add(self.sourceview.grab_focus)
 

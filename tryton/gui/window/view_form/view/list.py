@@ -280,7 +280,6 @@ class ViewTree(View):
         self.children_definitions = children_definitions or []
         self.sum_widgets = []
         self.sum_box = gtk.HBox()
-        self.reload = False
 
         # ABD: Pass self.attributes.get('editable_open') to constructor
         if self.attributes.get('editable'):
@@ -1084,10 +1083,10 @@ class ViewTree(View):
     def reset(self):
         pass
 
-    def display(self):
+    def display(self, force=False):
         self.treeview.display_counter += 1
         current_record = self.screen.current_record
-        if (self.reload
+        if (force
                 or not self.treeview.get_model()
                 or (self.screen.group !=
                     self.treeview.get_model().group)):
@@ -1102,7 +1101,6 @@ class ViewTree(View):
                 # JCA : Check selection is not empty before updateing path
                 if selection:
                     selection.select_path(path)
-        self.reload = False
         if not current_record:
             selection = self.treeview.get_selection()
             selection.unselect_all()

@@ -1037,13 +1037,18 @@ class DictField(Field):
                 'get_keys', key_ids, context=context)
         except RPCException:
             new_fields = []
-
         new_keys = []
+        values = self.get_client(record) or {}
+        to_update = False
         for new_field in new_fields:
             name = new_field['name']
             new_keys.append(name)
             self.keys[name] = new_field
-
+            if 'default' in new_field:
+                values[name] = new_field['default']
+                to_update = True
+        if to_update:
+            self.set_client(record, values, force_change=True)
         return new_keys
 
     def validate(self, record, softvalidation=False, pre_validate=None):

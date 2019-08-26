@@ -3,7 +3,6 @@
 "Screen"
 import copy
 import functools
-import gobject
 import datetime
 import calendar
 import json
@@ -14,7 +13,7 @@ import gettext
 import logging
 from operator import itemgetter
 
-import gtk
+from gi.repository import GLib, Gtk
 
 from tryton.gui.window.view_form.model.group import Group
 from tryton.gui.window.view_form.view.screen_container import ScreenContainer
@@ -27,6 +26,7 @@ from tryton.common import RPCExecute, RPCException, MODELACCESS, \
     node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
 from tryton.pyson import PYSONDecoder
+from tryton.rpc import clear_cache
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -93,19 +93,19 @@ class Screen(SignalEvent):
                         yield widget
 
             for widget in reversed(list(walk_descendants(context_widget))):
-                if isinstance(widget, gtk.Entry):
+                if isinstance(widget, Gtk.Entry):
                     widget.connect_after(
                         'activate', self.screen_container.activate)
-                elif isinstance(widget, gtk.CheckButton):
+                elif isinstance(widget, Gtk.CheckButton):
                     widget.connect_after(
                         'toggled', self.screen_container.activate)
 
             def remove_bin(widget):
-                assert isinstance(widget, (gtk.ScrolledWindow, gtk.Viewport))
+                assert isinstance(widget, (Gtk.ScrolledWindow, Gtk.Viewport))
                 parent = widget.get_parent()
                 parent.remove(widget)
                 child = widget.get_child()
-                while isinstance(child, (gtk.ScrolledWindow, gtk.Viewport)):
+                while isinstance(child, (Gtk.ScrolledWindow, Gtk.Viewport)):
                     child = child.get_child()
                 child.get_parent().remove(child)
                 parent.add(child)
@@ -119,7 +119,7 @@ class Screen(SignalEvent):
                 remove_bin(widget)
 
             self.screen_container.filter_vbox.pack_start(
-                context_widget, expand=False, fill=True)
+                context_widget, expand=False, fill=True, padding=0)
             self.screen_container.filter_vbox.reorder_child(
                 context_widget, 0)
             self.context_screen.widget.show()
@@ -256,7 +256,7 @@ class Screen(SignalEvent):
                 self.clear()
                 self.context_screen.display(set_cursor=True)
                 return False
-            context = self.context
+            context = self.group._context.copy()
             context.update(self.context_screen.get_on_change_value())
             self.new_group(context)
 
@@ -318,6 +318,7 @@ class Screen(SignalEvent):
                 domain = self.domain_parser.parse(search_string)
             else:
                 domain = self.search_value
+                self.search_value = None
             if set_text:
                 self.screen_container.set_text(
                     self.domain_parser.string(domain))
@@ -381,6 +382,7 @@ class Screen(SignalEvent):
                 fields[name] = field.attrs
                 fields_views[name] = field.views
         self.tree_states_done.clear()
+        self.order = None
         self.__group = group
         self.parent = group.parent
         self.parent_name = group.parent_name
@@ -456,7 +458,7 @@ class Screen(SignalEvent):
             self.signal('current-record-changed')
         self.signal('resources', record.resources if record else None)
         # update resources after 1 second
-        gobject.timeout_add(1000, self._update_resources, record)
+        GLib.timeout_add(1000, self._update_resources, record)
         return True
 
     current_record = property(__get_current_record, __set_current_record)
@@ -469,7 +471,6 @@ class Screen(SignalEvent):
         return False
 
     def destroy(self):
-        self.screen_container.destroy()
         for view in self.views:
             view.destroy()
         del self.views[:]
@@ -538,7 +539,7 @@ class Screen(SignalEvent):
         self.screen_container.set(self.current_view.widget)
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
-        gobject.idle_add(self.set_cursor)
+        GLib.idle_add(self.set_cursor)
 
     def load_view_to_load(self):
         if len(self.view_to_load):
@@ -587,9 +588,9 @@ class Screen(SignalEvent):
         self.group.add_fields(fields)
         for field in fields:
             self.group.fields[field].views.add(view_id)
-        view = View.parse(self, xml_dom, view.get('field_childs'),
+        view = View.parse(
+            self, view_id, view['type'], xml_dom, view.get('field_childs'),
             view.get('children_definitions'))
-        view.view_id = view_id
         self.views.append(view)
         # PJA: set list of fields to use on the view
         view._field_keys = list(fields.keys())
@@ -621,7 +622,7 @@ class Screen(SignalEvent):
         self.current_record = record
         self.display()
         # Postpone set of the cursor to ensure widgets are allocated
-        gobject.idle_add(self.set_cursor, True)
+        GLib.idle_add(self.set_cursor, True)
         return self.current_record
 
     def new_model_position(self):
@@ -685,7 +686,7 @@ class Screen(SignalEvent):
         current_view = self.current_view
         if not current_view:
             return
-        elif current_view.view_type in ('tree', 'form'):
+        elif current_view.view_type in ('tree', 'form', 'list-form'):
             current_view.set_cursor(new=new, reset_view=reset_view)
 
     def get(self):
@@ -801,13 +802,9 @@ class Screen(SignalEvent):
         if parent is not None and parent < 0:
             return
         expanded_nodes, selected_nodes = [], []
-        timestamp = self.parent._timestamp if self.parent else None
         state = self.tree_states[parent][view.children_field]
         if state:
-            state_timestamp, expanded_nodes, selected_nodes = state
-            if (timestamp != state_timestamp
-                    and view.view_type != 'form'):
-                state = None
+            expanded_nodes, selected_nodes = state
         if state is None and CONFIG['client.save_tree_state'] and (
                 view.view_type != 'tree' or not view.always_expand):
             json_domain = self.get_tree_domain(parent)
@@ -823,7 +820,7 @@ class Screen(SignalEvent):
                     _('Unable to get view tree state for %s')
                     % self.model_name)
             self.tree_states[parent][view.children_field] = (
-                timestamp, expanded_nodes, selected_nodes)
+                expanded_nodes, selected_nodes)
         if view.view_type == 'tree':
             view.expand_nodes(expanded_nodes)
             view.select_nodes(selected_nodes)
@@ -848,7 +845,6 @@ class Screen(SignalEvent):
 
     def save_tree_state(self, store=True):
         parent = self.parent.id if self.parent else None
-        timestamp = self.parent._timestamp if self.parent else None
         for view in self.views:
             if view.view_type == 'form':
                 for widgets in view.widgets.values():
@@ -861,12 +857,12 @@ class Screen(SignalEvent):
                         path = -self.current_record.group.index(
                             self.current_record)
                     self.tree_states[parent][view.children_field] = (
-                        timestamp, [], [[path]])
+                        [], [[path]])
             elif view.view_type == 'tree':
                 paths = view.get_expanded_paths()
                 selected_paths = view.get_selected_paths()
                 self.tree_states[parent][view.children_field] = (
-                    timestamp, paths, selected_paths)
+                    paths, selected_paths)
                 if (store
                         and int(view.attributes.get('tree_state', False))
                         and CONFIG['client.save_tree_state']):
@@ -879,6 +875,7 @@ class Screen(SignalEvent):
                             self.model_name, json_domain, view.children_field,
                             json_paths, json_selected_path,
                             process_exception=False)
+                        clear_cache('model.ir.ui.view_tree_state.get')
                     except Exception:
                         logger.warn(
                             _('Unable to set view tree state'), exc_info=True)
@@ -980,6 +977,11 @@ class Screen(SignalEvent):
                 record = next
                 break
             self.current_record = record
+        elif (view.view_type == 'list-form' and len(self.group)
+                and self.current_record in self.group):
+            idx = self.group.index(self.current_record)
+            if 0 <= idx < len(self.group) - 1:
+                self.current_record = self.group[idx + 1]
         elif view.view_type == 'calendar':
             record = self.current_record
             goocalendar = view.widgets.get('goocalendar')
@@ -1067,6 +1069,11 @@ class Screen(SignalEvent):
                             if prev_id >= 0:
                                 self.current_record = events[prev_id].record
                             break
+        elif (view.view_type == 'list-form' and len(self.group)
+                and self.current_record in self.group):
+            idx = self.group.index(self.current_record)
+            if 0 < idx <= len(self.group) - 1:
+                self.current_record = self.group[idx - 1]
         else:
             self.current_record = self.group[-1] if len(self.group) else None
         self.set_cursor(reset_view=False)
@@ -1222,10 +1229,6 @@ class Screen(SignalEvent):
             Main().sig_win_close()
         elif action.startswith('switch'):
             self.switch_view(*action.split(None, 2)[1:])
-        elif action.startswith('toggle'):
-            # PJA: handle a custom action to toggle views
-            _, view_id = action.split(':')
-            self.switch_view(view_id=int(view_id))
         elif action == 'reload':
             if (self.current_view.view_type in ['tree', 'graph', 'calendar']
                     and not self.parent):
@@ -1251,11 +1254,18 @@ class Screen(SignalEvent):
         if name:
             query_string.append(
                 ('name', json.dumps(name, separators=(',', ':'))))
+        if self.screen_container.tab_domain:
+            query_string.append(('tab_domain', json.dumps(
+                        self.screen_container.tab_domain,
+                        cls=JSONEncoder, separators=(',', ':'))))
         path = [CONFIG['login.db'], 'model', self.model_name]
         view_ids = [v.view_id for v in self.views] + self.view_ids
         if self.current_view.view_type != 'form':
-            search_string = self.screen_container.get_text()
-            search_value = self.domain_parser.parse(search_string)
+            if self.search_value:
+                search_value = self.search_value
+            else:
+                search_string = self.screen_container.get_text()
+                search_value = self.domain_parser.parse(search_string)
             if search_value:
                 query_string.append(('search_value', json.dumps(
                             search_value, cls=JSONEncoder,

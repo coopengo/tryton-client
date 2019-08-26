@@ -4,17 +4,7 @@ import _ast
 from pyflakes.checker import Checker
 import pyflakes.messages
 
-import gobject
-# import gtk
-import pango
-import gi
-from gi.repository import Gdk as gdk
-
-gi.require_version('GtkSource', '3.0')
-gi.require_version('Gtk', '3.0')
-
-from gi.repository import Gtk as gtk
-from gi.repository import GtkSource as gtksourceview
+from gi.repository import Gtk, Gdk, GtkSource, Pango, GObject, GLib
 
 from .widget import Widget
 
@@ -84,19 +74,19 @@ class SourceView(Widget):
     def __init__(self, view, attrs):
         super(SourceView, self).__init__(view, attrs)
 
-        vbox = gtk.VBox(homogeneous=False, spacing=2)
-        sc_editor = gtk.ScrolledWindow()
-        sc_editor.set_policy(gtk.POLICY_AUTOMATIC,
-            gtk.POLICY_AUTOMATIC)
-        sc_editor.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+        vbox = Gtk.VBox(homogeneous=False, spacing=2)
+        sc_editor = Gtk.ScrolledWindow()
+        sc_editor.set_policy(
+            Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        sc_editor.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         sc_editor.set_size_request(-1, 80)
 
-        language_manager = gtksourceview.LanguageManager.get_default()
+        language_manager = GtkSource.LanguageManager.get_default()
         python = language_manager.get_language('python')
-        self.sourcebuffer = gtksourceview.Buffer(language=python)
+        self.sourcebuffer = GtkSource.Buffer(language=python)
         self.sourcebuffer.connect('changed', self._clear_marks)
 
-        self.sourceview = gtksourceview.View.new_with_buffer(self.sourcebuffer)
+        self.sourceview = GtkSource.View.new_with_buffer(self.sourcebuffer)
         self.sourceview.connect('focus-out-event', lambda x, y:
             self._focus_out())
         self.sourceview.connect('key-press-event', self.send_modified)
@@ -109,82 +99,82 @@ class SourceView(Widget):
 
         tag_table = self.sourcebuffer.get_tag_table()
         for mark_type, (priority, stock_id) in list(MARKS.items()):
-            mark_attrs = gtksourceview.MarkAttributes()
+            mark_attrs = GtkSource.MarkAttributes()
             mark_attrs.set_icon_name(stock_id)
             self.sourceview.set_mark_attributes(mark_type,
                 mark_attrs, priority)
-            tag = gtk.TextTag(name=mark_type)
+            tag = Gtk.TextTag(name=mark_type)
             if mark_type in (ERROR, SYNTAX):
-                tag.props.underline = pango.UNDERLINE_ERROR
+                tag.props.underline = Pango.Underline.ERROR
                 tag.props.underline_set = True
             tag_table.add(tag)
 
-        mono_desc = pango.FontDescription('monospace')
+        mono_desc = Pango.FontDescription('monospace')
         if mono_desc:
             self.sourceview.modify_font(mono_desc)
 
         sc_editor.add(self.sourceview)
 
-        toolbar = gtk.Toolbar()
-        undo_btn = gtk.ToolButton('gtk-undo')
+        toolbar = Gtk.Toolbar()
+        undo_btn = Gtk.ToolButton('gtk-undo')
         undo_btn.connect('clicked', self.undo)
         toolbar.insert(undo_btn, -1)
-        redo_btn = gtk.ToolButton('gtk-redo')
+        redo_btn = Gtk.ToolButton('gtk-redo')
         redo_btn.connect('clicked', self.redo)
         toolbar.insert(redo_btn, -1)
-        #check_btn = gtk.ToolButton(label='Check Code')
-        check_btn = gtk.ToolButton('gtk-apply')
+        check_btn = Gtk.ToolButton('gtk-apply')
         check_btn.connect('clicked', self.check_code)
         toolbar.insert(check_btn, -1)
 
-        self.error_store = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING,
-            gobject.TYPE_STRING)
+        self.error_store = Gtk.ListStore(
+            GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_STRING)
 
-        error_list = gtk.TreeView(self.error_store)
+        error_list = Gtk.TreeView(self.error_store)
         error_list.set_enable_search(False)
-        line_col = gtk.TreeViewColumn(_('L'))
-        renderer = gtk.CellRendererText()
+        line_col = Gtk.TreeViewColumn(_('L'))
+        renderer = Gtk.CellRendererText()
         line_col.pack_start(renderer, True)
         line_col.add_attribute(renderer, 'text', 0)
         line_col.add_attribute(renderer, 'cell-background', 2)
         error_list.append_column(line_col)
-        error_col = gtk.TreeViewColumn(_('Message'))
-        renderer = gtk.CellRendererText()
+        error_col = Gtk.TreeViewColumn(_('Message'))
+        renderer = Gtk.CellRendererText()
         error_col.pack_start(renderer, True)
         error_col.add_attribute(renderer, 'text', 1)
         error_col.add_attribute(renderer, 'cell-background', 2)
         error_list.append_column(error_col)
-        sc_error = gtk.ScrolledWindow()
-        sc_error.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sc_error = Gtk.ScrolledWindow()
+        sc_error.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         sc_error.add_with_viewport(error_list)
         self.error_tree = sc_error
 
         error_selection = error_list.get_selection()
         error_selection.connect_after('changed', self.focus_line)
 
-        vbox.pack_start(toolbar, expand=False, fill=True)
-        vbox.pack_start(sc_editor, expand=True, fill=True)
-        vbox.pack_start(sc_error, expand=True, fill=True)
+        vbox.pack_start(toolbar, expand=False, fill=True, padding=0)
+        vbox.pack_start(sc_editor, expand=True, fill=True, padding=0)
+        vbox.pack_start(sc_error, expand=True, fill=True, padding=0)
         vbox.show_all()
 
         self.tree_data_field = attrs.get('context_tree')
         if self.tree_data_field:
-            sc_tree = gtk.ScrolledWindow()
-            sc_tree.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-            sc_tree.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+            sc_tree = Gtk.ScrolledWindow()
+            sc_tree.set_policy(
+                Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+            sc_tree.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
             sc_tree.set_size_request(-1, 30)
 
-            self.model = gtk.TreeStore(gobject.TYPE_PYOBJECT,
-                gobject.TYPE_STRING)
-            self.treeview = gtk.TreeView(self.model)
+            self.model = Gtk.TreeStore(
+                GObject.TYPE_PYOBJECT, GObject.TYPE_STRING)
+            self.treeview = Gtk.TreeView(self.model)
             self.treeview.set_headers_visible(False)
             self.treeview.set_tooltip_column(1)
             self.treeview.connect('query-tooltip', self.tree_display_tooltip)
-            tree_cell = gtk.CellRendererText()
-            tree_col = gtk.TreeViewColumn('Objects')
-            tree_col.pack_start(tree_cell)
+            tree_cell = Gtk.CellRendererText()
+            tree_col = Gtk.TreeViewColumn('Objects')
+            tree_col.pack_start(tree_cell, True)
 
-            def cell_setter(column, cell, store, iter):
+            def cell_setter(column, cell, store, iter, data):
                 if not self.treeview.get_realized():
                     return
                 record = store.get_value(iter, 0)
@@ -192,13 +182,13 @@ class SourceView(Widget):
             tree_col.set_cell_data_func(tree_cell, cell_setter)
             self.treeview.append_column(tree_col)
 
-            target_entry = gtk.TargetEntry('TREE_ROW', gtk.TARGET_SAME_APP, 0)
+            target_entry = Gtk.TargetEntry(
+                'TREE_ROW', Gtk.TargetFlags.SAME_APP, 0)
 
-            self.treeview.drag_source_set(gdk.ModifierType.BUTTON1_MASK,
-                [target_entry], gdk.DragAction.COPY)
-            self.sourceview.drag_dest_set(gtk.DEST_DEFAULT_ALL,
-                [target_entry],
-                gdk.DragAction.COPY)
+            self.treeview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
+                [target_entry], Gdk.DragAction.COPY)
+            self.sourceview.drag_dest_set(
+                Gtk.DestDefaults.ALL, [target_entry], Gdk.DragAction.COPY)
             self.treeview.connect('drag-data-get', self.drag_data_get)
             self.sourceview.connect('drag-data-received',
                 self.drag_data_received_data)
@@ -210,11 +200,10 @@ class SourceView(Widget):
             self.sourceview.drag_dest_add_text_targets()
             self.treeview.drag_source_add_text_targets()
 
-
             self.treeview.show_all()
             sc_tree.add(self.treeview)
 
-            self.widget = gtk.HPaned()
+            self.widget = Gtk.HPaned()
             self.widget.pack1(sc_tree)
             self.widget.pack2(vbox)
             self.widget.set_position(250)
@@ -244,12 +233,12 @@ class SourceView(Widget):
         iter_end = self.sourcebuffer.get_end_iter()
         return self.sourcebuffer.get_text(iter_start, iter_end, False)
 
-    def set_value(self, record, field):
-        field.set_client(record, self.get_value())
+    def set_value(self):
+        self.field.set_client(self.record, self.get_value())
 
-    def display(self, record, field):
-        super(SourceView, self).display(record, field)
-        value = field and field.get_client(record)
+    def display(self):
+        super(SourceView, self).display()
+        value = self.field and self.field.get_client(self.record)
         if not value:
             value = ''
 
@@ -262,10 +251,10 @@ class SourceView(Widget):
             self.error_store.clear()
 
         if self.tree_data_field:
-            if not record:
+            if not self.record:
                 return
-            tree_field = record[self.tree_data_field]
-            json_data = tree_field.get(record)
+            tree_field = self.record[self.tree_data_field]
+            json_data = tree_field.get(self.record)
             if json_data:
                 tree_data = json.loads(json_data)
                 if self.tree_data != tree_data:
@@ -348,8 +337,8 @@ class SourceView(Widget):
             line_nbr = message.lineno - 9
             self.error_store.append((line_nbr,
                     message.message % message.message_args, error_type))
-            line = self.sourcebuffer.props.text.split('\n')[line_nbr -
-                1]
+            line = self.sourcebuffer.props.text.split('\n')[
+                line_nbr - 1]
             line_start = self.sourcebuffer.get_iter_at_line_offset(
                 line_nbr - 1, 0)
             line_end = self.sourcebuffer.get_iter_at_line_offset(
@@ -368,13 +357,13 @@ class SourceView(Widget):
         line = self.sourcebuffer.props.text.split('\n')[lineno - 1]
         textiter = self.sourcebuffer.get_iter_at_line_offset(lineno - 1,
             len(line))
-        self.sourceview.scroll_to_iter(textiter, within_margin=0.,
-            use_align=True)
+        self.sourceview.scroll_to_iter(
+            textiter, within_margin=0., use_align=True, xalign=0.5, yalign=0.5)
         self.sourcebuffer.place_cursor(textiter)
-        gobject.idle_add(self.sourceview.grab_focus)
+        GLib.idle_add(self.sourceview.grab_focus)
 
     def _test_check(self, sourceview, event):
-        if gtk.gdk.keyval_name(event.keyval) == 'F7':
+        if Gdk.keyval_name(event.keyval) == 'F7':
             self.check_code(None)
             sourceview.emit_stop_by_name('key-press-event')
 

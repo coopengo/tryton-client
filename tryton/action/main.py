@@ -134,18 +134,19 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
-            # TODO: comment changes
             action_ctx = context.copy()
-            action_ctx.update(decoder.decode(
-                    action.get('pyson_context') or '{}'))
-            action_ctx.update(ctx)
+            action_ctx.update(
+                decoder.decode(action.get('pyson_context') or '{}'))
+            # XXX: add extra_context
             action_ctx.update(data.get('extra_context', {}))
-            action_ctx['context'] = ctx
+            ctx.update(action_ctx)
 
-            decoder = PYSONDecoder(action_ctx)
-            domain = action['pyson_domain']
+            ctx['context'] = ctx
+            decoder = PYSONDecoder(ctx)
+            domain = decoder.decode(action['pyson_domain'])
             order = decoder.decode(action['pyson_order'])
             search_value = decoder.decode(action['pyson_search_value'] or '[]')
+            # XXX: Evaluate tab domain later
             tab_domain = [(n, (action_ctx, d), c)
                 for n, d, c in action['domains']]
 

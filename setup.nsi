@@ -109,9 +109,7 @@ SectionIn 1 2 RO
     ;Put file
     File /r "dist\*"
     File "COPYRIGHT"
-    File "INSTALL"
     File "LICENSE"
-    File "README"
     File "CHANGELOG"
 
     SetOutPath "$INSTDIR\doc"

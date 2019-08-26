@@ -1,32 +1,52 @@
+Version 5.2.2 - 2019-07-01
+* Bug fixes (see mercurial logs for details)
+
+Version 5.2.1 - 2019-06-10
+* Bug fixes (see mercurial logs for details)
+
+Version 5.2.0 - 2019-05-06
+* Bug fixes (see mercurial logs for details)
+* Add domain inversion for reference fields
+* Add list-form view
+* Remove support for Python 3.4
+* Replace ColorSelectionDialog by ColorChooserDialog
+* Support HTML widget
+* Use locale format for data import and export
+* Add day view on calendar
+* Add CSV exports into print toolbar
 * Display unread and total of notes
 * Support badge on icon
 * Use resources method
+* Replace Arrow by Image
+* Remove Fast Tabbing option
+* Remove usage of focus_chain
+* Add shortcuts for switch and remove on One2Many
+* Rename roundup.url configuration to bug.url
+* Remove send error to bug tracker
+* Replace Table by Grid
+* Use separate XML parser in Views
+* Use between numbers in filter box
+* Rename email and calendar file
+* Use markup for styling
+* Replace ImageMenuItem by MenuItem
+* Replace ComboBoxEntry by ComboBox or ComboBoxText
+* Replace GObject.idle_add by GLibe.idle_add
+* Remove positional arguments for PyGObject
+* Remove pygtkcompat
+* Implement Reference cell with Selection and Many2One cells
+* Replace CellRendererBinary with clickable pixbuf cells
+* Allow cell to have multiple renderers
+* Fill 'to' with 'from' value on filter box
+* Add tab domain in URL
+* Use Popover for search filter
+* Display version on login dialog
+* Use tab key for tab navigation
+* Use ShortcutsWindow
+* Improve default size of widgets and dialog
+* Use record and field properties of widget instead of method arguments
 * Reduce offset when no search result
-
-Version 5.0.8 - 2019-04-02
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.7 - 2019-03-15
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.6 - 2019-02-19
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.5 - 2019-01-22
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.4 - 2019-01-05
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.3 - 2018-12-02
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.2 - 2018-11-12
-* Bug fixes (see mercurial logs for details)
-
-Version 5.0.1 - 2018-10-31
-* Bug fixes (see mercurial logs for details)
 * Ensure URL scheme of bus (issue7792)
+* Add drag & drop support on binary widget
 
 Version 5.0.0 - 2018-10-01
 * Bug fixes (see mercurial logs for details)

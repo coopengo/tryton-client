@@ -1074,10 +1074,10 @@ class ViewTree(View):
     def reset(self):
         pass
 
-    def display(self):
+    def display(self, force=False):
         self.treeview.display_counter += 1
         current_record = self.record
-        if (self.reload
+        if (force
                 or not self.treeview.get_model()
                 or self.group != self.treeview.get_model().group):
             model = AdaptModelGroup(self.group, self.children_field,
@@ -1091,7 +1091,6 @@ class ViewTree(View):
                 # JCA : Check selection is not empty before updateing path
                 if selection:
                     selection.select_path(path)
-        self.reload = False
         if not current_record:
             selection = self.treeview.get_selection()
             selection.unselect_all()

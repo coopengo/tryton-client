@@ -372,7 +372,7 @@ class One2Many(Widget):
                 continue
             if (widget.screen.current_view.view_type == 'form'
                     or widget.screen.current_view.editable and
-                    not widget.screen.editable_open_get()):
+                    not widget.screen.current_view.editable_open):
                 widget.screen.new()
                 widget.screen.current_view.widget.set_sensitive(True)
                 update_sequence()

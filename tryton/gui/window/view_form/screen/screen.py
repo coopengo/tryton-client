@@ -597,12 +597,6 @@ class Screen(SignalEvent):
 
         return view
 
-    def editable_open_get(self):
-        if (self.current_view and self.current_view.view_type == 'tree'
-                and self.current_view.attributes.get('editable_open')):
-            return self.current_view.widget_tree.editable_open
-        return False
-
     def new(self, default=True, rec_name=None):
         previous_view = self.current_view
         if self.current_view.view_type == 'calendar':

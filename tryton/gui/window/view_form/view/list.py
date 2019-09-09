@@ -679,6 +679,11 @@ class ViewTree(View):
         return (bool(getattr(self.treeview, 'editable', False))
             and not self.screen.readonly)
 
+    @property
+    def editable_open(self):
+        return self.editable and bool(getattr(self.treeview, 'editable_open',
+                False))
+
     def get_fields(self):
         return [col.name for col in self.treeview.get_columns() if col.name]
 

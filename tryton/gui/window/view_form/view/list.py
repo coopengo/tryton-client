@@ -1171,13 +1171,14 @@ class ViewTree(View):
                         selected_sum, converter)
                     sum_ = common.timedelta.format(sum_, converter)
                 elif digit:
-                    selected_sum = locale.format(
-                        '%.*f', (digit, selected_sum or 0), True)
-                    sum_ = locale.format('%.*f', (digit, sum_ or 0), True)
+                    selected_sum = locale.localize(
+                        '{0:.{1}f}'.format(selected_sum or 0, digit), True)
+                    sum_ = locale.localize(
+                        '{0:.{1}f}'.format(sum_ or 0, digit), True)
                 else:
-                    selected_sum = locale.format(
-                        '%s', selected_sum or 0, True)
-                    sum_ = locale.format('%s', sum_ or 0, True)
+                    selected_sum = locale.localize(
+                        '{}'.format(selected_sum or 0), True)
+                    sum_ = locale.localize('{}'.format(sum_ or 0), True)
 
                 # coog specific feature #8374
                 text1 = '%s /' % (selected_sum)

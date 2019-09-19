@@ -2,6 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 __version_coog__ = "2.5"
 __version__ = "5.2.3"
+import locale
 import gi
 
 gi.require_version('Gtk', '3.0')
@@ -18,3 +19,25 @@ try:
     import goocalendar
 except ImportError:
     pass
+
+if not hasattr(locale, 'localize'):
+    def localize(formatted, grouping=False, monetary=False):
+        float(formatted)
+        if '.' in formatted:
+            seps = 0
+            parts = formatted.split('.')
+            if grouping:
+                parts[0], seps = locale._group(parts[0], monetary=monetary)
+            decimal_point = locale.localeconv()[
+                monetary and 'mon_decimal_point' or 'decimal_point']
+            formatted = decimal_point.join(parts)
+            if seps:
+                formatted = locale._strip_padding(formatted, seps)
+        else:
+            seps = 0
+            if grouping:
+                formatted, seps = locale._group(formatted, monetary=monetary)
+            if seps:
+                formatted = locale._strip_padding(formatted, seps)
+        return formatted
+    setattr(locale, 'localize', localize)

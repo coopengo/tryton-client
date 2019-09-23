@@ -1,3 +1,4 @@
+* BUG#12734 Fix crash when displaying dictionnary with interger value set to None
 * Fix crash when opening the translation tools: old code removed (merge error)
 
 Version 1.8

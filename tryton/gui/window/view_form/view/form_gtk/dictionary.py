@@ -171,6 +171,8 @@ class DictIntegerEntry(DictEntry):
         return widget
 
     def get_value(self):
+        if self.widget.value is None:
+            return None
         return int(self.widget.value)
 
     def set_value(self, value):

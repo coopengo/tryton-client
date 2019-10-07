@@ -311,7 +311,7 @@ class TreeXMLViewParser(XMLViewParser):
         column.name = name
 
         prefixes = []
-        suffixes = []
+        suffixes = list(widget.suffixes)
         if attributes['widget'] in ['url', 'email', 'callto', 'sip']:
             prefixes.append(
                 Affix(self.view, attributes, protocol=attributes['widget']))
@@ -509,7 +509,6 @@ class ViewTree(View):
         self.children_definitions = children_definitions
         self.sum_widgets = []
         self.sum_box = Gtk.HBox()
-        self.reload = False
         self.treeview = None
         editable = xml.getAttribute('editable')
         if editable and not screen.readonly:

@@ -385,11 +385,14 @@ class WizardDialog(Wizard, NoModal):
         else:
             dialog = self.page
         screen = getattr(dialog, 'screen', None)
-        if self.sensible_widget == main.window:
+        # JMO: the conditions added on 'reload' are needed
+        # for https://support.coopengo.com/issues/12986
+        if action != 'reload' and self.sensible_widget == main.window:
             screen = main.menu_screen
         if screen:
             if (screen.current_record
-                    and self.sensible_widget != main.window):
+                    and self.sensible_widget != main.window or
+                    action == 'reload'):
                 if screen.model_name == self.model:
                     ids = self.ids
                 else:

@@ -639,8 +639,10 @@ class Form(SignalEvent, TabContent):
         quick_actions = toolbars.get('quick_actions', [])
         if quick_actions:
             gtktoolbar.insert(Gtk.SeparatorToolItem(), -1)
+        buttons = []
         for quick_action in quick_actions:
-            icon = quick_action.get('icon.rec_name')
+            icon = quick_action.get('icon.').get('rec_name') \
+                if quick_action.get('icon.') else None
             if not icon:
                 icon = 'tryton-executable'
 
@@ -651,12 +653,17 @@ class Form(SignalEvent, TabContent):
                 common.IconFactory.get_image(
                     icon, Gtk.IconSize.LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
-            qbutton.connect('clicked',
-                lambda b: self._action(quick_action, 'quick_actions'))
+            buttons.append([qbutton, quick_action])
             self.tooltips.set_tip(qbutton, _(quick_action['name']))
-            gtktoolbar.insert(qbutton, -1)
 
+        for button in buttons:
+            self._connect(button)
+            gtktoolbar.insert(button[0], -1)
         return gtktoolbar
+
+    def _connect(self, button):
+        button[0].connect('clicked', lambda b: self._action(button[1],
+            'quick_actions'))
 
     def _create_popup_menu(self, widget, keyword, actions, special_action):
         menu = Gtk.Menu()

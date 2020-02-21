@@ -146,7 +146,7 @@ class Record(SignalEvent):
         result = bool(self.modified_fields)
         if not result:
             return result
-        # JCA: Add a way to make sure some fields are always ignored when
+        # JCA #15014 Add a way to make sure some fields are always ignored when
         # detecting whether the record needs saving
         for field in self.modified_fields:
             if field not in self.group.fields:

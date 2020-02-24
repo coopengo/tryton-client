@@ -150,13 +150,24 @@ class Record:
 
     @property
     def modified(self):
+        result = bool(self.modified_fields)
+        if not result:
+            return result
+        # JCA #15014 Add a way to make sure some fields are always ignored when
+        # detecting whether the record needs saving
+        for field in self.modified_fields:
+            if field not in self.group.fields:
+                break
+            if not self.group.fields[field].attrs.get(
+                    'never_modified', False):
+                break
+        else:
+            return False
         if self.modified_fields:
             logger.info(
                 "Modified fields %s of %s",
                 list(self.modified_fields.keys()), self)
-            return True
-        else:
-            return False
+        return result
 
     @property
     def parent(self):

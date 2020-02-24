@@ -146,8 +146,19 @@ class Record(SignalEvent):
         result = bool(self.modified_fields)
         if not result:
             return result
-        logging.getLogger('root').debug('%s : modfied fields : %s' % (self,
-                self.modified_fields))
+        # JCA #15014 Add a way to make sure some fields are always ignored when
+        # detecting whether the record needs saving
+        for field in self.modified_fields:
+            if field not in self.group.fields:
+                break
+            if not self.group.fields[field].attrs.get(
+                    'never_modified', False):
+                break
+        else:
+            return False
+        logging.getLogger('root').critical(
+            '%s : modified fields : %s' % (
+                self, list(self.modified_fields.keys())))
         return result
 
     @property

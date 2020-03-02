@@ -34,14 +34,32 @@ from .form_gtk.dictionary import DictWidget
 from .form_gtk.multiselection import MultiSelection
 from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
-    Notebook, Alignment, Expander)
+    Notebook, Expander)
 from .form_gtk.sourceeditor import SourceView
 
 
 _ = gettext.gettext
 
 
-class Container(object):
+class _Container(object):
+
+    def __init__(self, col=4, homogeneous=False):
+        super().__init__()
+        if col < 0:
+            col = 0
+        self.col = col
+        self.tooltips = Tooltips()
+        self.tooltips.enable()
+
+    def add_row(self):
+        raise NotImplementedError
+
+    def add_col(self):
+        raise NotImplementedError
+
+    def add(self, widget, attributes):
+        if widget and attributes.get('help'):
+            self.tooltips.set_tip(widget, attributes['help'])
 
     @staticmethod
     def constructor(col=4, homogeneous=False):
@@ -54,17 +72,16 @@ class Container(object):
         else:
             return Container(col, homogeneous)
 
+
+class Container(_Container):
+
     def __init__(self, col=4, homogeneous=False):
-        if col < 0:
-            col = 0
-        self.col = col
+        super().__init__(col=col, homogeneous=homogeneous)
         self.container = Gtk.Grid(
             column_spacing=3, row_spacing=3,
             column_homogeneous=homogeneous, row_homogeneous=homogeneous,
             border_width=3)
         self.last = (0, 0)
-        self.tooltips = Tooltips()
-        self.tooltips.enable()
 
     def add_row(self):
         height, width = self.last
@@ -75,6 +92,7 @@ class Container(object):
         self.last = (height, width + 1)
 
     def add(self, widget, attributes):
+        super().add(widget, attributes)
 
         colspan = attributes.get('colspan', 1)
         if self.col > 0:
@@ -89,27 +107,17 @@ class Container(object):
         height, width = self.last
         self.last = height, width + colspan
 
-        if not widget:
-            return
-
-        widget.set_vexpand(bool(attributes.get('yexpand')))
-        if attributes.get('yfill'):
-            widget.set_valign(Gtk.Align.FILL)
-
-        widget.set_hexpand(bool(attributes.get('xexpand', True)))
-        if attributes.get('xfill', True):
-            widget.set_valign(Gtk.Align.FILL)
-
-        if attributes.get('help'):
-            self.tooltips.set_tip(widget, attributes['help'])
-
-        widget.show_all()
-        self.container.attach(widget, width, height, colspan, 1)
+        if widget:
+            widget.set_vexpand(bool(attributes.get('yexpand')))
+            widget.set_hexpand(bool(attributes.get('xexpand', True)))
+            widget.show_all()
+            self.container.attach(widget, width, height, colspan, 1)
 
 
-class VContainer(Container):
+class VContainer(_Container):
     def __init__(self, col=1, homogeneous=False):
-        self.col = 1
+        col = 1
+        super().__init__(col=col, homogeneous=homogeneous)
         self.container = Gtk.VBox()
         self.container.set_homogeneous(homogeneous)
 
@@ -120,16 +128,18 @@ class VContainer(Container):
         pass
 
     def add(self, widget, attributes):
-        if not widget:
-            return
-        expand = bool(int(attributes.get('yexpand', False)))
-        fill = bool(int(attributes.get('yfill', False)))
-        self.container.pack_start(widget, expand=expand, fill=fill, padding=2)
+        super().add(widget, attributes)
+        if widget:
+            expand = bool(int(attributes.get('yexpand', False)))
+            fill = bool(int(attributes.get('yfill', False)))
+            self.container.pack_start(
+                widget, expand=expand, fill=fill, padding=2)
 
 
-class HContainer(Container):
+class HContainer(_Container):
     def __init__(self, col=0, homogeneous=False):
-        self.col = 0
+        col = 0
+        super().__init__(col=col, homogeneous=homogeneous)
         self.container = Gtk.HBox()
         self.container.set_homogeneous(homogeneous)
 
@@ -140,11 +150,12 @@ class HContainer(Container):
         pass
 
     def add(self, widget, attributes):
-        if not widget:
-            return
-        expand = bool(int(attributes.get('xexpand', True)))
-        fill = bool(int(attributes.get('xfill', True)))
-        self.container.pack_start(widget, expand=expand, fill=fill, padding=1)
+        super().add(widget, attributes)
+        if widget:
+            expand = bool(int(attributes.get('xexpand', True)))
+            fill = bool(int(attributes.get('xfill', True)))
+            self.container.pack_start(
+                widget, expand=expand, fill=fill, padding=1)
 
 
 class FormXMLViewParser(XMLViewParser):
@@ -230,7 +241,13 @@ class FormXMLViewParser(XMLViewParser):
                 int(attributes.get('width', -1)),
                 int(attributes.get('height', -1)))
 
-        self.container.add(Alignment(widget.widget, attributes), attributes)
+        widget.widget.set_halign(get_align(
+                attributes.get('xalign', 0.5),
+                bool(attributes.get('xexpand', True))))
+        widget.widget.set_valign(get_align(
+                attributes.get('yalign', 0.5),
+                bool(attributes.get('yexpand'))))
+        self.container.add(widget.widget, attributes)
 
         if name in self._mnemonics and widget.mnemonic_widget:
             label = self._mnemonics.pop(name)
@@ -253,8 +270,12 @@ class FormXMLViewParser(XMLViewParser):
         vbox = VBox(attrs=attributes)
         if attributes.get('string'):
             label = Label(label=attributes['string'], attrs=attributes)
-            label.set_halign(get_align(attributes.get('xalign', 0.0)))
-            label.set_valign(get_align(attributes.get('yalign', 0.5)))
+            label.set_halign(get_align(
+                    attributes.get('xalign', 0.0),
+                    bool(attributes.get('xexpand', True))))
+            label.set_valign(get_align(
+                    attributes.get('yalign', 0.5),
+                    bool(attributes.get('yexpand', False))))
             vbox.pack_start(label, expand=True, fill=True, padding=0)
             self.view.state_widgets.append(label)
         vbox.pack_start(Gtk.HSeparator(), expand=True, fill=True, padding=0)
@@ -269,11 +290,15 @@ class FormXMLViewParser(XMLViewParser):
         if CONFIG['client.modepda']:
             attributes['xalign'] = 0.0
 
-        label = Label(label=attributes.get('string', ''), attrs=attributes)
-        label.set_halign(get_align(attributes.get('xalign', 1.0)))
-        label.set_valign(get_align(attributes.get('yalign', 0.5)))
-        label.set_angle(int(attributes.get('angle', 0)))
         attributes.setdefault('xexpand', 0)
+        label = Label(label=attributes.get('string', ''), attrs=attributes)
+        label.set_halign(get_align(
+                attributes.get('xalign', 1.0),
+                bool(attributes.get('xexpand'))))
+        label.set_valign(get_align(
+                attributes.get('yalign', 0.5),
+                bool(attributes.get('yexpand'))))
+        label.set_angle(int(attributes.get('angle', 0)))
         self.view.state_widgets.append(label)
         self.container.add(label, attributes)
         if name:

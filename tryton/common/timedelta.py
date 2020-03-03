@@ -87,7 +87,7 @@ def parse(text, converter=None):
             for t, v in zip(part.split(':'),
                     [converter['h'], converter['m'], converter['s']]):
                 try:
-                    seconds += abs(float(t)) * v
+                    seconds += abs(locale.atof(t)) * v
                 except ValueError:
                     pass
         else:
@@ -95,13 +95,13 @@ def parse(text, converter=None):
                 if part.endswith(separator):
                     part = part[:-len(separator)]
                     try:
-                        seconds += abs(int(part)) * converter[key]
+                        seconds += abs(locale.atof(part)) * converter[key]
                     except ValueError:
                         pass
                     break
             else:
                 try:
-                    seconds += abs(float(part))
+                    seconds += abs(locale.atof(part))
                 except ValueError:
                     pass
 
@@ -137,14 +137,23 @@ def test_format():
 _tests_parse = [
     (datetime.timedelta(), '  '),
     (datetime.timedelta(), 'foo'),
-    (datetime.timedelta(), '1.5d'),
+    (datetime.timedelta(days=1.5), '1.5d'),
     (datetime.timedelta(days=-2), '1d -1d'),
     (datetime.timedelta(hours=1, minutes=5, seconds=10), '1:5:10:42'),
     (datetime.timedelta(hours=2), '1: 1:'),
     (datetime.timedelta(hours=.25), ':15'),
+    (datetime.timedelta(hours=1), '1h'),
+    (datetime.timedelta(hours=.25), '.25h'),
     ]
 
 
 def test_parse():
     for timedelta, text, in _tests + _tests_parse:
         assert parse(text) == timedelta
+
+
+if __name__ == '__main__':
+    for name in list(globals()):
+        if name.startswith('test_'):
+            func = globals()[name]
+            func()

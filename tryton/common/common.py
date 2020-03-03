@@ -598,20 +598,12 @@ warning = WarningDialog()
 
 class UserWarningDialog(WarningDialog):
 
-    def __init__(self):
-        super(UserWarningDialog, self).__init__()
-        self.always = False
-
-    def _set_always(self, toggle):
-        self.always = toggle.get_active()
-
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
         # Disable Warning Automatic By Pass
-        # check = Gtk.CheckButton(label=_('Always ignore this warning.'))
-        # check.connect_after('toggled', self._set_always)
+        # self.always = Gtk.CheckButton(label=_('Always ignore this warning.'))
         # alignment = Gtk.Alignment(xalign=0, yalign=0.5)
-        # alignment.add(check)
+        # alignment.add(self.always)
         # dialog.vbox.pack_start(alignment, expand=True, fill=False, padding=0)
         label = Gtk.Label(
             label=_('Do you want to proceed?'), halign=Gtk.Align.END)
@@ -620,7 +612,7 @@ class UserWarningDialog(WarningDialog):
 
     def process_response(self, response):
         if response == Gtk.ResponseType.YES:
-            if self.always:
+            if self.always.get_active():
                 return 'always'
             return 'ok'
         return 'cancel'
@@ -888,7 +880,7 @@ def process_exception(exception, *args, **kwargs):
                     Login()
                 except TrytonError as exception:
                     if exception.faultCode == 'QueryCanceled':
-                        Main().sig_quit()
+                        Main().on_quit()
                     raise
                 finally:
                     PLOCK.release()
@@ -1264,13 +1256,16 @@ def ellipsize(string, length):
     return string[:length - len(ellipsis)] + ellipsis
 
 
-def get_align(float_):
+def get_align(float_, expand=True):
     "Convert float align into Gtk.Align"
     value = float(float_)
     if value < 0.5:
         return Gtk.Align.START
     elif value == 0.5:
-        return Gtk.Align.FILL
+        if expand:
+            return Gtk.Align.FILL
+        else:
+            return Gtk.Align.CENTER
     else:
         return Gtk.Align.END
 

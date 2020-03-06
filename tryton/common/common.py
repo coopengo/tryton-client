@@ -598,10 +598,6 @@ warning = WarningDialog()
 
 class UserWarningDialog(WarningDialog):
 
-    def __init__(self):
-        super(UserWarningDialog, self).__init__()
-        self.always = None
-
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
         # Disable Warning Automatic By Pass
@@ -616,8 +612,8 @@ class UserWarningDialog(WarningDialog):
 
     def process_response(self, response):
         if response == Gtk.ResponseType.YES:
-            if self.always and self.always.get_active():
-                return 'always'
+            # if self.always.get_active():
+            #     return 'always'
             return 'ok'
         return 'cancel'
 

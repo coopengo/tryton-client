@@ -612,8 +612,8 @@ class UserWarningDialog(WarningDialog):
 
     def process_response(self, response):
         if response == Gtk.ResponseType.YES:
-            if self.always.get_active():
-                return 'always'
+            # if self.always.get_active():
+            #     return 'always'
             return 'ok'
         return 'cancel'
 

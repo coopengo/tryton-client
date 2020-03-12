@@ -134,7 +134,7 @@ def freeze_value(value):
     if isinstance(value, dict):
         return tuple(sorted((k, freeze_value(v))
                 for k, v in value.items()))
-    elif isinstance(value, (list, set)):
+    elif isinstance(value, (list, set, tuple)):
         return tuple(freeze_value(v) for v in value)
     else:
         return value
@@ -217,3 +217,5 @@ def test_freeze_value():
     assert freeze_value([1, 42, 2, 3]) == (1, 42, 2, 3)
     assert freeze_value('foo') == 'foo'
     assert freeze_value({'foo': {'bar': 42}}) == (('foo', (('bar', 42),)),)
+    assert freeze_value({'foo': ('bar',  {'tata': 5, 'toto': 6})}) == \
+        (('foo', ('bar', (('tata', 5), ('toto', 6),))),)

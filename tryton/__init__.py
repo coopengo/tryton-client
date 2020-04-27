@@ -1,9 +1,10 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 __version_coog__ = "2.7"
-__version__ = "5.2.11"
+__version__ = "5.2.15"
 import locale
 import gi
+import locale
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -22,7 +23,6 @@ except ImportError:
 
 if not hasattr(locale, 'localize'):
     def localize(formatted, grouping=False, monetary=False):
-        float(formatted)
         if '.' in formatted:
             seps = 0
             parts = formatted.split('.')

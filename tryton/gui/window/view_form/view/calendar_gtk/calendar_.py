@@ -77,6 +77,9 @@ class Calendar_(goocalendar.Calendar):
         return text_color, bg_color
 
     def display(self, group):
+        def is_date_only(value):
+            return (isinstance(value, datetime.date)
+                and not isinstance(value, datetime.datetime))
         dtstart = self.attrs['dtstart']
         dtend = self.attrs.get('dtend')
         if self.view_calendar.record:
@@ -101,14 +104,11 @@ class Calendar_(goocalendar.Calendar):
             else:
                 end = None
             midnight = datetime.time(0)
-            all_day = False
+            all_day = is_date_only(start) and (not end or is_date_only(end))
             if not isinstance(start, datetime.datetime):
                 start = datetime.datetime.combine(start, midnight)
             if end and not isinstance(end, datetime.datetime):
                 end = datetime.datetime.combine(end, midnight)
-                all_day = True
-            elif not end:
-                all_day = True
 
             # Skip invalid event
             if end is not None and start > end:

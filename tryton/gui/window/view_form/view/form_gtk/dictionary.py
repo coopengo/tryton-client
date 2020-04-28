@@ -451,7 +451,7 @@ class DictWidget(Widget):
 
     def send_modified(self, *args):
         super(DictWidget, self).send_modified(*args)
-        if isinstance(args[0], gtk.CheckButton):
+        if args and isinstance(args[0], gtk.CheckButton):
             self.set_value(self.record, self.field)
 
     @property

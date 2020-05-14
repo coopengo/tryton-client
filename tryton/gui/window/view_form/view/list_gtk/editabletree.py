@@ -117,21 +117,12 @@ class EditableTreeView(TreeView):
 
     def set_value(self):
         path, column = self.get_cursor()
-        model = self.get_model()
         if not path or not column or not column.name:
             return True
-        record = model.get_value(model.get_iter(path), 0)
-        field = record[column.name]
-        if hasattr(field, 'editabletree_entry'):
-            entry = field.editabletree_entry
-            if isinstance(entry, (Date, Time)):
-                entry.activate()
-                txt = entry.props.value
-            elif isinstance(entry, gtk.Entry):
-                txt = entry.get_text()
-            else:
-                txt = entry.get_active_text()
-            self.on_quit_cell(record, column, txt)
+        for renderer in column.get_cell_renderers():
+            if renderer.props.editing:
+                widget = self.view.get_column_widget(column)
+                self.on_editing_done(widget.editable)
         return True
 
     def on_keypressed(self, entry, event):

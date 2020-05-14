@@ -156,6 +156,8 @@ class EditableTreeView(TreeView):
                 txt = entry.get_text()
             else:
                 txt = entry.get_active_text()
+                if isinstance(entry, (gtk.ComboBox, gtk.ComboBoxEntry)):
+                    gobject.idle_add(entry.emit, 'remove-widget')
             keyval = event.keyval
             entry.handler_block(entry.editing_done_id)
 

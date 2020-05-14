@@ -1123,6 +1123,8 @@ class ViewTree(View):
             if not name:
                 continue
             widget = self.get_column_widget(column)
+            if current_record and widget.editable:
+                widget.set_editable(current_record)
             if decoder.decode(widget.attrs.get('tree_invisible', '0')):
                 column.set_visible(False)
             elif name == self.screen.exclude_field:

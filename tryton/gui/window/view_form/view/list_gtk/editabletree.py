@@ -195,6 +195,9 @@ class EditableTreeView(TreeView):
                     model = entry.get_model()
                     index = entry.get_property('entry-text-column')
                     txt = model[active][index]
+                # It seems that the remove-widget signal is only sent when
+                # activating the combobox or when pressing escape.
+                GLib.idle_add(entry.emit, 'remove-widget')
             else:
                 return True
             keyval = event.keyval

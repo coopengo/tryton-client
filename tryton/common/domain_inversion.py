@@ -340,6 +340,8 @@ class And(object):
             if isinstance(part, And):
                 part_inversion = part.inverse(symbol, context)
                 evaluated = isinstance(part_inversion, bool)
+                if symbol not in part.variables:
+                    continue
                 if not evaluated:
                     result.append(part_inversion)
                 elif part_inversion:
@@ -370,9 +372,8 @@ class Or(And):
     def inverse(self, symbol, context):
         result = []
         known_variables = set(context.keys())
-        if (symbol not in self.variables
-                and not known_variables >= self.variables):
-            # In this case we don't know anything about this OR part, we
+        if not known_variables >= (self.variables - {symbol}):
+            # In this case we don't know enough about this OR part, we
             # consider it to be True (because people will have the constraint
             # on this part later).
             return True

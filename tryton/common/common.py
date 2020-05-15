@@ -600,11 +600,13 @@ class UserWarningDialog(WarningDialog):
 
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
-        # Disable Warning Automatic By Pass
+
+        # Coog: Disable Warning Automatic By Pass
         # self.always = Gtk.CheckButton(label=_('Always ignore this warning.'))
         # alignment = Gtk.Alignment(xalign=0, yalign=0.5)
         # alignment.add(self.always)
         # dialog.vbox.pack_start(alignment, expand=True, fill=False, padding=0)
+
         label = Gtk.Label(
             label=_('Do you want to proceed?'), halign=Gtk.Align.END)
         dialog.vbox.pack_start(label, expand=True, fill=True, padding=0)
@@ -612,6 +614,7 @@ class UserWarningDialog(WarningDialog):
 
     def process_response(self, response):
         if response == Gtk.ResponseType.YES:
+            # Coog: Disable Warning Automatic By Pass
             # if self.always.get_active():
             #     return 'always'
             return 'ok'
@@ -815,8 +818,8 @@ def check_version(box, version=__version__):
 
     logger.info(_("Check URL: %s"), url)
     try:
-        urllib.request.urlopen(HeadRequest(url), timeout=5,
-            cafile=rpc._CA_CERTS)
+        urllib.request.urlopen(
+            HeadRequest(url), timeout=5, cafile=rpc._CA_CERTS)
     except (urllib.error.HTTPError, socket.timeout):
         return True
     except Exception:
@@ -1107,6 +1110,7 @@ class Tooltips(object):
     def disable(self):
         if self._tooltips:
             self._tooltips.disable()
+
 
 FORMAT_ERROR = "Wrong key format [type_]style_value: "
 

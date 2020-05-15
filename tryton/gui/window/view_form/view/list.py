@@ -1169,7 +1169,7 @@ class ViewTree(View):
                     selected_sum = common.timedelta.format(
                         selected_sum, converter)
                     sum_ = common.timedelta.format(sum_, converter)
-                elif digit:
+                elif digit is not None:
                     selected_sum = locale.localize(
                         '{0:.{1}f}'.format(selected_sum or 0, digit), True)
                     sum_ = locale.localize(

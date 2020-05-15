@@ -773,12 +773,7 @@ infobar.question:backdrop,
                 inset 0 -1px shade (@error_bg_color, 1.04);
 }
 
-.invalid:focus {
-    color: @fg_color;
-}
-
-infobar.error,
-.error, .invalid {
+infobar.error, .error {
     background-color: mix (@error_bg_color, @bg_color, 0.5);
     border-style: solid;
     border-width: 1px;
@@ -794,15 +789,22 @@ infobar.error,
                 inset 0 -1px shade (@error_bg_color, 1.04);
 }
 
-frame.invalid tab {
-    background: mix (@error_bg_color, @bg_color, 0.5);
-}
-
 infobar.error:backdrop,
 .error:backdrop,
 .invalid:backdrop {
     background-image: none;
     background-color: mix (@error_bg_color, @bg_color, 0.5);
+}
+
+frame.invalid:backdrop {
+    background-color: @theme_bg_color;
+}
+
+frame.invalid {
+    background-color: @theme_bg_color;
+}
+
+frame.invalid entry.invalid {
 }
 
 /********

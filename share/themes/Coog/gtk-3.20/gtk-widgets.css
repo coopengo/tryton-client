@@ -804,9 +804,6 @@ frame.invalid {
     background-color: @theme_bg_color;
 }
 
-frame.invalid entry.invalid {
-}
-
 /********
  * menu *
  ********/

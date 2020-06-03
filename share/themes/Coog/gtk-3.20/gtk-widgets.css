@@ -773,11 +773,8 @@ infobar.question:backdrop,
                 inset 0 -1px shade (@error_bg_color, 1.04);
 }
 
-infobar.error,
-.error {
-    background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@error_bg_color, 1.04)),
-                                     to (shade (@error_bg_color, 0.96)));
+infobar.error, .error {
+    background-color: mix (@error_bg_color, @bg_color, 0.5);
     border-style: solid;
     border-width: 1px;
 
@@ -797,6 +794,14 @@ infobar.error:backdrop,
 .invalid:backdrop {
     background-image: none;
     background-color: mix (@error_bg_color, @bg_color, 0.5);
+}
+
+frame.invalid:backdrop {
+    background-color: @theme_bg_color;
+}
+
+frame.invalid {
+    background-color: @theme_bg_color;
 }
 
 /********

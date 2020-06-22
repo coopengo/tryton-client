@@ -261,7 +261,6 @@ combobox {
 	text-shadow: 0 1px @button_text_shadow;
 }
 
-combobox:readonly,
 combobox:disabled {
 	text-shadow: none;
 	color: @insensitive_fg_color;
@@ -278,8 +277,8 @@ combobox arrow {
 }
 
 combobox arrow:disabled,
-combobox.readonly arrow:backdrop,
-combobox.readonly arrow {
+combobox arrow:backdrop,
+*.readonly combobox arrow {
     color: transparent;
 }
 
@@ -497,41 +496,27 @@ entry:selected:backdrop {
     background-image:none;
 }
 
-*.readonly combobox button,
-*.readonly combobox button:backdrop,
-*.readonly combobox entry,
-*.readonly combobox entry:backdrop,
-*.readonly combobox entry:first-child:focus + button:last-child,
-*.readonly combobox entry:first-child:focus + button:last-child:backdrop,
-*.readonly combobox entry:last-child:focus ~ button:first-child,
-*.readonly combobox entry:last-child:focus ~ button:first-child:backdrop,
-*.readonly entry,
-*.readonly entry:backdrop,
-*.readonly entry:focus,
-*.readonly entry:focus:backdrop,
 *.readonly spinbutton,
-*.readonly spinbutton:backdrop,
+*.readonly entry,
 *.readonly spinbutton:focus,
-*.readonly spinbutton:focus:backdrop
-{
+*.readonly entry:focus,
+*.readonly combobox button,
+*.readonly combobox entry,
+*.readonly combobox entry:first-child:focus + button:last-child,
+*.readonly combobox entry:last-child:focus ~ button:first-child,
+*.readonly entry:focus,
+*.readonly spinbutton:backdrop,
+*.readonly entry:backdrop,
+*.readonly spinbutton:focus:backdrop,
+*.readonly entry:focus:backdrop,
+*.readonly combobox button:backdrop,
+*.readonly combobox entry:backdrop,
+*.readonly combobox entry:first-child:focus + button:last-child:backdrop,
+*.readonly combobox entry:last-child:focus ~ button:first-child:backdrop,
+*.readonly entry:focus:backdrop{
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@readonly_bg_color, 0.98)),
                                      to (shade (@readonly_bg_color, 1)));
-    color:@text_color;
-}
-
-frame.readonly combobox button,
-frame.readonly combobox button:backdrop,
-frame.readonly combobox entry,
-frame.readonly combobox entry:focus,
-frame.readonly combobox entry:focus:backdrop,
-frame.readonly combobox entry:first-child:focus + button:last-child,
-frame.readonly combobox entry:first-child:focus + button:last-child:backdrop,
-frame.readonly combobox entry:last-child:focus ~ button:first-child,
-frame.readonly combobox entry:last-child:focus ~ button:first-child:backdrop
-{
-    background-color: @bg_color;
-    background-image:none;
     color:@text_color;
 }
 

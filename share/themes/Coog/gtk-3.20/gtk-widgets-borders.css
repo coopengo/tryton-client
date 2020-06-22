@@ -189,36 +189,6 @@ combobox button:backdrop {
     margin:2px 2px 2px 0;
 }
 
-frame.readonly combobox entry:first-child:focus,
-frame.readonly combobox entry:last-child:focus ~ button:first-child {
-    border-radius: 5px 0 0 5px;
-    border-width: 2px 0 2px 2px;
-    margin: 0;
-    border-style: solid;
-    border-color: @shape_color;
-    border-image:none;
-}
-
-frame.readonly combobox entry:first-child:last-child:focus,
-frame.readonly combobox button:first-child:last-child:focus {
-    border-radius: 5px;
-    border-width: 2px;
-    margin:0;
-    border-style: solid;
-    border-color: @shape_color;
-    border-image:none;
-}
-
-frame.readonly combobox entry:last-child:focus,
-frame.readonly combobox entry:first-child:focus + button:last-child {
-    border-radius: 0 5px 5px 0;
-    border-width: 2px 2px 2px 0;
-    margin:0;
-    border-style: solid;
-    border-color: @shape_color;
-    border-image:none;
-}
-
 .primary-toolbar combobox entry button,
 .primary-toolbar combobox entry button:focus:disabled,
 menubar toolbar combobox entry button,

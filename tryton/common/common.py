@@ -1043,7 +1043,8 @@ def process_exception(exception, *args, **kwargs):
                     return rpc_execute(*args)
             else:
                 message(_('Concurrency Exception'), msg_type=gtk.MESSAGE_ERROR)
-        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
+        elif exception.faultCode in map(lambda x: str(int(x)),
+                (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)):
             from tryton.gui.main import Main
             if PLOCK.acquire(False):
                 try:

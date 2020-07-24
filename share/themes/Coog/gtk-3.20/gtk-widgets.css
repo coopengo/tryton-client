@@ -278,7 +278,7 @@ combobox arrow {
 
 combobox arrow:disabled,
 combobox arrow:backdrop,
-*.readonly combobox arrow {
+*.readonly > combobox arrow {
     color: transparent;
 }
 
@@ -500,19 +500,19 @@ entry:selected:backdrop {
 *.readonly entry,
 *.readonly spinbutton:focus,
 *.readonly entry:focus,
-*.readonly combobox button,
-*.readonly combobox entry,
-*.readonly combobox entry:first-child:focus + button:last-child,
-*.readonly combobox entry:last-child:focus ~ button:first-child,
+*.readonly > combobox button,
+*.readonly > combobox entry,
+*.readonly > combobox entry:first-child:focus + button:last-child,
+*.readonly > combobox entry:last-child:focus ~ button:first-child,
 *.readonly entry:focus,
 *.readonly spinbutton:backdrop,
 *.readonly entry:backdrop,
 *.readonly spinbutton:focus:backdrop,
 *.readonly entry:focus:backdrop,
-*.readonly combobox button:backdrop,
-*.readonly combobox entry:backdrop,
-*.readonly combobox entry:first-child:focus + button:last-child:backdrop,
-*.readonly combobox entry:last-child:focus ~ button:first-child:backdrop,
+*.readonly > combobox button:backdrop,
+*.readonly > combobox entry:backdrop,
+*.readonly > combobox entry:first-child:focus + button:last-child:backdrop,
+*.readonly > combobox entry:last-child:focus ~ button:first-child:backdrop,
 *.readonly entry:focus:backdrop{
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@readonly_bg_color, 0.98)),

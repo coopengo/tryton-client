@@ -171,20 +171,20 @@ combobox button:backdrop {
     border-color: shade (@shape_color, 1.8);
 }
 
-*.readonly combobox entry:first-child,
-*.readonly combobox entry:last-child ~ button:first-child {
+*.readonly > combobox entry:first-child,
+*.readonly > combobox entry:last-child ~ button:first-child {
     border-width: 0;
     margin: 2px 0 2px 2px;
 }
 
-*.readonly combobox entry:first-child:last-child,
-*.readonly combobox button:first-child:last-child {
+*.readonly > combobox entry:first-child:last-child,
+*.readonly > combobox button:first-child:last-child {
     border-width: 0;
     margin:2px;
 }
 
-*.readonly combobox entry:last-child,
-*.readonly combobox entry:first-child + button:last-child {
+*.readonly > combobox entry:last-child,
+*.readonly > combobox entry:first-child + button:last-child {
     border-width: 0;
     margin:2px 2px 2px 0;
 }

@@ -183,12 +183,16 @@ class DictMultiSelectionEntry(DictEntry):
         widget.add(self.tree)
 
         self.selection = self.definition['selection']
+        width = 10
         if self.definition.get('sort', True):
             self.selection.sort(key=operator.itemgetter(1))
         for value, name in self.selection:
             name = str(name)
             model.append((value, name))
+            width = max(width, len(name))
 
+        widget.set_propagate_natural_width(True)
+        widget.set_propagate_natural_height(True)
         name_column = Gtk.TreeViewColumn()
         name_cell = Gtk.CellRendererText()
         name_column.pack_start(name_cell, expand=True)

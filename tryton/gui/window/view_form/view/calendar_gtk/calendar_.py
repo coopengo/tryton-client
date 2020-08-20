@@ -5,6 +5,8 @@ import datetime
 import goocalendar
 from .dates_period import DatesPeriod
 
+from tryton.common import MODELACCESS
+
 
 class Calendar_(goocalendar.Calendar):
     'Calendar'
@@ -88,19 +90,22 @@ class Calendar_(goocalendar.Calendar):
             if date:  # select the day of the current record
                 self.select(date)
 
-        if self._event_store:
-            self._event_store.clear()
-        else:
-            event_store = goocalendar.EventStore()
-            self.event_store = event_store
+        event_store = goocalendar.EventStore()
+
+        model_access = MODELACCESS[self.view_calendar.screen.model_name]
+        editable = (
+            bool(int(self.view_calendar.attributes.get('editable', 1)))
+            and model_access['write'])
 
         for record in group:
             if not record[dtstart].get(record):
                 continue
 
             start = record[dtstart].get_client(record)
+            record[dtstart].state_set(record)
             if dtend:
                 end = record[dtend].get_client(record)
+                record[dtend].state_set(record)
             else:
                 end = None
             midnight = datetime.time(0)
@@ -117,9 +122,17 @@ class Calendar_(goocalendar.Calendar):
             text_color, bg_color = self.get_colors(record)
             label = '\n'.join(record[attrs['name']].get_client(record)
                 for attrs in self.fields).rstrip()
+            event_editable = (
+                editable
+                and not record[dtstart].get_state_attrs(record).get(
+                    'readonly', False)
+                and (not dtend
+                    or not record[dtend].get_state_attrs(record).get(
+                        'readonly', False)))
             event = goocalendar.Event(label, start, end, text_color=text_color,
-                bg_color=bg_color, all_day=all_day)
+                bg_color=bg_color, all_day=all_day, editable=event_editable)
             event.record = record
-            self._event_store.add(event)
+            event_store.add(event)
+        self.event_store = event_store
 
         self.grab_focus(self.get_root_item())

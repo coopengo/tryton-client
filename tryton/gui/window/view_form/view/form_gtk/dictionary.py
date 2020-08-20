@@ -17,7 +17,7 @@ from tryton.common import Tooltips, timezoned_date, untimezoned_date, \
         IconFactory
 from tryton.common.selection import selection_shortcuts
 from tryton.common.completion import get_completion, update_completion
-from tryton.common.datetime_ import Date, DateTime
+from tryton.common.datetime_ import Date, DateTime, add_operators
 from tryton.common.domain_parser import quote
 from tryton.common.entry_position import reset_position
 from tryton.common.number_entry import NumberEntry
@@ -118,7 +118,7 @@ class DictSelectionEntry(DictEntry):
         self._selection = {'': None}
         width = 10
         selection = self.definition['selection']
-        if self.definition.get('sorted', True):
+        if self.definition.get('sort', True):
             selection.sort(key=operator.itemgetter(1))
         for value, name in selection:
             name = str(name)
@@ -193,6 +193,7 @@ class DictMultiSelectionEntry(DictEntry):
 
         widget.set_propagate_natural_width(True)
         widget.set_propagate_natural_height(True)
+
         name_column = Gtk.TreeViewColumn()
         name_cell = Gtk.CellRendererText()
         name_column.pack_start(name_cell, expand=True)
@@ -211,8 +212,9 @@ class DictMultiSelectionEntry(DictEntry):
         selection.handler_block_by_func(self._changed)
         try:
             selection.unselect_all()
-            for v in (value or []):
-                selection.select_path(value2path[v])
+            for v in value:
+                if v in value2path:
+                    selection.select_path(value2path[v])
         finally:
             selection.handler_unblock_by_func(self._changed)
 
@@ -295,7 +297,7 @@ class DictNumericEntry(DictFloatEntry):
         txt_value = self.widget.get_text()
         if txt_value:
             try:
-                return locale.atof(txt_value, Decimal)
+                return Decimal(locale.delocalize(txt_value))
             except decimal.InvalidOperation:
                 pass
         return None
@@ -306,7 +308,7 @@ class DictDateTimeEntry(DictEntry):
     fill = False
 
     def create_widget(self):
-        widget = DateTime()
+        widget = add_operators(DateTime())
         record = self.parent_widget.record
         field = self.parent_widget.field
         if record and field:
@@ -329,7 +331,7 @@ class DictDateEntry(DictEntry):
     fill = False
 
     def create_widget(self):
-        widget = Date()
+        widget = add_operators(Date())
         record = self.parent_widget.record
         field = self.parent_widget.field
         if record and field:
@@ -514,7 +516,7 @@ class DictWidget(Widget):
 
     def add_line(self, key):
         key_schema = self.field.keys[key]
-        self.fields[key] = DICT_ENTRIES[key_schema['type_']](key, self)
+        self.fields[key] = DICT_ENTRIES[key_schema['type']](key, self)
         field = self.fields[key]
         text = key_schema['string'] + _(':')
         label = Gtk.Label(
@@ -561,26 +563,15 @@ class DictWidget(Widget):
             self.field.add_keys(list(new_key_names), self.record)
         decoder = PYSONDecoder()
 
-        # ABDC: Allow dictschema to be ordered by a sequence
-        value_ordered = OrderedDict()
-        use_sequence = any(
-            x[1].get('sequence_order', None) for x in self.field.keys.items())
-        if use_sequence:
-            for skey, svalues in sorted(self.field.keys.items(),
-                    key=lambda x: x[1]['sequence_order']):
-                if skey not in value:
-                    continue
-                value_ordered[skey] = value[skey]
+        def filter_func(item):
+            key, value = item
+            return key in self.field.keys
 
-        def _loop_order_hook():
-            if use_sequence:
-                return value_ordered.items()
-            else:
-                return ((key, val) for key, val in sorted(value.items()))
+        def key(item):
+            key, value = item
+            return self.field.keys[key]['sequence'] or 0
 
-        for key, val in _loop_order_hook():
-            if key not in self.field.keys:
-                continue
+        for key, val in sorted(filter(filter_func, value.items()), key=key):
             if key not in self.fields:
                 self.add_line(key)
             widget = self.fields[key]

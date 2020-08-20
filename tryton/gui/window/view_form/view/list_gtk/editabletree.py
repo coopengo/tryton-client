@@ -78,11 +78,9 @@ class EditableTreeView(TreeView):
     leaving_events = leaving_record_events + (
         Gdk.KEY_Tab, Gdk.KEY_ISO_Left_Tab, Gdk.KEY_KP_Enter)
 
-    def __init__(self, position, view, editable_open=False):
-        super(EditableTreeView, self).__init__(view)
-        self.editable = position
+    def __init__(self, view, editable_open=False):
+        super().__init__(view)
         self.editable_open = editable_open
-        self.view = view
 
     def on_quit_cell(
             self, current_record, column, renderer, value, callback=None):
@@ -123,7 +121,7 @@ class EditableTreeView(TreeView):
             and (len(model) >= self.view.screen.size_limit >= 0))
         if not access['create'] or limit:
             return
-        if self.editable == 'top':
+        if self.view.screen.new_position == 0:
             method = model.prepend
         else:
             method = model.append
@@ -224,7 +222,8 @@ class EditableTreeView(TreeView):
                                 break
                         GLib.idle_add(self.set_cursor, path, col, None, True)
                         return
-                    if ((self.view.screen.pre_validate
+                    if ((
+                                self.view.screen.pre_validate
                                 and not record.pre_validate())
                             or (not self.view.screen.parent
                                 and not record.save())):
@@ -237,7 +236,7 @@ class EditableTreeView(TreeView):
                     elif keyval == Gdk.KEY_Down:
                         self._key_down(path, model, column)
                     elif keyval == Gdk.KEY_Return:
-                        if self.editable == 'top':
+                        if self.view.screen.new_position == 0:
                             new_path = self._key_up(path, model)
                         else:
                             new_path = self._key_down(path, model)
@@ -284,7 +283,7 @@ class EditableTreeView(TreeView):
         return True
 
     def _key_down(self, path, model, column=None):
-        if path[0] == len(model) - 1 and self.editable == 'bottom':
+        if path[0] == len(model) - 1 and self.view.screen.new_position == -1:
             self.on_create_line()
         new_path = Gtk.TreePath((path[0] + 1) % len(model))
         if not column:
@@ -294,7 +293,7 @@ class EditableTreeView(TreeView):
         return new_path
 
     def _key_up(self, path, model, column=None):
-        if path[0] == 0 and self.editable == 'top':
+        if path[0] == 0 and self.view.screen.new_position == 0:
             self.on_create_line()
             new_path = Gtk.TreePath(0)
         else:
@@ -317,9 +316,11 @@ class EditableTreeView(TreeView):
             text = entry.props.value
         elif isinstance(entry, Gtk.ComboBox):
             model = entry.get_model()
-            text = model.get_value(
-                entry.get_active_iter(),
-                entry.props.entry_text_column)
+            iter_ = entry.get_active_iter()
+            if iter_:
+                text = model.get_value(iter_, entry.props.entry_text_column)
+            else:
+                text = ''
         else:
             text = entry.get_text()
         self.on_quit_cell(record, column, renderer, text)

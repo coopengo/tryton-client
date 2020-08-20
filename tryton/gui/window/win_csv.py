@@ -115,14 +115,10 @@ class WinCSV(NoModal):
         hbox_mapping.pack_start(
             frame_fields_selected, expand=True, fill=True, padding=0)
 
-        frame_csv_param = Gtk.Frame()
-        frame_csv_param.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
-        dialog_vbox.pack_start(
-            frame_csv_param, expand=False, fill=True, padding=0)
-
         vbox_csv_param = Gtk.VBox()
         vbox_csv_param.props.margin = 7
-        frame_csv_param.add(vbox_csv_param)
+        dialog_vbox.pack_start(
+            vbox_csv_param, expand=False, fill=True, padding=0)
 
         self.add_chooser(vbox_csv_param)
 
@@ -240,6 +236,13 @@ class WinCSV(NoModal):
             self.view2.connect("drag-data-get", self.drag_data_get)
             self.view2.connect('drag-data-received', self.drag_data_received)
             self.view2.connect('drag-data-delete', self.drag_data_delete)
+
+            drag_column = Gtk.TreeViewColumn()
+            drag_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            cell_pixbuf = Gtk.CellRendererPixbuf()
+            cell_pixbuf.props.pixbuf = IconFactory.get_pixbuf('tryton-drag')
+            drag_column.pack_start(cell_pixbuf, expand=False)
+            self.view2.insert_column(drag_column, 0)
 
     def drag_begin(self, treeview, context):
         return True

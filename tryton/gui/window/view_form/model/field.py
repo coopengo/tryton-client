@@ -237,8 +237,29 @@ class SelectionField(Field):
 
     _default = None
 
-    def get_client(self, record):
-        return record.value.get(self.name)
+
+class MultiSelectionField(Field):
+
+    _default = None
+
+    def get(self, record):
+        value = super().get(record)
+        if not value:
+            value = self._default
+        else:
+            value.sort()
+        return value
+
+    def get_eval(self, record):
+        value = super().get_eval(record)
+        if value is None:
+            value = []
+        return value
+
+    def set_client(self, record, value, force_change=False):
+        if value:
+            value = sorted(value)
+        super().set_client(record, value, force_change=force_change)
 
 
 class DateTimeField(Field):
@@ -386,7 +407,7 @@ class NumericField(FloatField):
 
     def convert(self, value):
         try:
-            return locale.atof(value, Decimal)
+            return Decimal(locale.delocalize(value))
         except decimal.InvalidOperation:
             return self._default
 
@@ -739,30 +760,38 @@ class O2MField(Field):
             else:
                 fields = {}
 
-        to_remove = []
-        for record2 in record.value[self.name]:
-            if not record2.id:
-                to_remove.append(record2)
+        group = record.value[self.name]
+        if value and value.get('delete'):
+            for record_id in value['delete']:
+                record2 = group.get(record_id)
+                if record2 is not None:
+                    group.remove(
+                        record2, remove=False, signal=False,
+                        force_remove=False)
         if value and value.get('remove'):
             for record_id in value['remove']:
-                record2 = record.value[self.name].get(record_id)
+                record2 = group.get(record_id)
                 if record2 is not None:
-                    to_remove.append(record2)
-        for record2 in to_remove:
-            record.value[self.name].remove(record2, signal=False,
-                force_remove=False)
+                    group.remove(
+                        record2, remove=True, signal=False,
+                        force_remove=False)
 
         if value and (value.get('add') or value.get('update', [])):
             record.value[self.name].add_fields(fields)
             for index, vals in value.get('add', []):
-                new_record = record.value[self.name].new(default=False)
-                record.value[self.name].add(new_record, index, signal=False)
+                new_record = None
+                id_ = vals.pop('id', None)
+                if id_ is not None:
+                    new_record = group.get(id_)
+                if not new_record:
+                    new_record = group.new(obj_id=id_, default=False)
+                group.add(new_record, index, signal=False)
                 new_record.set_on_change(vals)
 
             for vals in value.get('update', []):
                 if 'id' not in vals:
                     continue
-                record2 = record.value[self.name].get(vals['id'])
+                record2 = group.get(vals['id'])
                 if record2 is not None:
                     record2.set_on_change(vals)
 
@@ -855,7 +884,7 @@ class ReferenceField(Field):
                         pass
                 if '%s,%s' % (ref_model, ref_id) == self.get(record):
                     rec_name = record.value.get(
-                        self.name + '.', {}).get('rec_name', '')
+                        self.name + '.', {}).get('rec_name') or ''
                 else:
                     rec_name = ''
             record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
@@ -890,7 +919,7 @@ class ReferenceField(Field):
         elif ref_model:
             rec_name = ''
         else:
-            rec_name = str(ref_id)
+            rec_name = str(ref_id) if ref_id is not None else ''
         record.value[self.name] = ref_model, ref_id
         record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
 
@@ -1105,6 +1134,7 @@ TYPES = {
     'one2many': O2MField,
     'reference': ReferenceField,
     'selection': SelectionField,
+    'multiselection': MultiSelectionField,
     'boolean': BooleanField,
     'datetime': DateTimeField,
     'date': DateField,

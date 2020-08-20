@@ -3,6 +3,7 @@
 
 import gettext
 import os
+import platform
 import subprocess
 import tempfile
 import re
@@ -113,6 +114,8 @@ class IconFactory:
 
     @classmethod
     def get_pixbuf(cls, iconname, size=16, color=None, badge=None):
+        if not iconname:
+            return
         colors = CONFIG['icon.colors'].split(',')
         cls.register_icon(iconname)
         if iconname not in cls._pixbufs[(size, badge)]:
@@ -163,9 +166,10 @@ class IconFactory:
 
     @classmethod
     def get_image(cls, iconname, size=16, color=None, badge=None):
-        pixbuf = cls.get_pixbuf(iconname, size, color, badge)
         image = Gtk.Image()
-        image.set_from_pixbuf(pixbuf)
+        if iconname:
+            pixbuf = cls.get_pixbuf(iconname, size, color, badge)
+            image.set_from_pixbuf(pixbuf)
         return image
 
 
@@ -272,20 +276,6 @@ class ViewSearch(object):
 
 
 VIEW_SEARCH = ViewSearch()
-
-
-def find_in_path(name):
-    if os.name == "nt":
-        sep = ';'
-    else:
-        sep = ':'
-    path = [directory for directory in os.environ['PATH'].split(sep)
-            if os.path.isdir(directory)]
-    for directory in path:
-        val = os.path.join(directory, name)
-        if os.path.isfile(val) or os.path.islink(val):
-            return val
-    return name
 
 
 def get_toplevel_window():
@@ -696,7 +686,7 @@ ask = AskDialog()
 
 class ConcurrencyDialog(UniqueDialog):
 
-    def build_dialog(self, parent, resource, obj_id, context):
+    def build_dialog(self, parent):
         tooltips = Tooltips()
         dialog = Gtk.MessageDialog(
             transient_for=parent, modal=True, destroy_with_parent=True,
@@ -716,19 +706,24 @@ class ConcurrencyDialog(UniqueDialog):
         dialog.set_default_response(Gtk.ResponseType.CANCEL)
         return dialog
 
-    def __call__(self, resource, obj_id, context):
-        res = super(ConcurrencyDialog, self).__call__(resource, obj_id,
-            context)
+    def __call__(self, model, id_, context):
+        res = super(ConcurrencyDialog, self).__call__()
 
         if res == Gtk.ResponseType.OK:
             return True
         if res == Gtk.ResponseType.APPLY:
             from tryton.gui.window import Window
-            Window.create(resource,
-                res_id=obj_id,
-                domain=[('id', '=', obj_id)],
-                context=context,
-                mode=['form', 'tree'])
+            name = RPCExecute(
+                'model', model, 'read', [id_], ['rec_name'],
+                context=context)[0]['rec_name']
+            with Window(allow_similar=True):
+                Window.create(
+                    model,
+                    res_id=id_,
+                    name=_("Compare: %s", name),
+                    domain=[('id', '=', id_)],
+                    context=context,
+                    mode=['form'])
         return False
 
 
@@ -809,7 +804,8 @@ def check_version(box, version=__version__):
     filename = 'tryton-%s.tar.gz' % version
     if hasattr(sys, 'frozen'):
         if sys.platform == 'win32':
-            filename = 'tryton-setup-%s.exe' % version
+            bits = platform.architecture()[0]
+            filename = 'tryton-%s-%s.exe' % (bits, version)
         elif sys.platform == 'darwin':
             filename = 'tryton-%s.dmg' % version
     url = list(urllib.parse.urlparse(CONFIG['download.url']))
@@ -824,7 +820,7 @@ def check_version(box, version=__version__):
         return True
     except Exception:
         logger.error(
-            _("Unable to check for new version"), exc_info=True)
+            _("Unable to check for new version."), exc_info=True)
         return True
     else:
         if check_version(box, version):
@@ -849,6 +845,7 @@ PLOCK = Lock()
 
 
 def process_exception(exception, *args, **kwargs):
+    from .domain_parser import DomainParser
 
     rpc_execute = kwargs.get('rpc_execute', rpc.execute)
 
@@ -865,10 +862,18 @@ def process_exception(exception, *args, **kwargs):
                     process_exception=False)
                 return rpc_execute(*args)
         elif exception.faultCode == 'UserError':
-            msg, description = exception.args
+            msg, description, domain = exception.args
+            if domain:
+                domain, fields = domain
+                domain_parser = DomainParser(fields)
+                if domain_parser.stringable(domain):
+                    description += '\n' + domain_parser.string(domain)
             warning(description, msg)
         elif exception.faultCode == 'ConcurrencyException':
-            if len(args) >= 6:
+            if (len(args) >= 6
+                    and args[0] == 'model'
+                    and args[2] in {'write', 'delete'}
+                    and len(args[3]) == 1):
                 if concurrency(args[1], args[3][0], args[5]):
                     if '_timestamp' in args[5]:
                         del args[5]['_timestamp']
@@ -889,6 +894,10 @@ def process_exception(exception, *args, **kwargs):
                     PLOCK.release()
                 if args:
                     return rpc_execute(*args)
+        elif exception.faultCode == str(int(HTTPStatus.TOO_MANY_REQUESTS)):
+            message(
+                _('Too many requests. Try again later.'),
+                msg_type=Gtk.MessageType.ERROR)
         else:
             error(exception, exception.faultString)
     else:
@@ -906,10 +915,16 @@ class Login(object):
                 if exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
                     parameters.clear()
                     continue
+                if (exception.faultCode
+                        == str(int(HTTPStatus.TOO_MANY_REQUESTS))):
+                    message(
+                        _('Too many requests. Try again later.'),
+                        msg_type=Gtk.MessageType.ERROR)
+                    continue
                 if exception.faultCode != 'LoginException':
                     raise
-                name, message, type = exception.args
-                value = getattr(self, 'get_%s' % type)(message)
+                name, msg, type = exception.args
+                value = getattr(self, 'get_%s' % type)(msg)
                 if value is None:
                     raise TrytonError('QueryCanceled')
                 parameters[name] = value

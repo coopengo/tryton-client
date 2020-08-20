@@ -24,12 +24,17 @@ from tryton.common.cellrendererclickablepixbuf import \
     CellRendererClickablePixbuf
 from tryton.common import data2pixbuf
 from tryton.common.completion import get_completion, update_completion
-from tryton.common.selection import SelectionMixin, PopdownMixin
+from tryton.common.selection import (
+    SelectionMixin, PopdownMixin, selection_shortcuts)
 from tryton.common.datetime_ import CellRendererDate, CellRendererTime
 from tryton.common.domain_parser import quote
 from tryton.config import CONFIG
 
 _ = gettext.gettext
+
+COLORS = {n: v for n, v in zip(
+        ['muted', 'success', 'warning', 'danger'],
+        CONFIG['tree.colors'].split(','))}
 
 
 def send_keys(renderer, editable, position, treeview):
@@ -135,8 +140,16 @@ class Cell(object):
         field = record[self.attrs['name']]
         return record, field
 
-    def get_color(self, record):
-        return record.expr_eval(self.view.attributes.get('colors', '"black"'))
+    def _set_visual(self, cell, record):
+        visual = record.expr_eval(self.attrs.get('visual'))
+        if not visual:
+            visual = record.expr_eval(self.view.attributes.get('visual'))
+        background = COLORS.get(visual) if visual != 'muted' else None
+        foreground = COLORS.get(visual) if visual == 'muted' else None
+        cell.set_property('cell-background', background)
+        if isinstance(cell, Gtk.CellRendererText):
+            cell.set_property('foreground', foreground)
+            cell.set_property('foreground-set', bool(foreground))
 
 
 class Affix(Cell):
@@ -178,12 +191,7 @@ class Affix(Cell):
             if not text:
                 text = field.get_client(record) or ''
             cell.set_property('text', text)
-            fg_color = self.get_color(record)
-            cell.set_property('foreground', fg_color)
-            if fg_color == 'black':
-                cell.set_property('foreground-set', False)
-            else:
-                cell.set_property('foreground-set', True)
+        self._set_visual(cell, record)
 
     def clicked(self, renderer, path):
         record, field = self._get_record_field_from_path(path)
@@ -226,29 +234,19 @@ class GenericText(Cell):
     @realized
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
-        record = store.get_value(iter_, 0)
+        record, field = self._get_record_field_from_iter(iter_, store)
         text = self.get_textual_value(record)
 
-        if isinstance(cell, CellRendererToggle):
+        if isinstance(cell, Gtk.CellRendererToggle):
             cell.set_active(bool(text))
         else:
             cell.set_sensitive(not (record.deleted or record.removed))
-            if isinstance(cell,
-                    (CellRendererText, CellRendererDate, CellRendererCombo)):
+            if isinstance(cell, Gtk.CellRendererText):
                 cell.set_property('strikethrough', record.deleted)
             cell.set_property('text', text)
-            fg_color = self.get_color(record)
-            cell.set_property('foreground', fg_color)
-            if fg_color == 'black':
-                cell.set_property('foreground-set', False)
-            else:
-                cell.set_property('foreground-set', True)
 
-        field = record[self.attrs['name']]
-
-        editable = getattr(self.view.treeview, 'editable', False)
         states = ('invisible',)
-        if editable:
+        if self.view.editable:
             states = ('readonly', 'required', 'invisible')
 
         field.state_set(record, states=states)
@@ -261,7 +259,7 @@ class GenericText(Cell):
         if invisible and not isinstance(cell, CellRendererToggle):
             cell.set_property('text', '')
 
-        if editable:
+        if self.view.editable:
             readonly = self.attrs.get('readonly',
                 field.get_state_attrs(record).get('readonly', False))
             if invisible:
@@ -295,7 +293,7 @@ class GenericText(Cell):
                 cell.set_property('activatable', False)
         # ABD See #3428
         self._format_set(record, field, cell)
-        cell.set_property('xalign', self.align)
+        self._set_visual(cell, record)
 
     def _set_foreground(self, value, cell):
         cell.set_property('foreground', value)
@@ -353,6 +351,8 @@ class GenericText(Cell):
             callback()
 
     def set_editable(self, record):
+        if not record or not self.editable:
+            return
         self.editable.set_text(self.get_textual_value(record))
 
     def editing_started(self, cell, editable, path):
@@ -550,12 +550,13 @@ class Binary(GenericText):
         cell.set_property('text', text)
 
         states = ('invisible',)
-        if getattr(self.view.treeview, 'editable', False):
+        if self.view.editable:
             states = ('readonly', 'required', 'invisible')
 
         field.state_set(record, states=states)
         invisible = field.get_state_attrs(record).get('invisible', False)
         cell.set_property('visible', not invisible)
+        self._set_visual(cell, record)
 
     def get_data(self, record, field):
         if hasattr(field, 'get_data'):
@@ -618,6 +619,7 @@ class _BinarySave(_BinaryIcon):
         field.state_set(record, states=['invisible'])
         invisible = field.get_state_attrs(record).get('invisible', False)
         cell.set_property('visible', not invisible and size)
+        self._set_visual(cell, record)
 
 
 class _BinarySelect(_BinaryIcon):
@@ -668,6 +670,7 @@ class _BinarySelect(_BinaryIcon):
             cell.set_property('visible', False)
         else:
             cell.set_property('visible', not invisible)
+        self._set_visual(cell, record)
 
 
 class _BinaryOpen(_BinarySave):
@@ -701,8 +704,9 @@ class Image(GenericText):
         if renderer is None:
             renderer = Gtk.CellRendererPixbuf
         super(Image, self).__init__(view, attrs, renderer)
-        self.renderer.set_fixed_size(self.attrs.get('width', -1),
-            self.attrs.get('height', -1))
+        self.height = int(attrs.get('height', 100))
+        self.width = int(attrs.get('width', 300))
+        self.renderer.set_fixed_size(self.width, self.height)
 
     @realized
     @CellCache.cache
@@ -715,11 +719,10 @@ class Image(GenericText):
             else:
                 value = field.get_data(record)
         pixbuf = data2pixbuf(value)
-        width = self.attrs.get('width', -1)
-        height = self.attrs.get('height', -1)
-        if pixbuf and (width != -1 or height != -1):
-            pixbuf = common.resize_pixbuf(pixbuf, width, height)
+        if pixbuf:
+            pixbuf = common.resize_pixbuf(pixbuf, self.width, self.height)
         cell.set_property('pixbuf', pixbuf)
+        self._set_visual(cell, record)
 
     def get_textual_value(self, record):
         if not record:
@@ -758,7 +761,7 @@ class M2O(GenericText):
                 callback()
             return
 
-        if model:
+        if model and common.get_toplevel_window().get_focus():
             field = record[self.attrs['name']]
             win = self.search_remote(record, field, text, callback=callback)
             if len(win.screen.group) == 1:
@@ -938,7 +941,8 @@ class M2O(GenericText):
             self.open_remote(record, create=False, changed=True,
                 text=entry.get_text(), callback=callback)
         elif index == 1:
-            self.open_remote(record, create=True, callback=callback)
+            self.open_remote(record, create=True,
+                text=entry.get_text(), callback=callback)
         else:
             entry.handler_unblock(entry.editing_done_id)
 
@@ -1033,6 +1037,8 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
             callback()
 
     def set_editable(self, record):
+        if not record or not self.editable:
+            return
         field = record[self.attrs['name']]
         value = self.get_value(record, field)
         self.update_selection(record, field)
@@ -1041,6 +1047,8 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
     def editing_started(self, cell, editable, path):
         super(Selection, self).editing_started(cell, editable, path)
         record, field = self._get_record_field_from_path(path)
+
+        selection_shortcuts(editable)
 
         def set_value(*a):
             return self.set_value(editable, record, field)
@@ -1070,6 +1078,33 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
             value = (value, text)
         field.set_client(record, value)
         return False
+
+
+class MultiSelection(GenericText, SelectionMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.init_selection()
+
+    @realized
+    @CellCache.cache
+    def setter(self, column, cell, store, iter_, user_data=None):
+        super().setter(column, cell, store, iter_, user_data=user_data)
+        cell.set_property('editable', False)
+
+    def value_from_text(self, record, text, callback=None):
+        if callback:
+            callback()
+
+    def get_textual_value(self, record):
+        field = record[self.attrs['name']]
+        self.update_selection(record, field)
+        selection = dict(self.selection)
+        values = []
+        for value in field.get_eval(record):
+            text = selection.get(value, '')
+            values.append(text)
+        return ';'.join(values)
 
 
 class Reference(M2O):
@@ -1140,6 +1175,21 @@ class _ReferenceSelection(Selection):
         return False
 
 
+class Dict(GenericText):
+    align = 0.5
+
+    def __init__(self, view, attrs):
+        super().__init__(view, attrs)
+        self.renderer.props.editable = False
+
+    def setter(self, column, cell, store, iter_, user_data=None):
+        super().setter(column, cell, store, iter_, user_data=None)
+        cell.props.editable = False
+
+    def get_textual_value(self, record):
+        return '(%s)' % len(record[self.attrs['name']].get_client(record))
+
+
 class ProgressBar(Cell):
     align = 0.5
     orientations = {
@@ -1173,6 +1223,7 @@ class ProgressBar(Cell):
         cell.set_property('text', text)
         value = field.get(record) or 0.0
         cell.set_property('value', value * 100)
+        self._set_visual(cell, record)
 
     def open_remote(self, record, create, changed=False, text=None,
             callback=None):
@@ -1215,6 +1266,7 @@ class Button(Cell):
                 break
             parent = parent.parent
         # TODO icon
+        self._set_visual(cell, record)
 
     def button_clicked(self, widget, path):
         if not path:

@@ -156,8 +156,9 @@ class PopdownMixin(object):
         if lengths:
             pop = sorted(lengths, reverse=True)
             average = sum(pop) / len(pop)
-            deviation = int(math.sqrt(sum((x - average) ** 2 for x in pop) /
-                    len(pop)))
+            deviation = int(
+                math.sqrt(sum((x - average) ** 2 for x in pop)
+                    / len(pop)))
             width = max(next((x for x in pop if x < (deviation * 4)), 10), 10)
         else:
             width = 10
@@ -210,12 +211,3 @@ class PopdownMixin(object):
             # When setting no item GTK doesn't clear the entry
             entry.get_child().set_text('')
         return True
-
-
-def test_freeze_value():
-    assert freeze_value({'foo': 'bar'}) == (('foo', 'bar'),)
-    assert freeze_value([1, 42, 2, 3]) == (1, 42, 2, 3)
-    assert freeze_value('foo') == 'foo'
-    assert freeze_value({'foo': {'bar': 42}}) == (('foo', (('bar', 42),)),)
-    assert freeze_value({'foo': ('bar',  {'tata': 5, 'toto': 6})}) == \
-        (('foo', ('bar', (('tata', 5), ('toto', 6),))),)

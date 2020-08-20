@@ -9,6 +9,10 @@
 !ifndef SERIES
     !error "Missing SERIES! Specify if with '/DSERIES=<SERIES>'"
 !endif
+;Check bits
+!ifndef BITS
+    !error "Missing BITS! Specify it with '/DBITS=<BITS>'"
+!endif
 
 ;Include Modern UI
 !include "MUI.nsh"

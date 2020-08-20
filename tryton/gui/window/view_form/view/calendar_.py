@@ -11,9 +11,11 @@ from . import View, XMLViewParser
 try:
     from .calendar_gtk.calendar_ import Calendar_
     from .calendar_gtk.toolbar import Toolbar
-except ImportError as e:
+except ImportError:
     Calendar_ = None
     Toolbar = None
+
+from tryton.common import MODELACCESS
 
 _ = gettext.gettext
 
@@ -39,12 +41,20 @@ class CalendarXMLViewParser(XMLViewParser):
             self.parse(child)
         goocalendar = Calendar_(
             self.view.attributes, self.view, self.calendar_fields)
+        scrolledwindow = Gtk.ScrolledWindow()
+        scrolledwindow.add(goocalendar)
         toolbar = Toolbar(goocalendar)
-        self.view.scroll.add(goocalendar)
         self.view.widget.pack_start(
             toolbar, expand=False, fill=False, padding=0)
+        self.view.widget.pack_start(
+            scrolledwindow, expand=True, fill=True, padding=0)
         self.view.widgets['goocalendar'] = goocalendar
         self.view.widgets['toolbar'] = toolbar
+
+        if attributes.get('height') or attributes.get('width'):
+            scrolledwindow.set_size_request(
+                int(attributes.get('width', -1)),
+                int(attributes.get('height', -1)))
 
     def _parse_field(self, node, attributes):
         self.calendar_fields.append(attributes)
@@ -61,10 +71,6 @@ class ViewCalendar(View):
         if not Calendar_:
             self.widgets = {}
             return
-
-        self.scroll = scrolledWindow = Gtk.ScrolledWindow()
-        self.widget.pack_end(
-            scrolledWindow, expand=True, fill=True, padding=0)
 
         super().__init__(view_id, screen, xml)
 
@@ -120,7 +126,10 @@ class ViewCalendar(View):
         self.record = None
 
     def on_day_activated(self, goocalendar, day):
-        self.screen.new()
+        model_access = MODELACCESS[self.screen.model_name]
+        if (bool(int(self.attributes.get('editable', 1)))
+                and model_access['create']):
+            self.screen.new()
 
     def __getitem__(self, name):
         return None

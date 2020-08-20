@@ -48,6 +48,7 @@ class Main(Gtk.Application):
         action = Gio.SimpleAction.new('preferences', None)
         action.connect('activate', lambda *a: self.preferences())
         self.add_action(action)
+        self.set_accels_for_action('app.preferences', ['<Primary>comma'])
 
         action = Gio.SimpleAction.new('menu-search', None)
         action.connect(
@@ -75,7 +76,7 @@ class Main(Gtk.Application):
 
         for name, key in [
                 ('mode-pda', 'client.modepda'),
-                ('save-width-height', 'client.save_width_height'),
+                ('save-tree-width', 'client.save_tree_width'),
                 ('save-tree-state', 'client.save_tree_state'),
                 ('spell-checking', 'client.spellcheck'),
                 ('check-version', 'client.check_version'),
@@ -118,42 +119,6 @@ class Main(Gtk.Application):
         self.add_action(action)
         self.set_accels_for_action('app.quit', ['<Primary>q'])
 
-        menu = Gio.Menu.new()
-        menu.append(_("Preferences..."), 'app.preferences')
-
-        section = Gio.Menu.new()
-        toolbar = Gio.Menu.new()
-        section.append_submenu(_("Toolbar"), toolbar)
-        toolbar.append(_("Default"), 'app.toolbar::default')
-        toolbar.append(_("Text and Icons"), 'app.toolbar::both')
-        toolbar.append(_("Text"), 'app.toolbar::text')
-        toolbar.append(_("Icons"), 'app.toolbar::icons')
-
-        form = Gio.Menu.new()
-        section.append_submenu(_("Form"), form)
-        form.append(_("Save Width/Height"), 'app.save-width-height')
-        form.append(_("Save Tree State"), 'app.save-tree-state')
-        form.append(_("Fast Tabbing"), 'app.fast-tabbing')
-        form.append(_("Spell Checking"), 'app.spell-checking')
-
-        section.append(_("PDA Mode"), 'app.mode-pda')
-        section.append(_("Search Limit..."), 'app.search-limit')
-        section.append(_("Email..."), 'app.email')
-        section.append(_("Check Version"), 'app.check-version')
-
-        menu.append_section(_("Options"), section)
-
-        section = Gio.Menu.new()
-        section.append(_("Keyboard Shortcuts..."), 'app.shortcuts')
-        section.append(_("About..."), 'app.about')
-        menu.append_section(_("Help"), section)
-
-        section = Gio.Menu.new()
-        section.append(_("Quit"), 'app.quit')
-        menu.append_section(None, section)
-
-        self.set_app_menu(menu)
-
     def do_activate(self):
         if self.window:
             self.window.present()
@@ -173,8 +138,41 @@ class Main(Gtk.Application):
         self.window.set_titlebar(self.header)
         self.set_title()
 
+        menu = Gio.Menu.new()
+        menu.append(_("Preferences..."), 'app.preferences')
+
+        section = Gio.Menu.new()
+        toolbar = Gio.Menu.new()
+        section.append_submenu(_("Toolbar"), toolbar)
+        toolbar.append(_("Default"), 'app.toolbar::default')
+        toolbar.append(_("Text and Icons"), 'app.toolbar::both')
+        toolbar.append(_("Text"), 'app.toolbar::text')
+        toolbar.append(_("Icons"), 'app.toolbar::icons')
+
+        form = Gio.Menu.new()
+        section.append_submenu(_("Form"), form)
+        form.append(_("Save Column Width"), 'app.save-tree-width')
+        form.append(_("Save Tree State"), 'app.save-tree-state')
+        form.append(_("Spell Checking"), 'app.spell-checking')
+
+        section.append(_("PDA Mode"), 'app.mode-pda')
+        section.append(_("Search Limit..."), 'app.search-limit')
+        section.append(_("Email..."), 'app.email')
+        section.append(_("Check Version"), 'app.check-version')
+
+        menu.append_section(_("Options"), section)
+
+        section = Gio.Menu.new()
+        section.append(_("Keyboard Shortcuts..."), 'app.shortcuts')
+        section.append(_("About..."), 'app.about')
+        menu.append_section(_("Help"), section)
+
+        primary_menu = Gtk.MenuButton.new()
+        primary_menu.set_menu_model(menu)
+        self.header.pack_end(primary_menu)
+
         menu = Gtk.Button.new()
-        menu .set_relief(Gtk.ReliefStyle.NONE)
+        menu.set_relief(Gtk.ReliefStyle.NONE)
         menu.set_image(
             common.IconFactory.get_image('tryton-menu', Gtk.IconSize.BUTTON))
         menu.connect('clicked', self.menu_toggle)
@@ -441,7 +439,7 @@ class Main(Gtk.Application):
                 CONFIG['login.login'],
                 CONFIG['login.host'],
                 CONFIG['login.db'])
-        titles = [CONFIG['client.title']]
+        titles = []
         if value:
             titles.append(value)
         self.header.set_title(' - '.join(titles) + ' (' + date + ')')
@@ -631,6 +629,7 @@ class Main(Gtk.Application):
         section.add(group)
 
         for action, title in [
+                ('app.preferences', _("Preferences")),
                 ('app.menu-search', _("Search menu")),
                 ('app.menu-toggle', _("Toggle menu")),
                 ('app.tab-previous', _("Previous tab"), ),

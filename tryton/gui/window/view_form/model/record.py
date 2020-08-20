@@ -33,6 +33,7 @@ class Record(SignalEvent):
         self._timestamp = None
         self.resources = None
         self.button_clicks = {}
+        self.links_counts = {}
         self.next = {}  # Used in Group list
         self.value = {}
         self.autocompletion = {}
@@ -318,6 +319,7 @@ class Record(SignalEvent):
         self.modified_fields.clear()
         self._timestamp = None
         self.button_clicks.clear()
+        self.links_counts.clear()
 
     def get_timestamp(self):
         result = {self.model_name + ',' + str(self.id): self._timestamp}
@@ -339,8 +341,8 @@ class Record(SignalEvent):
 
     def save(self, force_reload=True):
         if self.id < 0 or self.modified:
+            value = self.get()
             if self.id < 0:
-                value = self.get()
                 try:
                     res, = RPCExecute('model', self.model_name, 'create',
                         [value], context=self.get_context())
@@ -350,7 +352,6 @@ class Record(SignalEvent):
                 self.id = res
                 self.group.id_changed(old_id)
             elif self.modified:
-                value = self.get()
                 if value:
                     context = self.get_context()
                     context = context.copy()
@@ -630,8 +631,9 @@ class Record(SignalEvent):
         autocomplete = self.group.fields[fieldname].attrs['autocomplete']
         args = self._get_on_change_args(autocomplete)
         try:
-            res = RPCExecute('model', self.model_name, 'autocomplete_' +
-                fieldname, args, context=self.get_context())
+            res = RPCExecute(
+                'model', self.model_name,
+                'autocomplete_' + fieldname, args, context=self.get_context())
         except RPCException:
             # ensure res is a list
             res = []

@@ -5,15 +5,19 @@ import datetime
 import os
 import tempfile
 import gettext
+import json
 import locale
+import urllib.parse
 from numbers import Number
 
 from gi.repository import Gdk, GObject, Gtk
 
 import tryton.common as common
+from tryton.config import CONFIG
 from tryton.common import RPCExecute, RPCException
 from tryton.gui.window.win_csv import WinCSV
-from tryton.rpc import clear_cache
+from tryton.jsonrpc import JSONEncoder
+from tryton.rpc import clear_cache, CONNECTION
 
 _ = gettext.gettext
 
@@ -21,14 +25,22 @@ _ = gettext.gettext
 class WinExport(WinCSV):
     "Window export"
 
-    def __init__(self, name, model, ids, context=None):
+    def __init__(self, name, screen):
         self.name = name
-        self.ids = ids
-        self.model = model
-        self.context = context
+        self.screen = screen
         self.fields = {}
         super(WinExport, self).__init__()
         self.dialog.set_title(_('CSV Export: %s') % name)
+        # Hide as selected record is the default
+        self.ignore_search_limit.hide()
+
+    @property
+    def model(self):
+        return self.screen.model_name
+
+    @property
+    def context(self):
+        return self.screen.context
 
     def add_buttons(self, box):
         button_save_export = Gtk.Button(
@@ -39,6 +51,20 @@ class WinExport(WinCSV):
         button_save_export.connect_after('clicked', self.addreplace_predef)
         box.pack_start(
             button_save_export, expand=False, fill=False, padding=0)
+
+        button_url = Gtk.MenuButton(
+            label=_("_URL Export"), stock=None, use_underline=True)
+        button_url.set_image(common.IconFactory.get_image(
+                'tryton-public', Gtk.IconSize.BUTTON))
+        button_url.set_always_show_image(True)
+        box.pack_start(button_url, expand=False, fill=False, padding=0)
+        menu_url = Gtk.Menu()
+        menuitem_url = Gtk.MenuItem()
+        menuitem_url.connect('activate', self.copy_url)
+        menu_url.add(menuitem_url)
+        menu_url.show_all()
+        button_url.set_popup(menu_url)
+        button_url.connect('button-press-event', self.set_url, menuitem_url)
 
         button_del_export = Gtk.Button(
             label=_('_Delete Export'), stock=None, use_underline=True)
@@ -80,10 +106,26 @@ class WinExport(WinCSV):
         box.pack_start(hbox_csv_export, expand=False, fill=True, padding=0)
         self.saveas = Gtk.ComboBoxText()
         hbox_csv_export.pack_start(
-            self.saveas, expand=True, fill=True, padding=0)
+            self.saveas, expand=True, fill=True, padding=3)
         self.saveas.append_text(_("Open"))
         self.saveas.append_text(_("Save"))
         self.saveas.set_active(0)
+
+        self.selected_records = Gtk.ComboBoxText()
+        hbox_csv_export.pack_start(
+            self.selected_records, expand=True, fill=True, padding=3)
+        self.selected_records.append_text(_("Listed Records"))
+        self.selected_records.append_text(_("Selected Records"))
+        self.selected_records.set_active(1)
+
+        self.ignore_search_limit = Gtk.CheckButton(
+            label=_("Ignore search limit"))
+        hbox_csv_export.pack_start(
+            self.ignore_search_limit, expand=False, fill=True, padding=3)
+
+        self.selected_records.connect(
+            'changed',
+            lambda w: self.ignore_search_limit.set_visible(not w.get_active()))
 
     def add_csv_header_param(self, box):
         self.add_field_names = Gtk.CheckButton(label=_("Add field names"))
@@ -147,11 +189,7 @@ class WinExport(WinCSV):
 
     def _sig_sel_add(self, store, path, iter):
         name = store.get_value(iter, 1)
-        string_, long_string, relation = self.fields[name]
-        if relation:
-            return
-        num = self.model2.append()
-        self.model2.set(num, 0, long_string, 1, name)
+        self.sel_field(name)
 
     def sig_unsel(self, *args):
         store, paths = self.view2.get_selection().get_selected_rows()
@@ -205,23 +243,24 @@ class WinExport(WinCSV):
             if not override:
                 return
         try:
-            new_id, = RPCExecute('model', 'ir.export', 'create', [{
-                    'name': name,
-                    'resource': self.model,
-                    'export_fields': [('create', [{
-                                        'name': x,
-                                        } for x in fields])],
-                    }], context=self.context)
-            if pref_id:
-                RPCExecute('model', 'ir.export', 'delete', [pref_id],
+            if not pref_id:
+                pref_id, = RPCExecute('model', 'ir.export', 'create', [{
+                        'name': name,
+                        'resource': self.model,
+                        'export_fields': [('create', [{
+                                            'name': x,
+                                            } for x in fields])],
+                        }], context=self.context)
+            else:
+                RPCExecute('model', 'ir.export', 'update', [pref_id], fields,
                     context=self.context)
         except RPCException:
             return
         clear_cache('model.%s.view_toolbar_get' % self.model)
         if iter_ is None:
-            self.predef_model.append((new_id, fields, name))
+            self.predef_model.append((pref_id, fields, name))
         else:
-            model.set_value(iter_, 0, new_id)
+            model.set_value(iter_, 0, pref_id)
             model.set_value(iter_, 1, fields)
 
     def remove_predef(self, widget):
@@ -269,7 +308,7 @@ class WinExport(WinCSV):
     def sel_field(self, name):
         _, long_string, relation = self.fields[name]
         if relation:
-            return
+            name += '/rec_name'
         self.model2.append((long_string, name))
 
     def response(self, dialog, response):
@@ -281,24 +320,42 @@ class WinExport(WinCSV):
                 fields.append(self.model2.get_value(iter, 1))
                 fields2.append(self.model2.get_value(iter, 0))
                 iter = self.model2.iter_next(iter)
-            action = self.saveas.get_active()
-            try:
-                data = RPCExecute('model', self.model, 'export_data',
-                    self.ids, fields, context=self.context)
-            except RPCException:
-                data = []
 
-            if action == 0:
+            if self.selected_records.get_active():
+                ids = [r.id for r in self.screen.selected_records]
+                try:
+                    data = RPCExecute(
+                        'model', self.model, 'export_data',
+                        ids, fields,
+                        context=self.context)
+                except RPCException:
+                    data = []
+            else:
+                domain = self.screen.search_domain(
+                    self.screen.screen_container.get_text())
+                if self.ignore_search_limit.get_active():
+                    offset, limit = 0, None
+                else:
+                    offset, limit = self.screen.offset, self.screen.limit
+                try:
+                    data = RPCExecute(
+                        'model', self.model, 'export_data_domain',
+                        domain, fields, offset, limit, self.screen.order,
+                        context=self.context)
+                except RPCException:
+                    data = []
+
+            if self.saveas.get_active():
+                fname = common.file_selection(_('Save As...'),
+                        action=Gtk.FileChooserAction.SAVE)
+                if fname:
+                    self.export_csv(fname, fields2, data)
+            else:
                 fileno, fname = tempfile.mkstemp(
                     '.csv', common.slugify(self.name) + '_')
                 self.export_csv(fname, fields2, data, popup=False)
                 os.close(fileno)
                 common.file_open(fname, 'csv')
-            else:
-                fname = common.file_selection(_('Save As...'),
-                        action=Gtk.FileChooserAction.SAVE)
-                if fname:
-                    self.export_csv(fname, fields2, data)
         self.destroy()
 
     def export_csv(self, fname, fields, data, popup=True):
@@ -312,20 +369,8 @@ class WinExport(WinCSV):
                 delimiter=self.get_delimiter())
             if self.add_field_names.get_active():
                 writer.writerow(fields)
-            for line in data:
-                row = []
-                for val in line:
-                    if locale_format:
-                        if isinstance(val, Number):
-                            val = locale.str(val)
-                        elif isinstance(val, datetime.datetime):
-                            val = val.strftime(common.date_format() + ' %X')
-                        elif isinstance(val, datetime.date):
-                            val = val.strftime(common.date_format())
-                    elif isinstance(val, bool):
-                        val = int(val)
-                    row.append(val)
-                writer.writerow(row)
+            for row in data:
+                writer.writerow(self.format_row(row, locale_format))
             if popup:
                 if len(data) == 1:
                     common.message(_('%d record saved.') % len(data))
@@ -336,6 +381,22 @@ class WinExport(WinCSV):
             common.warning(_("Operation failed.\nError message:\n%s")
                 % exception, _('Error'))
             return False
+
+    @classmethod
+    def format_row(cls, line, locale_format=True):
+        row = []
+        for val in line:
+            if locale_format:
+                if isinstance(val, Number):
+                    val = locale.str(val)
+                elif isinstance(val, datetime.datetime):
+                    val = val.strftime(common.date_format() + ' %X')
+                elif isinstance(val, datetime.date):
+                    val = val.strftime(common.date_format())
+            elif isinstance(val, bool):
+                val = int(val)
+            row.append(val)
+        return row
 
     def export_click(self, treeview, event):
         path_at_pos = treeview.get_path_at_pos(int(event.x), int(event.y))
@@ -358,3 +419,66 @@ class WinExport(WinCSV):
         if not selected:
             return
         self.sel_predef(model.get_path(selected))
+
+    def get_url(self):
+        path = [CONFIG['login.db'], 'data', self.model]
+        protocol = 'https' if CONNECTION.ssl else 'http'
+        host = common.get_hostname(CONFIG['login.host'])
+        port = common.get_port(CONFIG['login.host'])
+        if protocol == 'https' and port == 445:
+            netloc = host
+        elif protocol == 'http' and port == 80:
+            netloc = host
+        else:
+            netloc = '%s:%s' % (host, port)
+        query_string = []
+        if self.selected_records.get_active():
+            domain = [r.id for r in self.screen.selected_records]
+        else:
+            domain = self.screen.search_domain(
+                self.screen.screen_container.get_text())
+            if not self.ignore_search_limit.get_active():
+                query_string.append(('s', str(self.screen.limit)))
+                query_string.append(
+                    ('p', str(self.screen.offset // self.screen.limit)))
+            if self.screen.order:
+                for expr in self.screen.order:
+                    query_string.append(('o', ','.join(filter(None, expr))))
+        query_string.insert(0, ('d', json.dumps(
+                    domain, cls=JSONEncoder, separators=(',', ':'))))
+
+        iter_ = self.model2.get_iter_first()
+        while iter_:
+            query_string.append(('f', self.model2.get_value(iter_, 1)))
+            iter_ = self.model2.iter_next(iter_)
+
+        encoding = self.csv_enc.get_active_text()
+        if encoding:
+            query_string.append(('enc', encoding))
+
+        query_string.append(('dl', self.get_delimiter()))
+        query_string.append(('qc', self.get_quotechar()))
+        if not self.add_field_names.get_active():
+            query_string.append(('h', '0'))
+        if self.csv_locale.get_active():
+            query_string.append(('loc', '1'))
+
+        query_string = urllib.parse.urlencode(query_string)
+        return urllib.parse.urlunparse((
+                protocol, netloc, '/'.join(path), '', query_string, ''))
+
+    def set_url(self, button, event, menuitem):
+        url = self.get_url()
+        size = 80
+        if len(url) > size:
+            url = url[:size // 2] + '...' + url[-size // 2:]
+        menuitem.set_label(url)
+
+    def copy_url(self, menuitem):
+        url = self.get_url()
+        for selection in [
+                Gdk.Atom.intern('PRIMARY', True),
+                Gdk.Atom.intern('CLIPBOARD', True),
+                ]:
+            clipboard = Gtk.Clipboard.get(selection)
+            clipboard.set_text(url, -1)

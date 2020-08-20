@@ -201,10 +201,10 @@ class Form(SignalEvent, TabContent):
 
         fields = [
             ('id', _('ID:')),
-            ('create_uid.rec_name', _('Creation User:')),
-            ('create_date', _('Creation Date:')),
-            ('write_uid.rec_name', _('Latest Modification by:')),
-            ('write_date', _('Latest Modification Date:')),
+            ('create_uid.rec_name', _('Created by:')),
+            ('create_date', _('Created at:')),
+            ('write_uid.rec_name', _('Edited by:')),
+            ('write_date', _('Edited at:')),
         ]
 
         try:
@@ -247,7 +247,7 @@ class Form(SignalEvent, TabContent):
         if (self.screen.current_view.view_type == 'form'
                 and revision
                 and revision < revisions[-1][0]):
-                revision = revisions[-1][0]
+            revision = revisions[-1][0]
         if revision != self.screen.context.get('_datetime'):
             self.screen.clear()
             # Update root group context that will be propagated
@@ -320,10 +320,7 @@ class Form(SignalEvent, TabContent):
     def sig_export(self, widget=None):
         if not self.modified_save():
             return
-        export = WinExport(
-            self.title.get_text(), self.model,
-            [r.id for r in self.screen.selected_records],
-            context=self.screen.context)
+        export = WinExport(self.title.get_text(), self.screen)
         for name in self.screen.current_view.get_fields():
             type = self.screen.group.fields[name].attrs['type']
             if type == 'selection':
@@ -350,7 +347,8 @@ class Form(SignalEvent, TabContent):
         with open(fname, 'w') as fp:
             writer = csv.writer(fp, delimiter=delimiter)
             writer.writerow(fields)
-            writer.writerows(data)
+            for row in data:
+                writer.writerow(WinExport.format_row(row))
         os.close(fileno)
         common.file_open(fname, 'csv')
 
@@ -548,7 +546,7 @@ class Form(SignalEvent, TabContent):
             'id': record_id,
             'ids': record_ids,
         }
-        Action._exec_action(action, data, self.screen.local_context)
+        Action.execute(action, data, context=self.screen.local_context)
 
     def activate_save(self):
         self.buttons['save'].props.sensitive = self.screen.modified()

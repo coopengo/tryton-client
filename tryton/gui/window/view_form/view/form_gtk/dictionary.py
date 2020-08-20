@@ -181,6 +181,7 @@ class DictMultiSelectionEntry(DictEntry):
         selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         selection.connect('changed', self._changed)
         widget.add(self.tree)
+        widget_class(widget, 'multiselection', True)
 
         self.selection = self.definition['selection']
         width = 10

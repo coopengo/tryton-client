@@ -15,7 +15,8 @@ menubar menuitem:hover,
  * entry *
  *********/
 spinbutton,
-entry {
+entry,
+*.multiselection {
     border-radius: 5px;
     border-width: 1px;
     border-style: solid;
@@ -26,6 +27,8 @@ entry {
 
 *.readonly spinbutton,
 *.readonly entry,
+*.readonly *.multiselection,
+*.readonly *.multiselection:focus,
 *.readonly spinbutton:focus,
 *.readonly entry:focus {
     border-width:0px;
@@ -33,12 +36,14 @@ entry {
 }
 
 spinbutton:backdrop,
-entry:backdrop {
+entry:backdrop,
+*.multiselection:backdrop {
     border-color: shade (@shape_color, 1.8);
 }
 
 spinbutton:focus,
-entry:focus {
+entry:focus,
+*.multiselection:focus {
     border-width:2px;
     border-color: @focus_bg_color;
     margin:0;
@@ -47,7 +52,9 @@ entry:focus {
 spinbutton:disabled,
 entry:disabled,
 spinbutton:disabled:focus,
-entry:disabled:focus {
+entry:disabled:focus,
+*.multiselection:disabled,
+*.multiselection:disabled:focus {
     border-color: shade (@shape_color, 1.8);
     border-width: 1px;
     margin:1px;
@@ -106,9 +113,29 @@ headerbar toolitem .linked entry:disabled {
 /******************
  * comboboxentry *
  ******************/
-combobox entry:first-child,
-combobox button:first-child {
+combobox.cell entry,
+combobox.cell button {
+    border-radius: 0 0 0 0;
+    margin:0;
+}
+
+combobox:not(.cell) entry:first-child,
+combobox:not(.cell) button:first-child {
     border-radius: 5px 0 0 5px;
+}
+
+combobox:not(.cell) entry:last-child,
+combobox:not(.cell) button:last-child {
+    border-radius: 0 5px 5px 0;
+}
+
+combobox:not(.cell) entry:last-child:first-child,
+combobox:not(.cell) button:last-child:first-child {
+    border-radius: 5px;
+}
+
+combobox:not(.cell) entry:first-child,
+combobox:not(.cell) button:first-child {
     border-width: 1px 0 1px 1px;
     margin:1px 0 1px 1px;
     border-style: solid;
@@ -116,9 +143,8 @@ combobox button:first-child {
     border-image:none;
 }
 
-combobox entry:last-child,
-combobox button:last-child {
-    border-radius: 0 5px 5px 0;
+combobox:not(.cell) entry:last-child,
+combobox:not(.cell) button:last-child {
     border-width: 1px 1px 1px 0;
     margin:1px 1px 1px 0;
     border-style: solid;
@@ -126,9 +152,8 @@ combobox button:last-child {
     border-image:none;
 }
 
-combobox entry:last-child:first-child,
-combobox button:last-child:first-child {
-    border-radius: 5px;
+combobox:not(.cell) entry:last-child:first-child,
+combobox:not(.cell) button:last-child:first-child {
     border-width: 1px;
     margin:1px;
     border-style: solid;
@@ -136,35 +161,68 @@ combobox button:last-child:first-child {
     border-image:none;
 }
 
-combobox entry:first-child:focus,
-combobox entry:last-child:focus ~ button:first-child {
-    border-radius: 5px 0 0 5px;
-    border-width: 2px 0 2px 2px;
+combobox.cell entry:first-child,
+combobox.cell button:first-child,
+combobox.cell entry:first-child:focus,
+combobox.cell entry:last-child:focus ~ button:first-child {
+    border-width: 1px 0 1px 1px;
     margin: 0;
     border-style: solid;
     border-color: @shape_color;
     border-image:none;
 }
 
-combobox entry:first-child:last-child:focus,
-combobox button:first-child:last-child:focus {
-    border-radius: 5px;
-    border-width: 2px;
-    margin:0;
+combobox.cell entry:last-child,
+combobox.cell button:last-child,
+combobox.cell entry:last-child:focus,
+combobox.cell entry:first-child:focus + button:last-child {
+    border-width: 1px 1px 1px 0;
+    margin: 0;
     border-style: solid;
     border-color: @shape_color;
     border-image:none;
 }
 
-combobox entry:last-child:focus,
-combobox entry:first-child:focus + button:last-child {
-    border-radius: 0 5px 5px 0;
-    border-width: 2px 2px 2px 0;
-    margin:0;
+combobox.cell entry:last-child:first-child,
+combobox.cell button:last-child:first-child,
+combobox.cell entry:first-child:last-child:focus,
+combobox.cell button:first-child:last-child:focus
+ {
+    border-width: 1px;
+    margin: 0;
     border-style: solid;
     border-color: @shape_color;
     border-image:none;
 }
+
+combobox:not(.cell) entry:first-child:focus,
+combobox:not(.cell) entry:last-child:focus ~ button:first-child {
+    border-width: 2px 0 2px 2px;
+    margin: -1px 0 -1px -1px;
+    border-style: solid;
+    border-color: @shape_color;
+    border-image:none;
+}
+
+combobox:not(.cell) entry:first-child:last-child:focus,
+combobox:not(.cell) button:first-child:last-child:focus {
+    border-width: 2px;
+    margin: -1px;
+    border-style: solid;
+    border-color: @shape_color;
+    border-image:none;
+}
+
+combobox:not(.cell) entry:last-child:focus,
+combobox:not(.cell) entry:first-child:focus + button:last-child {
+    border-width: 2px 2px 2px 0;
+    margin: -1px -1px -1px 0;
+    border-style: solid;
+    border-color: @shape_color;
+    border-image:none;
+}
+
+
 
 combobox entry:backdrop,
 combobox button:backdrop {

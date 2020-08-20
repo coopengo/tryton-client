@@ -5,6 +5,7 @@ from gi.repository import GLib, GObject, Gtk
 from .widget import Widget
 from tryton.common.selection import SelectionMixin
 from tryton.common.treeviewcontrol import TreeViewControl
+from tryton.common.widget_style import widget_class
 
 
 class MultiSelection(Widget, SelectionMixin):
@@ -22,7 +23,7 @@ class MultiSelection(Widget, SelectionMixin):
             self.widget = Gtk.VBox()
         self.widget.set_size_request(100, 100)
         self.widget.get_accessible().set_name(attrs.get('string', ''))
-
+        widget_class(self.widget, 'multiselection', True)
         self.model = Gtk.ListStore(GObject.TYPE_INT, GObject.TYPE_STRING)
         self.tree = self.mnemonic_widget = TreeViewControl()
         self.tree.set_model(self.model)

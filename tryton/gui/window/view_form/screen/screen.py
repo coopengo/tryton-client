@@ -283,7 +283,6 @@ class Screen(SignalEvent):
         if not only_ids:
             if self.limit is not None and len(ids) == self.limit:
                 try:
-                    print(1, domain)
                     self.search_count = RPCExecute('model', self.model_name,
                         'search_count', domain, context=context)
                 except RPCException:

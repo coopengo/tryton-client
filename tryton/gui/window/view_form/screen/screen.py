@@ -283,6 +283,7 @@ class Screen(SignalEvent):
         if not only_ids:
             if self.limit is not None and len(ids) == self.limit:
                 try:
+                    print(1, domain)
                     self.search_count = RPCExecute('model', self.model_name,
                         'search_count', domain, context=context)
                 except RPCException:
@@ -359,9 +360,10 @@ class Screen(SignalEvent):
             self.screen_container.set_tab_counter(count, idx)
         screen_domain = self.search_domain(
             self.screen_container.get_text(), with_tab=False)
-        for idx, (name, domain, count) in enumerate(
+        for idx, (name, (ctx, domain), count) in enumerate(
                 self.screen_container.tab_domain):
-            domain = ['AND', domain, screen_domain]
+            decoder = PYSONDecoder(ctx)
+            domain = ['AND', decoder.decode(domain), screen_domain]
             set_tab_counter(lambda: None, idx)
             RPCExecute('model', self.model_name,
                 'search_count', domain, context=self.context,

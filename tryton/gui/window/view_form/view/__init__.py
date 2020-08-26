@@ -102,7 +102,7 @@ class XMLViewParser:
                 node_attrs[name] = bool(int(node_attrs[name]))
         for name in [
                 'yexpand', 'yfill', 'xexpand', 'xfill', 'colspan', 'position',
-                'height', 'width']:
+                'height', 'width', 'expand']:
             if name in node_attrs:
                 node_attrs[name] = int(node_attrs[name])
         for name in ['xalign', 'yalign']:
@@ -120,7 +120,7 @@ class XMLViewParser:
                     'relation_field', 'views', 'invisible', 'add_remove',
                     'sort', 'context', 'size', 'filename', 'autocomplete',
                     'translate', 'create', 'delete', 'selection_change_with',
-                    'schema_model']:
+                    'schema_model', 'required']:
                 if name in field:
                     node_attrs.setdefault(name, field[name])
         return node_attrs

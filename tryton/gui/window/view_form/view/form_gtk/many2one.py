@@ -135,7 +135,8 @@ class Many2One(Widget):
                     view_ids=self.attrs.get('view_ids', '').split(','),
                     views_preload=self.attrs.get('views', {}),
                     new=self.create_access,
-                    title=self.attrs.get('string'))
+                    title=self.attrs.get('string'),
+                    exclude_field=self.attrs.get('relation_field'))
                 win.screen.search_filter(quote(text))
                 if len(win.screen.group) == 1:
                     win.response(None, Gtk.ResponseType.OK)
@@ -146,9 +147,12 @@ class Many2One(Widget):
         self.changed = True
         return
 
-    def get_screen(self):
+    def get_screen(self, search=False):
         domain = self.field.domain_get(self.record)
-        context = self.field.get_context(self.record)
+        if search:
+            context = self.field.get_search_context(self.record)
+        else:
+            context = self.field.get_context(self.record)
         # Remove first tree view as mode is form only
         view_ids = self.attrs.get('view_ids', '').split(',')[1:]
         return Screen(self.get_model(), domain=domain, context=context,
@@ -161,7 +165,7 @@ class Many2One(Widget):
         if not model or not common.MODELACCESS[model]['create']:
             return
         self.focus_out = False
-        screen = self.get_screen()
+        screen = self.get_screen(search=True)
 
         def callback(result):
             if result:
@@ -222,7 +226,8 @@ class Many2One(Widget):
                 context=context, domain=domain, order=order,
                 view_ids=self.attrs.get('view_ids', '').split(','),
                 views_preload=self.attrs.get('views', {}),
-                new=self.create_access, title=self.attrs.get('string'))
+                new=self.create_access, title=self.attrs.get('string'),
+                exclude_field=self.attrs.get('relation_field'))
             win.screen.search_filter(quote(text))
             win.show()
             return
@@ -323,7 +328,7 @@ class Many2One(Widget):
         if self.has_target(value):
             populate(
                 menu, self.get_model(), self.id_from_value(value),
-                '', self.field)
+                '', self.field, self.field.get_context(self.record))
         return True
 
     def _set_completion(self):

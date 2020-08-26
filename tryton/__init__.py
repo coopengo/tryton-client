@@ -1,8 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 __version_coog__ = "2.9"
-__version__ = "5.2.15"
-import locale
+__version__ = "5.6.3"
 import gi
 import locale
 
@@ -17,7 +16,7 @@ except ValueError:
 
 try:
     # Import earlier otherwise there is a segmentation fault on MSYS2
-    import goocalendar
+    import goocalendar  # noqa: F401
 except ImportError:
     pass
 

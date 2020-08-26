@@ -23,8 +23,8 @@ import tryton.common as common
 from . import View, XMLViewParser
 from .list_gtk.editabletree import EditableTreeView, TreeView
 from .list_gtk.widget import (Affix, Char, Text, Int, Boolean, URL, Date,
-    Time, Float, TimeDelta, Binary, M2O, O2O, O2M, M2M, Selection, Reference,
-    ProgressBar, Button, Image)
+    Time, Float, TimeDelta, Binary, M2O, O2O, O2M, M2M, Selection,
+    MultiSelection, Reference, Dict, ProgressBar, Button, Image)
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -82,8 +82,8 @@ class AdaptModelGroup(GenericTreeModel):
             if record.children_group(self.children_field,
                     self.children_definitions):
                 self.row_has_child_toggled(path, iter_)
-            if (record.parent and
-                    record.group is not self.group):
+            if (record.parent
+                    and record.group is not self.group):
                 path = record.parent.get_index_path(self.group)
                 iter_ = self.get_iter(path)
                 self.row_has_child_toggled(path, iter_)
@@ -278,6 +278,7 @@ class TreeXMLViewParser(XMLViewParser):
         'callto': URL,
         'char': Char,
         'date': Date,
+        'dict': Dict,
         'email': URL,
         'float': Float,
         'image': Image,
@@ -290,6 +291,7 @@ class TreeXMLViewParser(XMLViewParser):
         'progressbar': ProgressBar,
         'reference': Reference,
         'selection': Selection,
+        'multiselection': MultiSelection,
         'sip': URL,
         'text': Text,
         'time': Time,
@@ -492,7 +494,7 @@ class TreeXMLViewParser(XMLViewParser):
             column.set_fixed_width(width)
         column.set_min_width(1)
 
-        expand = attributes.get('expand', False)
+        expand = bool(attributes.get('expand', False))
         column.set_expand(expand)
         column.set_resizable(True)
         if attributes.get('widget') != 'text':
@@ -502,6 +504,7 @@ class TreeXMLViewParser(XMLViewParser):
 class ViewTree(View):
     view_type = 'tree'
     xml_parser = TreeXMLViewParser
+    draggable = False
 
     def __init__(self, view_id, screen, xml, children_field,
             children_definitions):
@@ -510,17 +513,18 @@ class ViewTree(View):
         self.sum_widgets = []
         self.sum_box = Gtk.HBox()
         self.treeview = None
-        editable = xml.getAttribute('editable')
-        if editable and not screen.readonly:
+        self._editable = bool(int(xml.getAttribute('editable') or 0))
+        if self._editable and not screen.readonly:
             # ABD: Pass self.attributes.get('editable_open') to constructor
             self.treeview = EditableTreeView(
-                editable, self, xml.getAttribute('editable_open'))
+                self, xml.getAttribute('editable_open'))
             grid_lines = Gtk.TreeViewGridLines.BOTH
         else:
             self.treeview = TreeView(self)
             grid_lines = Gtk.TreeViewGridLines.VERTICAL
 
         super().__init__(view_id, screen, xml)
+        self.set_drag_and_drop()
 
         self.mnemonic_widget = self.treeview
         # ABD set alway expand through attributes
@@ -537,7 +541,6 @@ class ViewTree(View):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.treeview.append_column(column)
 
-        self.treeview.set_property('rules-hint', True)
         self.treeview.set_property('enable-grid-lines', grid_lines)
         self.treeview.set_fixed_height_mode(
             all(c.get_sizing() == Gtk.TreeViewColumnSizing.FIXED
@@ -546,15 +549,15 @@ class ViewTree(View):
         self.treeview.connect('key-press-event', self.on_keypress)
         self.treeview.connect_after('row-activated', self.__sig_switch)
         if self.children_field:
+            child_col = 1 if self.draggable else 0
             self.treeview.connect('test-expand-row', self.test_expand_row)
-            self.treeview.set_expander_column(self.treeview.get_column(0))
+            self.treeview.set_expander_column(
+                self.treeview.get_column(child_col))
         self.treeview.set_rubber_banding(True)
 
         selection = self.treeview.get_selection()
         selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         selection.connect('changed', self.__select_changed)
-
-        self.set_drag_and_drop()
 
         self.widget = Gtk.VBox()
         self.scroll = scroll = Gtk.ScrolledWindow()
@@ -611,10 +614,11 @@ class ViewTree(View):
         order = self.screen.order
         if order and len(order) == 1:
             (name, direction), = order
-            direction = {
-                'ASC': common.IconFactory.get_pixbuf('tryton-arrow-down'),
-                'DESC': common.IconFactory.get_pixbuf('tryton-arrow-up'),
-                }[direction]
+            if direction:
+                direction = {
+                    'ASC': common.IconFactory.get_pixbuf('tryton-arrow-down'),
+                    'DESC': common.IconFactory.get_pixbuf('tryton-arrow-up'),
+                    }[direction]
         else:
             name, direction = None, None
 
@@ -644,6 +648,7 @@ class ViewTree(View):
         if self.screen.readonly:
             dnd = False
 
+        self.draggable = dnd
         if not dnd:
             return
 
@@ -669,14 +674,22 @@ class ViewTree(View):
         self.treeview.connect('drag-drop', self.drag_drop)
         self.treeview.connect('drag-data-delete', self.drag_data_delete)
 
+        drag_column = Gtk.TreeViewColumn()
+        drag_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+        drag_column._type = 'drag'
+        drag_column.name = None
+        cell_pixbuf = Gtk.CellRendererPixbuf()
+        cell_pixbuf.props.pixbuf = common.IconFactory.get_pixbuf('tryton-drag')
+        drag_column.pack_start(cell_pixbuf, expand=False)
+        self.treeview.insert_column(drag_column, 0)
+
     @property
     def modified(self):
         return False
 
     @property
     def editable(self):
-        return (bool(getattr(self.treeview, 'editable', False))
-            and not self.screen.readonly)
+        return self._editable and not self.screen.readonly
 
     def get_fields(self):
         return [col.name for col in self.treeview.get_columns() if col.name]
@@ -972,8 +985,8 @@ class ViewTree(View):
     def __getitem__(self, name):
         return None
 
-    def save_width_height(self):
-        if not CONFIG['client.save_width_height']:
+    def save_width(self):
+        if not CONFIG['client.save_tree_width']:
             return
         fields = {}
         last_col = None
@@ -1000,7 +1013,7 @@ class ViewTree(View):
             self.screen.tree_column_width[model_name].update(fields)
 
     def destroy(self):
-        self.save_width_height()
+        self.save_width()
         self.treeview.destroy()
 
     def __sig_switch(self, treeview, path, column):
@@ -1113,8 +1126,7 @@ class ViewTree(View):
             if not name:
                 continue
             widget = self.get_column_widget(column)
-            if current_record and widget.editable:
-                widget.set_editable(current_record)
+            widget.set_editable(current_record)
             if decoder.decode(widget.attrs.get('tree_invisible', '0')):
                 column.set_visible(False)
             elif name == self.screen.exclude_field:

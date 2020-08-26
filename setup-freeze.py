@@ -77,8 +77,9 @@ def replace_path(match):
     if sys.platform == 'darwin':
         libs = [os.path.join('@executable_path', l) for l in libs]
     return 'shared-library="%s"' % ','.join(libs)
-lib_re = re.compile(r'shared-library="([^\"]*)"')
 
+
+lib_re = re.compile(r'shared-library="([^\"]*)"')
 required_libs = set()
 temp = tempfile.mkdtemp()
 for ns in required_gi_namespaces:
@@ -138,6 +139,7 @@ setup(name='tryton',
         'build_exe': {
             'no_compress': True,
             'include_files': include_files,
+            'excludes': ['tkinter'],
             'silent': True,
             'packages': ['gi'],
             'includes': ['gi', "gi.overrides.Gtk"],

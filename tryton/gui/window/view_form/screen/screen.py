@@ -157,10 +157,12 @@ class Screen(SignalEvent):
             return self._domain_parser[view_id]
 
         if view_id not in self.fields_view_tree:
+            context = self.context
+            context['view_tree_width'] = CONFIG['client.save_tree_width']
             try:
                 self.fields_view_tree[view_id] = view_tree = RPCExecute(
                     'model', self.model_name, 'fields_view_get', False, 'tree',
-                    context=self.context)
+                    context=context)
             except RPCException:
                 view_tree = {
                     'fields': {},
@@ -204,10 +206,10 @@ class Screen(SignalEvent):
         # Add common fields
         for name, string, type_ in (
                 ('id', _('ID'), 'integer'),
-                ('create_uid', _('Creation User'), 'many2one'),
-                ('create_date', _('Creation Date'), 'datetime'),
-                ('write_uid', _('Modification User'), 'many2one'),
-                ('write_date', _('Modification Date'), 'datetime'),
+                ('create_uid', _('Create by'), 'many2one'),
+                ('create_date', _('Created at'), 'datetime'),
+                ('write_uid', _('Edited by'), 'many2one'),
+                ('write_date', _('Edited at'), 'datetime'),
                 ):
             if name not in fields:
                 fields[name] = {
@@ -307,7 +309,7 @@ class Screen(SignalEvent):
         decoder = PYSONDecoder(self.context)
         return decoder.decode(self.domain)
 
-    def search_domain(self, search_string=None, set_text=False):
+    def search_domain(self, search_string=None, set_text=False, with_tab=True):
         domain = []
         # Test first parent to avoid calling unnecessary domain_parser
         if not self.parent and self.domain_parser:
@@ -339,6 +341,13 @@ class Screen(SignalEvent):
                 domain = ['AND', domain, self.current_view.current_domain()]
             else:
                 domain = self.current_view.current_domain()
+        if self.context_domain:
+            decoder = PYSONDecoder(self.context)
+            domain = ['AND', domain, decoder.decode(self.context_domain)]
+        if with_tab:
+            tab_domain = self.screen_container.get_tab_domain()
+            if tab_domain:
+                domain = ['AND', domain, tab_domain]
         return domain
 
     def count_tab_domain(self):
@@ -348,11 +357,10 @@ class Screen(SignalEvent):
             except RPCException:
                 count = None
             self.screen_container.set_tab_counter(count, idx)
-        screen_domain = self.search_domain(self.screen_container.get_text())
+        screen_domain = self.search_domain(
+            self.screen_container.get_text(), with_tab=False)
         for idx, (name, (ctx, domain), count) in enumerate(
                 self.screen_container.tab_domain):
-            if not count:
-                continue
             decoder = PYSONDecoder(ctx)
             domain = ['AND', decoder.decode(domain), screen_domain]
             set_tab_counter(lambda: None, idx)
@@ -483,8 +491,8 @@ class Screen(SignalEvent):
         self.group.destroy()
 
     def default_row_activate(self):
-        if (self.current_view.view_type == 'tree' and
-                int(self.current_view.attributes.get('keyword_open', 0))):
+        if (self.current_view.view_type == 'tree'
+                and int(self.current_view.attributes.get('keyword_open', 0))):
             return Action.exec_keyword('tree_open', {
                 'model': self.model_name,
                 'id': self.current_record.id if self.current_record else None,
@@ -499,13 +507,13 @@ class Screen(SignalEvent):
     def number_of_views(self):
         return len(self.views) + len(self.view_to_load)
 
-    def switch_view(self, view_type=None, view_id=None):
+    def switch_view(self, view_type=None, view_id=None, display=True):
         if view_id is not None:
             view_id = int(view_id)
         if self.current_view:
             self.current_view.set_value()
-            if (self.current_record and
-                    self.current_record not in self.current_record.group):
+            if (self.current_record
+                    and self.current_record not in self.current_record.group):
                 self.current_record = None
             fields = self.current_view.get_fields()
             if (self.current_record and self.current_view.editable
@@ -541,9 +549,10 @@ class Screen(SignalEvent):
             if view_type and not view_id and not len(self.view_to_load):
                 break
         self.screen_container.set(self.current_view.widget)
-        self.display()
-        # Postpone set of the cursor to ensure widgets are allocated
-        GLib.idle_add(self.set_cursor)
+        if display:
+            self.display()
+            # Postpone set of the cursor to ensure widgets are allocated
+            GLib.idle_add(self.set_cursor)
 
     def load_view_to_load(self):
         if len(self.view_to_load):
@@ -560,9 +569,12 @@ class Screen(SignalEvent):
         elif not view_id and view_type in self.views_preload:
             view = self.views_preload[view_type]
         else:
+            context = self.context
+            context['view_tree_width'] = CONFIG['client.save_tree_width']
             try:
-                view = RPCExecute('model', self.model_name, 'fields_view_get',
-                    view_id, view_type, context=self.context)
+                view = RPCExecute(
+                    'model', self.model_name, 'fields_view_get', view_id,
+                    view_type, context=context)
             except RPCException:
                 return
         return self.add_view(view)
@@ -612,7 +624,7 @@ class Screen(SignalEvent):
         if self.current_view.view_type == 'calendar':
             selected_date = self.current_view.get_selected_date()
         if self.current_view and not self.current_view.editable:
-            self.switch_view('form')
+            self.switch_view('form', display=False)
             if self.current_view.view_type != 'form':
                 return None
         if self.current_record:
@@ -620,7 +632,7 @@ class Screen(SignalEvent):
         else:
             group = self.group
         record = group.new(default, rec_name=rec_name)
-        group.add(record, self.new_model_position())
+        group.add(record, self.new_position)
         if previous_view.view_type == 'calendar':
             previous_view.set_default_date(record, selected_date)
         self.current_record = record
@@ -629,12 +641,19 @@ class Screen(SignalEvent):
         GLib.idle_add(self.set_cursor, True)
         return self.current_record
 
-    def new_model_position(self):
-        position = -1
-        if (self.current_view and self.current_view.view_type == 'tree'
-                and self.current_view.attributes.get('editable') == 'top'):
-            position = 0
-        return position
+    @property
+    def new_position(self):
+        if self.order:
+            for oexpr, otype in self.order:
+                if oexpr == 'id' and otype:
+                    if otype.startswith('DESC'):
+                        return 0
+                    elif otype.startswith('ASC'):
+                        return -1
+        if self.parent:
+            return -1
+        else:
+            return 0
 
     def set_on_write(self, func_name):
         if func_name:
@@ -662,12 +681,14 @@ class Screen(SignalEvent):
         path = self.current_record.get_path(self.group)
         if self.current_view.view_type == 'tree':
             # False value must be not saved
-            saved = all((x is 0 or x > 0 for x in self.group.save()))
+            saved = all((
+                    x is not False and x >= 0
+                    for x in self.group.save()))
             record_id = self.current_record.id if self.current_record else None
         elif self.current_record.validate(fields):
             record_id = self.current_record.save(force_reload=True)
             # False value must be not saved
-            saved = record_id is 0 or record_id > 0
+            saved = record_id is not False and record_id >= 0
         else:
             self.set_cursor()
             self.current_view.display()
@@ -1090,18 +1111,18 @@ class Screen(SignalEvent):
     def invalid_message(self, record=None):
         if record is None:
             record = self.current_record
-        domain_string = _('"%s" is not valid according to its domain')
+        domain_string = _('"%s" is not valid according to its domain.')
         domain_parser = DomainParser(
             {n: f.attrs for n, f in record.group.fields.items()})
         fields = []
         for field, invalid in sorted(record.invalid_fields.items()):
             string = record.group.fields[field].attrs['string']
             if invalid == 'required' or invalid == [[field, '!=', None]]:
-                fields.append(_('"%s" is required') % string)
+                fields.append(_('"%s" is required.') % string)
             elif invalid == 'domain':
                 fields.append(domain_string % string)
             elif invalid == 'children':
-                fields.append(_('The values of "%s" are not valid') % string)
+                fields.append(_('The values of "%s" are not valid.') % string)
             else:
                 if domain_parser.stringable(invalid):
                     fields.append(domain_parser.string(invalid))

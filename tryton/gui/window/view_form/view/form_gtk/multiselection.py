@@ -24,7 +24,7 @@ class MultiSelection(Widget, SelectionMixin):
         self.widget.set_size_request(100, 100)
         self.widget.get_accessible().set_name(attrs.get('string', ''))
         widget_class(self.widget, 'multiselection', True)
-        self.model = Gtk.ListStore(GObject.TYPE_INT, GObject.TYPE_STRING)
+        self.model = Gtk.ListStore(GObject.TYPE_PYOBJECT, GObject.TYPE_STRING)
         self.tree = self.mnemonic_widget = TreeViewControl()
         self.tree.set_model(self.model)
         self.tree.set_search_column(1)
@@ -42,7 +42,6 @@ class MultiSelection(Widget, SelectionMixin):
 
         self.nullable_widget = False
         self.init_selection()
-        self.id2path = {}
 
     def _color_widget(self):
         return self.tree
@@ -55,7 +54,7 @@ class MultiSelection(Widget, SelectionMixin):
     @property
     def modified(self):
         if self.record and self.field:
-            group = set(r.id for r in self.field.get_client(self.record))
+            group = set(self.field.get_eval(self.record))
             value = set(self.get_value())
             return value != group
         return False
@@ -85,17 +84,14 @@ class MultiSelection(Widget, SelectionMixin):
             self.model.clear()
             if not self.field:
                 return
-            id2path = {}
+            value2path = {}
             for idx, (value, name) in enumerate(self.selection):
                 self.model.append((value, name))
-                id2path[value] = idx
+                value2path[value] = idx
             selection.unselect_all()
-            group = self.field.get_client(self.record)
-            for element in group:
-                if (element not in group.record_removed
-                        and element not in group.record_deleted
-                        and element.id in id2path):
-                    selection.select_path(id2path[element.id])
+            values = self.field.get_eval(self.record)
+            for value in values:
+                selection.select_path(value2path[value])
             super(MultiSelection, self).display()
         finally:
             selection.handler_unblock_by_func(self.changed)

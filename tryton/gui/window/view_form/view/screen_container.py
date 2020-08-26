@@ -590,7 +590,7 @@ class ScreenContainer(object):
 
             vbox = Gtk.VBox()
             fields = [f for f in self.screen.domain_parser.fields.values()
-                if f.get('searchable', True)]
+                if f.get('searchable', True) and '.' not in f['name']]
             self.search_grid = Gtk.Grid(column_spacing=3, row_spacing=3)
 
             # Fill table with fields
@@ -606,7 +606,7 @@ class ScreenContainer(object):
                     selections = (_('True'), _('False'))
                     for selection in selections:
                         entry.append_text(selection)
-                elif field['type'] == 'selection':
+                elif field['type'] in ['selection', 'multiselection']:
                     selections = tuple(x[1] for x in field['selection'])
                     entry = Selection(selections)
                     entry.set_vexpand(True)

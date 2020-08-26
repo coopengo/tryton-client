@@ -34,7 +34,7 @@ from .form_gtk.dictionary import DictWidget
 from .form_gtk.multiselection import MultiSelection
 from .form_gtk.pyson import PYSON
 from .form_gtk.state_widget import (Label, VBox, Image, Frame, ScrolledWindow,
-    Notebook, Expander)
+    Notebook, Expander, Link)
 from .form_gtk.sourceeditor import SourceView
 
 
@@ -261,12 +261,21 @@ class FormXMLViewParser(XMLViewParser):
         self.view.state_widgets.append(button)
         self.container.add(button, attributes)
 
+    def _parse_link(self, node, attributes):
+        link = Link(attrs=attributes)
+        self.view.state_widgets.append(link)
+        self.container.add(link, attributes)
+
     def _parse_image(self, node, attributes):
         image = Image(attrs=attributes)
         self.view.state_widgets.append(image)
         self.container.add(image, attributes)
 
     def _parse_separator(self, node, attributes):
+        name = attributes.get('name')
+        if name and name == self.exclude_field:
+            self.container.add(None, attributes)
+            return
         vbox = VBox(attrs=attributes)
         if attributes.get('string'):
             label = Label(label=attributes['string'], attrs=attributes)
@@ -278,6 +287,8 @@ class FormXMLViewParser(XMLViewParser):
                     bool(attributes.get('yexpand', False))))
             vbox.pack_start(label, expand=True, fill=True, padding=0)
             self.view.state_widgets.append(label)
+            if name:
+                self._mnemonics[name] = label
         vbox.pack_start(Gtk.HSeparator(), expand=True, fill=True, padding=0)
         self.view.state_widgets.append(vbox)
         self.container.add(vbox, attributes)
@@ -385,6 +396,12 @@ class FormXMLViewParser(XMLViewParser):
             widget = Frame(label=attributes.get('string'), attrs=attributes)
             widget.add(group.container)
 
+        widget.set_halign(get_align(
+                attributes.get('xalign', 0.5),
+                bool(attributes.get('xexpand', True))))
+        widget.set_valign(get_align(
+                attributes.get('yalign', 0.5),
+                bool(attributes.get('yexpand'))))
         self.view.state_widgets.append(widget)
         self.container.add(widget, attributes)
 

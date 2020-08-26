@@ -27,9 +27,8 @@ class Wizard(InfoBar):
     def __init__(self, name=''):
         super(Wizard, self).__init__()
         self.widget = Gtk.VBox(spacing=3)
-        self.toolbar_box = None
         self.widget.show()
-        self.name = name or ''
+        self.name = name or _('Wizard')
         self.id = None
         self.ids = None
         self.action = None
@@ -39,7 +38,7 @@ class Wizard(InfoBar):
         self.email = False
         self.context = None
         self.states = {}
-        self.response2state = {}
+        self.response2button = {}
         self.__processing = False
         self.__waiting_response = False
         self.session_id = None
@@ -133,10 +132,7 @@ class Wizard(InfoBar):
                     del context['active_ids']
                     del context['active_model']
                     del context['action_id']
-                    del context['direct_print']
-                    del context['email_print']
-
-                    Action._exec_action(*action, context=context)
+                    Action.execute(*action, context=context)
 
             if self.state == self.end_state:
                 self.end(lambda *a: execute_actions())
@@ -171,10 +167,11 @@ class Wizard(InfoBar):
 
     def response(self, widget, response):
         self.__waiting_response = False
-        state = self.response2state.get(response, self.end_state)
+        button_attrs = self.response2button[response].attrs
+        state = button_attrs.get('state', self.end_state)
         self.screen.current_view.set_value()
-        if (not self.screen.current_record.validate()
-                and state != self.end_state):
+        if (button_attrs.get('validate', True)
+                and not self.screen.current_record.validate()):
             self.screen.display(set_cursor=True)
             self.message_info(
                 self.screen.invalid_message(), Gtk.MessageType.ERROR)
@@ -187,7 +184,7 @@ class Wizard(InfoBar):
         button = Button(definition)
         self.states[definition['state']] = button
         response = len(self.states)
-        self.response2state[response] = definition['state']
+        self.response2button[response] = button
         button.show()
         return button
 
@@ -230,10 +227,6 @@ class Wizard(InfoBar):
 
         self.widget.pack_start(frame, expand=False, fill=True, padding=3)
 
-        if self.toolbar_box:
-            self.widget.pack_start(
-                self.toolbar_box, expand=False, fill=True, padding=0)
-
         viewport = Gtk.Viewport()
         viewport.set_shadow_type(Gtk.ShadowType.NONE)
         viewport.add(self.screen.widget)
@@ -258,13 +251,10 @@ class WizardForm(Wizard, TabContent, SignalEvent):
 
     def __init__(self, name=''):
         super(WizardForm, self).__init__(name=name)
-        self.toolbar_box = Gtk.HBox()
         self.hbuttonbox = Gtk.HButtonBox()
         self.hbuttonbox.set_spacing(5)
         self.hbuttonbox.set_layout(Gtk.ButtonBoxStyle.END)
         self.hbuttonbox.show()
-        self.widget.pack_start(
-            self.toolbar_box, expand=False, fill=True, padding=0)
         self.dialogs = []
 
         self.handlers = {
@@ -294,9 +284,6 @@ class WizardForm(Wizard, TabContent, SignalEvent):
         return self.state == self.end_state
 
     def destroy(self, action=None):
-        if self.toolbar_box.get_children():
-            toolbar = self.toolbar_box.get_children()[0]
-            self.toolbar_box.remove(toolbar)
         super(WizardForm, self).destroy(action=action)
         if action == 'reload menu':
             RPCContextReload(Main().sig_win_menu)
@@ -315,8 +302,6 @@ class WizardForm(Wizard, TabContent, SignalEvent):
 class WizardDialog(Wizard, NoModal):
 
     def __init__(self, name=''):
-        if not name:
-            name = _('Wizard')
         Wizard.__init__(self, name=name)
         NoModal.__init__(self)
         self.dia = Gtk.Dialog(

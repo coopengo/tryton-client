@@ -98,14 +98,6 @@ def group_operator(tokens):
         yield cur
 
 
-def test_group_operator():
-    assert list(group_operator(iter(['a', '>', '=']))) == ['a', '>=']
-    assert list(group_operator(iter(['>', '=', 'b']))) == ['>=', 'b']
-    assert list(group_operator(iter(['a', '=', 'b']))) == ['a', '=', 'b']
-    assert list(group_operator(iter(['a', '>', '=', 'b']))) == ['a', '>=', 'b']
-    assert list(group_operator(iter(['a', '>', '=', '=']))) == ['a', '>=', '=']
-
-
 def likify(value):
     "Add % if needed"
     if not value:
@@ -129,13 +121,6 @@ def quote(value):
         if test in value:
             return '"%s"' % value
     return value
-
-
-def test_quote():
-    assert quote('test') == 'test'
-    assert quote('foo bar') == '"foo bar"'
-    assert quote('"foo"') == '\\\"foo\\\"'
-    assert quote('foo\\bar') == 'foo\\\\bar'
 
 
 def ending_clause(domain, deep=0):
@@ -177,6 +162,8 @@ def default_operator(field):
     if field['type'] in ('char', 'text', 'many2one', 'many2many', 'one2many',
             'reference'):
         return 'ilike'
+    elif field['type'] == 'multiselection':
+        return 'in'
     else:
         return '='
 
@@ -208,25 +195,6 @@ def split_target_value(field, value):
     return target, value
 
 
-def test_split_target_value():
-    field = {
-        'type': 'reference',
-        'selection': [
-            ('spam', 'Spam'),
-            ('ham', 'Ham'),
-            ('e', 'Eggs'),
-            ]
-        }
-    for value, result in (
-            ('Spam', (None, 'Spam')),
-            ('foo', (None, 'foo')),
-            ('Spam,', ('spam', '')),
-            ('Ham,bar', ('ham', 'bar')),
-            ('Eggs,foo', ('e', 'foo')),
-            ):
-        assert split_target_value(field, value) == result
-
-
 def convert_value(field, value, context=None):
     "Convert value for field"
     if context is None:
@@ -237,8 +205,6 @@ def convert_value(field, value, context=None):
             return any(test.lower().startswith(value.lower())
                 for test in (
                     _('y'), _('Yes'), _('True'), _('t'), '1'))
-        else:
-            return bool(value)
 
     def convert_float():
         factor = float(field.get('factor', 1))
@@ -257,7 +223,7 @@ def convert_value(field, value, context=None):
     def convert_numeric():
         factor = Decimal(field.get('factor', 1))
         try:
-            return locale.atof(value, Decimal) / factor
+            return Decimal(locale.delocalize(value)) / factor
         except (decimal.InvalidOperation, AttributeError):
             return
 
@@ -310,6 +276,7 @@ def convert_value(field, value, context=None):
         'integer': convert_integer,
         'numeric': convert_numeric,
         'selection': convert_selection,
+        'multiselection': convert_selection,
         'reference': convert_selection,
         'datetime': convert_datetime,
         'date': convert_date,
@@ -320,186 +287,31 @@ def convert_value(field, value, context=None):
     return converts.get(field['type'], lambda: value)()
 
 
-def test_convert_boolean():
-    field = {
-        'type': 'boolean',
-        }
-    for value, result in (
-            ('Y', True),
-            ('yes', True),
-            ('t', True),
-            ('1', True),
-            ('N', False),
-            ('False', False),
-            ('no', False),
-            ('0', False),
-            (None, False),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_float():
-    field = {
-        'type': 'float',
-        }
-    for value, result in (
-            ('1', 1.0),
-            ('1.5', 1.5),
-            ('', None),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_float_factor():
-    field = {
-        'type': 'float',
-        'factor': '100',
-        }
-    assert convert_value(field, '42') == 0.42
-
-
-def test_convert_integer():
-    field = {
-        'type': 'integer',
-        }
-    for value, result in (
-            ('1', 1),
-            ('1.5', 1),
-            ('', None),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_integer_factor():
-    field = {
-        'type': 'integer',
-        'factor': '2',
-        }
-    assert convert_value(field, '6') == 3
-
-
-def test_convert_numeric():
-    field = {
-        'type': 'numeric',
-        }
-    for value, result in (
-            ('1', Decimal(1)),
-            ('1.5', Decimal('1.5')),
-            ('', None),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_numeric_factor():
-    field = {
-        'type': 'numeric',
-        'factor': '5',
-        }
-    assert convert_value(field, '1') == Decimal('0.2')
-
-
-def test_convert_selection():
-    field = {
-        'type': 'selection',
-        'selection': [
-            ('male', 'Male'),
-            ('female', 'Female'),
-            ],
-        }
-    field_with_empty = field.copy()
-    field_with_empty['selection'] = (field_with_empty['selection']
-        + [('', '')])
-    for value, result in (
-            ('Male', 'male'),
-            ('male', 'male'),
-            ('test', 'test'),
-            (None, None),
-            ('', ''),
-            ):
-        assert convert_value(field, value) == result
-        assert convert_value(field_with_empty, value) == result
-
-
-def test_convert_datetime():
-    field = {
-        'type': 'datetime',
-        'format': '"%H:%M:%S"',
-        }
-    for value, result in (
-            ('12/04/2002', untimezoned_date(datetime.datetime(2002, 12, 4))),
-            ('12/04/2002 12:30:00', untimezoned_date(
-                    datetime.datetime(2002, 12, 4, 12, 30))),
-            ('02/03/04', untimezoned_date(datetime.datetime(2004, 2, 3))),
-            ('02/03/04 05:06:07', untimezoned_date(
-                    datetime.datetime(2004, 2, 3, 5, 6, 7))),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result, (value,
-            convert_value(field, value), result)
-
-
-def test_convert_date():
-    field = {
-        'type': 'date',
-        }
-    for value, result in (
-            ('12/04/2002', datetime.date(2002, 12, 4)),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_time():
-    field = {
-        'type': 'time',
-        'format': '"%H:%M:%S"',
-        }
-    for value, result in (
-            ('12:30:00', datetime.time(12, 30, 0)),
-            ('test', None),
-            (None, None),
-            ):
-        assert convert_value(field, value) == result
-
-
-def test_convert_timedelta():
-    field = {
-        'type': 'timedelta',
-        }
-    for value, result in [
-            ('1d 2:00', datetime.timedelta(days=1, hours=2)),
-            ('foo', datetime.timedelta()),
-            (None, None),
-            ]:
-        assert convert_value(field, value) == result
-
-
 def format_value(field, value, target=None, context=None):
     "Format value for field"
     if context is None:
         context = {}
 
     def format_boolean():
-        return _('True') if value else _('False')
+        if value is False:
+            return _("False")
+        elif value:
+            return _("True")
+        else:
+            return ''
 
     def format_integer():
         factor = float(field.get('factor', 1))
-        if value or value is 0 or isinstance(value, float):
+        if (value
+                or (isinstance(value, (int, float))
+                    and not isinstance(value, bool))):
             return str(int(value * factor))
         return ''
 
     def format_float():
         if (not value
-                and value is not 0
-                and not isinstance(value, (float, Decimal))):
+                and (not isinstance(value, (int, float, Decimal))
+                    or isinstance(value, bool))):
             return ''
         if isinstance(value, Decimal):
             cast = Decimal
@@ -563,6 +375,7 @@ def format_value(field, value, target=None, context=None):
         'float': format_float,
         'numeric': format_float,
         'selection': format_selection,
+        'multiselection': format_selection,
         'reference': format_reference,
         'datetime': format_datetime,
         'date': format_date,
@@ -576,172 +389,14 @@ def format_value(field, value, target=None, context=None):
             lambda: value if value is not None else '')())
 
 
-def test_format_boolean():
-    field = {
-        'type': 'boolean',
-        }
-    for value, result in (
-            (True, 'True'),
-            (False, 'False'),
-            (None, 'False'),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_integer():
-    field = {
-        'type': 'integer',
-        }
-    for value, result in (
-            (1, '1'),
-            (1.5, '1'),
-            (0, '0'),
-            (0.0, '0'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_integer_factor():
-    field = {
-        'type': 'integer',
-        'factor': '2',
-        }
-    assert format_value(field, 3) == '6'
-
-
-def test_format_float():
-    field = {
-        'type': 'float',
-        }
-    for value, result in (
-            (1, '1'),
-            (1.5, '1.5'),
-            (1.50, '1.5'),
-            (150.79, '150.79'),
-            (0, '0'),
-            (0.0, '0'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_float_factor():
-    field = {
-        'type': 'float',
-        'factor': '100',
-        }
-    assert format_value(field, 0.42) == '42'
-
-
-def test_format_numeric():
-    field = {
-        'type': 'numeric',
-        }
-    for value, result in (
-            (Decimal(1), '1'),
-            (Decimal('1.5'), '1.5'),
-            (Decimal('1.50'), '1.5'),
-            (Decimal('150.79'), '150.79'),
-            (Decimal(0), '0'),
-            (Decimal('0.0'), '0'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_numeric_factor():
-    field = {
-        'type': 'numeric',
-        'factor': '5',
-        }
-    assert format_value(field, Decimal('0.2')) == '1'
-
-
-def test_format_selection():
-    field = {
-        'type': 'selection',
-        'selection': [
-            ('male', 'Male'),
-            ('female', 'Female'),
-            ],
-        }
-    field_with_empty = field.copy()
-    field_with_empty['selection'] = (field_with_empty['selection']
-        + [('', '')])
-    for value, result in (
-            ('male', 'Male'),
-            ('test', 'test'),
-            (False, ''),
-            (None, ''),
-            ('', ''),
-            ):
-        assert format_value(field, value) == result
-        assert format_value(field_with_empty, value) == result
-
-
-def test_format_datetime():
-    field = {
-        'type': 'datetime',
-        'format': '"%H:%M:%S"',
-        }
-    for value, result in (
-            (datetime.date(2002, 12, 4), '12/04/2002'),
-            (untimezoned_date(datetime.datetime(2002, 12, 4)), '12/04/2002'),
-            (untimezoned_date(datetime.datetime(2002, 12, 4, 12, 30)),
-                '"12/04/2002 12:30:00"'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_date():
-    field = {
-        'type': 'date',
-        }
-    for value, result in (
-            (datetime.date(2002, 12, 4), '12/04/2002'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_time():
-    field = {
-        'type': 'time',
-        'format': '"%H:%M:%S"',
-        }
-    for value, result in (
-            (datetime.time(12, 30, 0), '"12:30:00"'),
-            (False, ''),
-            (None, ''),
-            ):
-        assert format_value(field, value) == result
-
-
-def test_format_timedelta():
-    field = {
-        'type': 'timedelta',
-        }
-    for value, result in [
-            (datetime.timedelta(days=1, hours=2), '"1d 02:00"'),
-            (datetime.timedelta(), ''),
-            (None, ''),
-            ('', ''),
-            ]:
-        assert format_value(field, value) == result
-
-
 def complete_value(field, value):
     "Complete value for field"
 
     def complete_boolean():
-        if value:
+        if value is None:
+            yield True
+            yield False
+        elif value:
             yield False
         else:
             yield True
@@ -783,62 +438,13 @@ def complete_value(field, value):
     completes = {
         'boolean': complete_boolean,
         'selection': complete_selection,
+        'multiselection': complete_selection,
         'reference': complete_reference,
         'datetime': complete_datetime,
         'date': complete_date,
         'time': complete_time,
         }
     return completes.get(field['type'], lambda: [])()
-
-
-def test_complete_selection():
-    field = {
-        'type': 'selection',
-        'selection': [
-            ('male', 'Male'),
-            ('female', 'Female'),
-            ],
-        }
-    for value, result in (
-            ('m', ['male']),
-            ('test', []),
-            ('', ['male', 'female']),
-            (None, ['male', 'female']),
-            (['male', 'f'], [['male', 'female']]),
-            (['male', None], [['male', 'male'], ['male', 'female']]),
-            ):
-        assert list(complete_value(field, value)) == result
-
-    field_with_empty = field.copy()
-    field_with_empty['selection'] = (field_with_empty['selection']
-        + [('', '')])
-    for value, result in (
-            ('m', ['male']),
-            ('test', []),
-            ('', ['male', 'female', '']),
-            (None, ['male', 'female', '']),
-            (['male', 'f'], [['male', 'female']]),
-            ):
-        assert list(complete_value(field_with_empty, value)) == result
-
-
-def test_complete_reference():
-    field = {
-        'type': 'reference',
-        'selection': [
-            ('spam', 'Spam'),
-            ('ham', 'Ham'),
-            ('', ''),
-            ],
-        }
-    for value, result in (
-            ('s', ['%spam%']),
-            ('test', []),
-            ('', ['%spam%', '%ham%', '%']),
-            (None, ['%spam%', '%ham%', '%']),
-            (['spam', 'h'], [['spam', 'ham']]),
-            ):
-        assert list(complete_value(field, value)) == result
 
 
 def parenthesize(tokens):
@@ -850,22 +456,6 @@ def parenthesize(tokens):
             break
         else:
             yield token
-
-
-def test_parenthesize():
-    for value, result in (
-            (['a'], ['a']),
-            (['a', 'b'], ['a', 'b']),
-            (['(', 'a', ')'], [['a']]),
-            (['a', 'b', '(', 'c', '(', 'd', 'e', ')', 'f', ')', 'g'],
-                ['a', 'b', ['c', ['d', 'e'], 'f'], 'g']),
-            (['a', 'b', '(', 'c'], ['a', 'b', ['c']]),
-            (['a', 'b', '(', 'c', '(', 'd', 'e', ')', 'f'],
-                ['a', 'b', ['c', ['d', 'e'], 'f']]),
-            (['a', 'b', ')'], ['a', 'b']),
-            (['a', 'b', ')', 'c', ')', 'd)'], ['a', 'b']),
-            ):
-        assert rlist(parenthesize(iter(value))) == result
 
 
 def operatorize(tokens, operator='or'):
@@ -907,54 +497,30 @@ def operatorize(tokens, operator='or'):
             yield cur
 
 
-def test_operatorize():
-    a = ('a', 'a', 'a')
-    b = ('b', 'b', 'b')
-    c = ('c', 'c', 'c')
-    null_ = ('d', None, 'x')
-    double_null_ = ('e', None, None)
-    for value, result in (
-            (['a'], ['a']),
-            (['a', 'or', 'b'], [['OR', 'a', 'b']]),
-            (['a', 'or', 'b', 'or', 'c'], [['OR', ['OR', 'a', 'b'], 'c']]),
-            (['a', 'b', 'or', 'c'], ['a', ['OR', 'b', 'c']]),
-            (['a', 'or', 'b', 'c'], [['OR', 'a', 'b'], 'c']),
-            (['a', iter(['b', 'c'])], ['a', ['b', 'c']]),
-            (['a', iter(['b', 'c']), 'd'], ['a', ['b', 'c'], 'd']),
-            (['a', 'or', iter(['b', 'c'])], [['OR', 'a', ['b', 'c']]]),
-            (['a', 'or', iter(['b', 'c']), 'd'],
-                [['OR', 'a', ['b', 'c']], 'd']),
-            (['a', iter(['b', 'c']), 'or', 'd'],
-                ['a', ['OR', ['b', 'c'], 'd']]),
-            (['a', 'or', iter(['b', 'or', 'c'])],
-                [['OR', 'a', [['OR', 'b', 'c']]]]),
-            (['or'], []),
-            (['or', 'a'], ['a']),
-            (['a', iter(['or', 'b'])], ['a', ['b']]),
-            (['a', 'or', 'or', 'b'], [['OR', 'a', 'b']]),
-            (['or', 'or', 'a'], ['a']),
-            (['or', 'or', 'a', 'b'], ['a', 'b']),
-            (['or', 'or', 'a', 'or', 'b'], [['OR', 'a', 'b']]),
-            (['a', iter(['b', 'or', 'c'])], ['a', [['OR', 'b', 'c']]]),
-            ([a, iter([b, ('or',), c])], [a, [['OR', b, c]]]),
-            (['a', iter(['b', 'or'])], ['a', [['OR', 'b']]]),
-            ([null_], [null_]),
-            ([null_, 'or', double_null_], [['OR', null_, double_null_]]),
-            ):
-        assert rlist(operatorize(iter(value))) == result
-
-
 class DomainParser(object):
     "A parser for domain"
 
     def __init__(self, fields, context=None):
-        self.fields = OrderedDict((name, f)
-            for name, f in fields.items()
-            if f.get('searchable', True))
-        self.strings = dict((f['string'].lower(), f)
-            for f in fields.values()
-            if f.get('searchable', True))
+        self.fields = OrderedDict()
+        self.strings = OrderedDict()
         self.context = context
+
+        def update_fields(fields, prefix='', string_prefix=''):
+            for name, field in fields.items():
+                if not field.get('searchable', True) or name == 'rec_name':
+                    continue
+                field = field.copy()
+                fullname = '.'.join(filter(None, [prefix, name]))
+                string = '.'.join(
+                    filter(None, [string_prefix, field['string']]))
+                field['string'] = string
+                field['name'] = fullname
+                self.fields[fullname] = field
+                self.strings[string.lower()] = field
+                rfields = field.get('relation_fields')
+                if rfields:
+                    update_fields(rfields, fullname, string)
+        update_fields(fields)
 
     def parse(self, input_):
         "Return domain for the input string"
@@ -976,8 +542,9 @@ class DomainParser(object):
         def stringable_(clause):
             if not clause:
                 return True
-            if (((clause[0] in ('AND', 'OR'))
-                    or isinstance(clause[0], (list, tuple)))
+            if ((
+                        (clause[0] in ('AND', 'OR'))
+                        or isinstance(clause[0], (list, tuple)))
                     and all(isinstance(c, (list, tuple)) for c in clause[1:])):
                 return self.stringable(clause)
             name, _, value = clause[:3]
@@ -995,6 +562,8 @@ class DomainParser(object):
                         return all(isinstance(v, types) for v in value)
                     else:
                         return isinstance(value, types)
+                elif field['type'] == 'multiselection':
+                    return not value or isinstance(value, list)
                 else:
                     return True
             elif name == 'rec_name':
@@ -1058,8 +627,8 @@ class DomainParser(object):
                 else:
                     operator = ''
             formatted_value = format_value(field, value, target, self.context)
-            if (operator in OPERATORS and
-                    field['type'] in ('char', 'text', 'selection')
+            if (operator in OPERATORS
+                    and field['type'] in ('char', 'text', 'selection')
                     and value == ''):
                 formatted_value = '""'
             return '%s: %s%s' % (quote(field['string']), operator,
@@ -1244,16 +813,25 @@ class DomainParser(object):
                         target, value = split_target_value(field, value)
                         if target:
                             field_name += '.rec_name'
+                    elif field['type'] == 'multiselection':
+                        if value is not None and not isinstance(value, list):
+                            value = [value]
 
                     if not operator:
                         operator = default_operator(field)
-                    if isinstance(value, list):
+                    if (isinstance(value, list)
+                            and field['type'] != 'multiselection'):
                         if operator == '!':
                             operator = 'not in'
                         else:
                             operator = 'in'
                     if operator == '!':
                         operator = negate_operator(default_operator(field))
+                    if value is None and operator.endswith('in'):
+                        if operator.startswith('not'):
+                            operator = '!='
+                        else:
+                            operator = '='
                     if field['type'] in ('integer', 'float', 'numeric',
                             'datetime', 'date', 'time'):
                         if isinstance(value, str) and '..' in value:
@@ -1279,336 +857,3 @@ class DomainParser(object):
                         yield (field_name, operator, value, target)
                     else:
                         yield field_name, operator, value
-
-
-def test_stringable():
-    dom = DomainParser({
-            'name': {
-                'string': 'Name',
-                'type': 'char',
-                },
-            'relation': {
-                'string': 'Relation',
-                'type': 'many2one',
-                },
-            'relations': {
-                'string': 'Relations',
-                'type': 'many2many',
-                },
-            })
-    valid = ('name', '=', 'Doe')
-    invalid = ('surname', '=', 'John')
-    assert dom.stringable([valid])
-    assert not dom.stringable([invalid])
-    assert dom.stringable(['AND', valid])
-    assert not dom.stringable(['AND', valid, invalid])
-    assert dom.stringable([[valid]])
-    assert not dom.stringable([[valid], [invalid]])
-    assert dom.stringable([('relation', '=', None)])
-    assert dom.stringable([('relation', '=', "Foo")])
-    assert dom.stringable([('relation.rec_name', '=', "Foo")])
-    assert not dom.stringable([('relation', '=', 1)])
-    assert dom.stringable([('relations', '=', "Foo")])
-    assert dom.stringable([('relations', 'in', ["Foo"])])
-    assert not dom.stringable([('relations', 'in', [42])])
-
-
-def test_string():
-    dom = DomainParser({
-            'name': {
-                'string': 'Name',
-                'type': 'char',
-                },
-            'surname': {
-                'string': '(Sur)Name',
-                'type': 'char',
-                },
-            'date': {
-                'string': 'Date',
-                'type': 'date',
-                },
-            'selection': {
-                'string': 'Selection',
-                'type': 'selection',
-                'selection': [
-                    ('male', 'Male'),
-                    ('female', 'Female'),
-                    ('', ''),
-                    ],
-                },
-            'reference': {
-                'string': 'Reference',
-                'type': 'reference',
-                'selection': [
-                    ('spam', 'Spam'),
-                    ('ham', 'Ham'),
-                    ]
-                },
-            'many2one': {
-                'string': 'Many2One',
-                'name': 'many2one',
-                'type': 'many2one',
-                },
-            })
-    assert dom.string([('name', '=', 'Doe')]) == 'Name: =Doe'
-    assert dom.string([('name', '=', None)]) == 'Name: ='
-    assert dom.string([('name', '=', '')]) == 'Name: =""'
-    assert dom.string([('name', 'ilike', '%')]) == 'Name: '
-    assert dom.string([('name', 'ilike', '%Doe%')]) == 'Name: Doe'
-    assert dom.string([('name', 'ilike', '%<%')]) == 'Name: "" "<"'
-    assert dom.string([('name', 'ilike', 'Doe')]) == 'Name: =Doe'
-    assert dom.string([('name', 'ilike', 'Doe%')]) == 'Name: Doe%'
-    assert dom.string([('name', 'ilike', 'Doe%%')]) == 'Name: =Doe%'
-    assert dom.string([('name', 'not ilike', '%Doe%')]) == 'Name: !Doe'
-    assert dom.string([('name', 'in', ['John', 'Jane'])]) == 'Name: John;Jane'
-    assert dom.string([('name', 'not in', ['John', 'Jane'])]) == \
-        'Name: !John;Jane'
-    assert dom.string([
-            ('name', 'ilike', '%Doe%'),
-            ('name', 'ilike', '%Jane%')]) == 'Name: Doe Name: Jane'
-    assert dom.string(['AND',
-            ('name', 'ilike', '%Doe%'),
-            ('name', 'ilike', '%Jane%')]) == 'Name: Doe Name: Jane'
-    assert dom.string(['OR',
-            ('name', 'ilike', '%Doe%'),
-            ('name', 'ilike', '%Jane%')]) == 'Name: Doe or Name: Jane'
-    assert dom.string([
-            ('name', 'ilike', '%Doe%'),
-            ['OR',
-                ('name', 'ilike', '%John%'),
-                ('name', 'ilike', '%Jane%')]]) == \
-        'Name: Doe (Name: John or Name: Jane)'
-    assert dom.string([]) == ''
-    assert dom.string([('surname', 'ilike', '%Doe%')]) == '"(Sur)Name": Doe'
-    assert dom.string([('date', '>=', datetime.date(2012, 10, 24))]) == \
-        'Date: >=10/24/2012'
-    assert dom.string([('selection', '=', '')]) == 'Selection: '
-    assert dom.string([('selection', '=', None)]) == 'Selection: '
-    assert dom.string([('selection', '!=', '')]) == 'Selection: !""'
-    assert dom.string([('selection', '=', 'male')]) == 'Selection: Male'
-    assert dom.string([('selection', '!=', 'male')]) == 'Selection: !Male'
-    assert dom.string([('reference', 'ilike', '%foo%')]) == \
-        'Reference: foo'
-    assert dom.string([('reference.rec_name', 'ilike', '%bar%', 'spam')]) == \
-        'Reference: Spam,bar'
-    assert dom.string([('reference', 'in', ['foo', 'bar'])]) == \
-        'Reference: foo;bar'
-    assert dom.string([('many2one', 'ilike', '%John%')]) == 'Many2One: John'
-    assert dom.string([('many2one.rec_name', 'in', ['John', 'Jane'])]) == \
-        'Many2One: John;Jane'
-
-
-def test_group():
-    dom = DomainParser({
-            'name': {
-                'string': 'Name',
-                },
-            'firstname': {
-                'string': 'First Name',
-                },
-            'surname': {
-                'string': '(Sur)Name',
-                },
-            })
-    assert rlist(dom.group(udlex('Name: Doe'))) == [('Name', None, 'Doe')]
-    assert rlist(dom.group(udlex('"(Sur)Name": Doe'))) == [
-        ('(Sur)Name', None, 'Doe'),
-        ]
-    assert rlist(dom.group(udlex('Name: Doe Name: John'))) == [
-        ('Name', None, 'Doe'),
-        ('Name', None, 'John')]
-    assert rlist(dom.group(udlex('Name: Name: John'))) == [
-        ('Name', None, None),
-        ('Name', None, 'John')]
-    assert rlist(dom.group(udlex('First Name: John'))) == [
-        ('First Name', None, 'John'),
-        ]
-    assert rlist(dom.group(udlex('Name: Doe First Name: John'))) == [
-        ('Name', None, 'Doe'),
-        ('First Name', None, 'John'),
-        ]
-    assert rlist(dom.group(udlex('First Name: John Name: Doe'))) == [
-        ('First Name', None, 'John'),
-        ('Name', None, 'Doe'),
-        ]
-    assert rlist(dom.group(udlex('First Name: John First Name: Jane'))) == [
-        ('First Name', None, 'John'),
-        ('First Name', None, 'Jane'),
-        ]
-    assert rlist(dom.group(udlex('Name: John Doe'))) == [
-        ('Name', None, 'John'),
-        ('Doe',),
-        ]
-    assert rlist(dom.group(udlex('Name: "John Doe"'))) == [
-        ('Name', None, 'John Doe'),
-        ]
-    assert rlist(dom.group(udlex('Name: =Doe'))) == [('Name', '=', 'Doe')]
-    assert rlist(dom.group(udlex('Name: =Doe Name: >John'))) == [
-        ('Name', '=', 'Doe'),
-        ('Name', '>', 'John'),
-        ]
-    assert rlist(dom.group(udlex('First Name: =John First Name: =Jane'))) == [
-        ('First Name', '=', 'John'),
-        ('First Name', '=', 'Jane'),
-        ]
-    assert rlist(dom.group(udlex('Name: John;Jane'))) == [
-        ('Name', None, ['John', 'Jane'])
-        ]
-    assert rlist(dom.group(udlex('Name: John;'))) == [
-        ('Name', None, ['John'])
-        ]
-    assert rlist(dom.group(udlex('Name: John;Jane Name: Doe'))) == [
-        ('Name', None, ['John', 'Jane']),
-        ('Name', None, 'Doe'),
-        ]
-    assert rlist(dom.group(udlex('Name: John; Name: Doe'))) == [
-        ('Name', None, ['John']),
-        ('Name', None, 'Doe'),
-        ]
-    assert rlist(dom.group(udlex('Name:'))) == [
-        ('Name', None, None),
-        ]
-    assert rlist(dom.group(udlex('Name: ='))) == [
-        ('Name', '=', None),
-        ]
-    assert rlist(dom.group(udlex('Name: =""'))) == [
-        ('Name', '=', ''),
-        ]
-    assert rlist(dom.group(udlex('Name: = ""'))) == [
-        ('Name', '=', ''),
-        ]
-    assert rlist(dom.group(udlex('Name: = Name: Doe'))) == [
-        ('Name', '=', None),
-        ('Name', None, 'Doe'),
-        ]
-    assert rlist(dom.group(udlex('Name: \\"foo\\"'))) == [
-        ('Name', None, '"foo"'),
-        ]
-    assert rlist(dom.group(udlex('Name: "" <'))) == [
-        ('Name', '', '<'),
-        ]
-
-
-def test_parse_clause():
-    dom = DomainParser({
-            'name': {
-                'string': 'Name',
-                'name': 'name',
-                'type': 'char',
-                },
-            'integer': {
-                'string': 'Integer',
-                'name': 'integer',
-                'type': 'integer',
-                },
-            'selection': {
-                'string': 'Selection',
-                'name': 'selection',
-                'type': 'selection',
-                'selection': [
-                    ('male', 'Male'),
-                    ('female', 'Female'),
-                    ],
-                },
-            'reference': {
-                'string': 'Reference',
-                'name': 'reference',
-                'type': 'reference',
-                'selection': [
-                    ('spam', 'Spam'),
-                    ('ham', 'Ham'),
-                    ]
-                },
-            'many2one': {
-                'string': 'Many2One',
-                'name': 'many2one',
-                'type': 'many2one',
-                },
-            })
-    assert rlist(dom.parse_clause([('John',)])) == [
-        ('rec_name', 'ilike', '%John%')]
-    assert rlist(dom.parse_clause([('Name', None, None)])) == [
-        ('name', 'ilike', '%')]
-    assert rlist(dom.parse_clause([('Name', '', None)])) == [
-        ('name', 'ilike', '%')]
-    assert rlist(dom.parse_clause([('Name', '=', None)])) == [
-        ('name', '=', None)]
-    assert rlist(dom.parse_clause([('Name', '=', '')])) == [
-        ('name', '=', '')]
-    assert rlist(dom.parse_clause([('Name', None, 'Doe')])) == [
-        ('name', 'ilike', '%Doe%')]
-    assert rlist(dom.parse_clause([('Name', '!', 'Doe')])) == [
-        ('name', 'not ilike', '%Doe%')]
-    assert rlist(dom.parse_clause([('Name', None, ['John', 'Jane'])])) == [
-        ('name', 'in', ['John', 'Jane']),
-        ]
-    assert rlist(dom.parse_clause([('Name', '!', ['John', 'Jane'])])) == [
-        ('name', 'not in', ['John', 'Jane']),
-        ]
-    assert rlist(dom.parse_clause([('Selection', None, None)])) == [
-        ('selection', '=', None),
-        ]
-    assert rlist(dom.parse_clause([('Selection', None, '')])) == [
-        ('selection', '=', ''),
-        ]
-    assert rlist(dom.parse_clause([('Selection', None, ['Male', 'Female'])])) \
-        == [
-            ('selection', 'in', ['male', 'female'])
-            ]
-    assert rlist(dom.parse_clause([('Integer', None, None)])) == [
-        ('integer', '=', None),
-        ]
-    assert rlist(dom.parse_clause([('Integer', None, '3..5')])) == [[
-            ('integer', '>=', 3),
-            ('integer', '<=', 5),
-            ]]
-    assert rlist(dom.parse_clause([('Reference', None, 'foo')])) == [
-        ('reference', 'ilike', '%foo%'),
-        ]
-    assert rlist(dom.parse_clause([('Reference', None, 'Spam')])) == [
-        ('reference', 'ilike', '%spam%'),
-        ]
-    assert rlist(dom.parse_clause([('Reference', None, 'Spam,bar')])) == [
-        ('reference.rec_name', 'ilike', '%bar%', 'spam'),
-        ]
-    assert rlist(dom.parse_clause([('Reference', None, ['foo', 'bar'])])) == [
-        ('reference', 'in', ['foo', 'bar']),
-        ]
-    assert rlist(dom.parse_clause(['OR',
-                ('Name', None, 'John'), ('Name', None, 'Jane')])) == ['OR',
-        ('name', 'ilike', '%John%'),
-        ('name', 'ilike', '%Jane%'),
-        ]
-    assert rlist(dom.parse_clause([('Many2One', None, 'John')])) == [
-        ('many2one', 'ilike', '%John%'),
-        ]
-    assert rlist(dom.parse_clause([('Many2One', None, ['John', 'Jane'])])) == [
-        ('many2one.rec_name', 'in', ['John', 'Jane']),
-        ]
-    assert rlist(dom.parse_clause(iter([iter([['John']])]))) == [
-        [('rec_name', 'ilike', '%John%')]]
-
-
-def test_completion():
-    dom = DomainParser({
-            'name': {
-                'string': 'Name',
-                'name': 'name',
-                'type': 'char',
-                },
-            })
-    assert list(dom.completion('Nam')) == ['Name: ']
-    assert list(dom.completion('Name:')) == ['Name: ']
-    assert list(dom.completion('Name: foo')) == []
-    assert list(dom.completion('Name: !=')) == []
-    assert list(dom.completion('Name: !=foo')) == []
-    assert list(dom.completion('')) == ['Name: ']
-    assert list(dom.completion(' ')) == ['', 'Name: ']
-    assert list(dom.complete(['rec_name', 'in', ['Foo']])) == []
-
-
-if __name__ == '__main__':
-    for name in list(globals()):
-        if name.startswith('test_'):
-            func = globals()[name]
-            func()

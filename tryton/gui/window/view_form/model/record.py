@@ -372,6 +372,7 @@ class Record(SignalEvent):
         return self.id
 
     def default_get(self, rec_name=None):
+        vals = None
         if len(self.group.fields):
             context = self.get_context()
             context.setdefault('default_rec_name', rec_name)

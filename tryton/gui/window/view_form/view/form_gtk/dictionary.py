@@ -227,7 +227,7 @@ class DictMultiSelectionEntry(DictEntry):
         selection.handler_block_by_func(self._changed)
         try:
             selection.unselect_all()
-            for v in value:
+            for v in value or []:
                 if v in value2path:
                     selection.select_path(value2path[v])
         finally:
@@ -571,7 +571,6 @@ class DictWidget(Widget):
 
     def display(self):
         super(DictWidget, self).display()
-
         if not self.field:
             return
 

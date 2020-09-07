@@ -399,8 +399,7 @@ class DictWidget(Widget):
 
     def _sig_remove(self, button, key, modified=True):
         del self.fields[key]
-        if not self.attrs.get('no_command', 0.0) and self.buttons.get(key):
-            del self.buttons[key]
+        del self.buttons[key]
         for widget in self.rows[key]:
             self.grid.remove(widget)
             widget.destroy()
@@ -462,15 +461,16 @@ class DictWidget(Widget):
         self.grid.attach_next_to(
             hbox, label, Gtk.PositionType.RIGHT, 1, 1)
         hbox.show_all()
-        remove_but = self._new_remove_btn()
-        self.tooltips.set_tip(remove_but, _('Remove "%s"') %
-            key_schema['string'])
-        self.grid.attach_next_to(
-            remove_but, hbox, Gtk.PositionType.RIGHT, 1, 1)
-        remove_but.connect('clicked', self._sig_remove, key)
-        remove_but.show_all()
-        self.rows[key] = [label, hbox, remove_but]
-        self.buttons[key] = remove_but
+        if not self.attrs.get('no_command', 0.0):
+            remove_but = self._new_remove_btn()
+            self.tooltips.set_tip(remove_but, _('Remove "%s"') %
+                key_schema['string'])
+            self.grid.attach_next_to(
+                remove_but, hbox, Gtk.PositionType.RIGHT, 1, 1)
+            remove_but.connect('clicked', self._sig_remove, key)
+            remove_but.show_all()
+            self.rows[key] = [label, hbox, remove_but]
+            self.buttons[key] = remove_but
 
     def display(self):
         super(DictWidget, self).display()

@@ -519,8 +519,6 @@ class One2Many(Widget):
         self._set_button_sensitive()
 
     def group_sync(self, screen, current_record):
-        if not self.screen.widget.props.window:
-            return
         if not self.view or not self.view.widgets:
             return
         if self.attrs.get('mode') == 'form':

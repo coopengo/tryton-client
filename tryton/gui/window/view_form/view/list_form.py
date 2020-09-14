@@ -70,7 +70,7 @@ class ViewListForm(View):
         self._model = None
         self._view_forms = []
 
-    def display(self):
+    def display(self, force=False):
         if self._model is None or self._model.group is not self.group:
             self._view_forms = []
             self._model = ListBoxModel(self.group)

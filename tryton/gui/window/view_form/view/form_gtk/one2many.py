@@ -175,6 +175,8 @@ class One2Many(Widget):
             self.screen.signal_connect(self, 'current-record-changed',
                 lambda screen, _: GLib.idle_add(self.group_sync, screen,
                     screen.current_record))
+            self.screen._multiview_form = view
+            self.screen._multiview_group = self.attrs['group']
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True, padding=0)
 

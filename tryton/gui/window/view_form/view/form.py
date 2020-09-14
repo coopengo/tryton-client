@@ -232,6 +232,10 @@ class FormXMLViewParser(XMLViewParser):
         widget = self.WIDGETS[attributes['widget']](self.view, attributes)
         self.view.widgets[name].append(widget)
 
+        if attributes.get('group'):
+            group = attributes['group']
+            self.view._multiview_groups.setdefault(group, []).append(widget)
+
         if widget.expand:
             attributes.setdefault('yexpand', True)
             attributes.setdefault('yfill', True)
@@ -441,6 +445,7 @@ class ViewForm(View):
     def __init__(self, view_id, screen, xml):
         self.notebooks = []
         self.expandables = []
+        self._multiview_groups = {}
 
         vbox = Gtk.VBox()
         vp = Gtk.Viewport()
@@ -508,7 +513,7 @@ class ViewForm(View):
                         field.get_state_attrs(record)['invalid'] = False
                         widget.display()
 
-    def display(self):
+    def display(self, force=False):
         record = self.record
         if record:
             # Force to set fields in record
@@ -584,3 +589,18 @@ class ViewForm(View):
             self.screen.button(widget.attrs)
         finally:
             widget.handler_unblock_by_func(self.button_clicked)
+
+    def reload_group(self, group_name, caller):
+        group_widgets = self._multiview_groups.get(group_name)
+        if not group_widgets:
+            return
+        for widget in group_widgets:
+            if caller == widget.screen:
+                continue
+            is_tree = hasattr(widget.screen.views[0], 'get_expanded_paths')
+            expanded_paths = []
+            if is_tree:
+                expanded_paths = widget.screen.views[0].get_expanded_paths()
+            widget.screen.display(force=True)
+            if is_tree:
+                widget.screen.views[0].expand_nodes(expanded_paths)

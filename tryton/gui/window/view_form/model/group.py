@@ -120,7 +120,6 @@ class Group(SignalEvent, list):
         record.next[id(self)] = None
         super(Group, self).append(record)
         self.__id2record[record.id] = record
-        print(f'Group.append {self.lock_signal} {record} {record.group}')
         if not self.lock_signal:
             self.signal('group-list-changed', (
                     'record-added', record, self.__len__() - 1))

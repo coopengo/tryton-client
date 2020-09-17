@@ -746,12 +746,10 @@ class Screen(SignalEvent):
         if written:
             self.group.written(ids)
         if self.parent:
-            # Force parent to forget their children in order to reload them
-            self.current_record.unload_parents()
             self.parent.root_parent.reload()
         self.display()
-        if self._multiview_group:
-            self._multiview_form.reload_group(self._multiview_group, self)
+        if self._multiview_form:
+            self._multiview_form.screen.reload([self.parent.root_parent.id])
 
     def unremove(self):
         records = self.selected_records

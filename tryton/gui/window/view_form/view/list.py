@@ -972,7 +972,6 @@ class ViewTree(View):
         return False
 
     def group_list_changed(self, group, signal):
-        print(f'ViewTree.group_list_changed {group}')
         model = self.treeview.get_model()
         if model is not None:
             if signal[0] == 'record-added':

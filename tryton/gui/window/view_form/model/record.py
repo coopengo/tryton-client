@@ -136,7 +136,6 @@ class Record(SignalEvent):
                 if record and not record.destroyed and value:
                     for key in record.modified_fields:
                         value.pop(key, None)
-                    # print(f'Record.__getitem__ {record} {value}')
                     record.set(value, signal=False)
         return self.group.fields[name]
 
@@ -177,14 +176,6 @@ class Record(SignalEvent):
         while parent.parent:
             parent = parent.parent
         return parent
-
-    def unload_parents(self):
-        parent = self
-        child_name = parent.group.child_name if parent.group else None
-        while parent.parent and child_name:
-            parent = parent.parent
-            parent._loaded.discard(child_name)
-            child_name = parent.group.child_name if parent.group else None
 
     @property
     def depth(self):

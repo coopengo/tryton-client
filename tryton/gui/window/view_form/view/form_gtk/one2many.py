@@ -592,7 +592,6 @@ class One2Many(Widget):
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:
                 self.screen.current_record = None
-        print(f'O2M.display {self.screen} {self.screen.group}')
         domain = []
         size_limit = None
         if self.record:

@@ -746,6 +746,8 @@ class Screen(SignalEvent):
         if written:
             self.group.written(ids)
         if self.parent:
+            # Force parent to forget their children in order to reload them
+            self.current_record.unload_parents()
             self.parent.root_parent.reload()
         self.display()
         if self._multiview_group:

@@ -120,6 +120,7 @@ class Group(SignalEvent, list):
         record.next[id(self)] = None
         super(Group, self).append(record)
         self.__id2record[record.id] = record
+        print(f'Group.append {self.lock_signal} {record} {record.group}')
         if not self.lock_signal:
             self.signal('group-list-changed', (
                     'record-added', record, self.__len__() - 1))
@@ -253,8 +254,8 @@ class Group(SignalEvent, list):
             return True
 
         # PJA : Select first entry in list if even if there is only one #3431
-        if len(ids) >= 1:
-            self.lock_signal = True
+        # if len(ids) >= 1:
+        #     self.lock_signal = True
 
         new_records = []
         for id in ids:

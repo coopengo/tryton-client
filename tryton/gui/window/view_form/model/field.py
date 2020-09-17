@@ -554,6 +554,7 @@ class O2MField(Field):
         record.parent.signal('record-modified')
 
     def _set_default_value(self, record, fields=None):
+        print(f'Group._set_default_value {record} {self.name}')
         if record.value.get(self.name) is not None:
             return
         from .group import Group
@@ -651,6 +652,7 @@ class O2MField(Field):
     def _set_value(self, record, value, default=False, modified=False):
         self._set_default_value(record)
         group = record.value[self.name]
+        print(f'O2MField._set_value {record} {self.name} {group} {value}')
         if value is None:
             value = []
         if not value or isinstance(value[0], int):
@@ -694,15 +696,15 @@ class O2MField(Field):
         if group is not None:
             fields = group.fields.copy()
             # Unconnect to prevent infinite loop
-            group.signal_unconnect(group)
-            group.destroy()
+            # group.signal_unconnect(group)
+            # group.destroy()
         elif record.model_name == self.attrs['relation']:
             fields = record.group.fields
         if fields:
             fields = dict((fname, field.attrs)
                 for fname, field in fields.items())
 
-        record.value[self.name] = None
+        # record.value[self.name] = None
         self._set_default_value(record, fields=fields)
         group = record.value[self.name]
 

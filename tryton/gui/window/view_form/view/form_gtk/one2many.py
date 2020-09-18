@@ -16,6 +16,7 @@ from tryton.gui.window.win_search import WinSearch
 from .widget import Widget
 
 _ = gettext.gettext
+IncompatibleGroup = object()
 
 
 class One2Many(Widget):
@@ -33,6 +34,7 @@ class One2Many(Widget):
         self._required = False
         self._position = 0
         self._length = 0
+        self._incompatible_group = False
 
         self.title_box = hbox = Gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
@@ -547,10 +549,9 @@ class One2Many(Widget):
         if screen.current_record != current_record:
             return
 
-        def is_compatbile(screen, record):
-            return not (screen.current_view.view_type == 'form'
-                and record is not None
-                and screen.model_name != record.model_name)
+        def is_compatible(screen, record):
+            return (screen.current_view.view_type != 'form'
+                or screen.model_name == record.model_name)
 
         current_record = self.screen.current_record
         to_sync = []
@@ -562,12 +563,12 @@ class One2Many(Widget):
             if widget.screen.current_record == current_record:
                 continue
             record = current_record
-            if not is_compatbile(widget.screen, record):
-                record = None
+            if not is_compatible(widget.screen, record):
+                record = IncompatibleGroup
             if not widget._validate():
                 def go_previous():
                     record = widget.screen.current_record
-                    if not is_compatbile(screen, record):
+                    if not is_compatible(screen, record):
                         record = None
                     screen.current_record = record
                     screen.display()
@@ -575,14 +576,18 @@ class One2Many(Widget):
                 return
             to_sync.append((widget, record))
         for widget, record in to_sync:
-            if (widget.screen.current_view.view_type == 'form'
-                    and record is not None
-                    and widget.screen.group.model_name ==
-                    record.group.model_name):
-                fields = dict((name, field.attrs) for name, field in
-                    widget.screen.group.fields.iteritems())
-                record.group.load_fields(fields)
-            widget.screen.current_record = record
+            widget._incompatible_group = record is IncompatibleGroup
+            if not widget._incompatible_group:
+                if (widget.screen.current_view.view_type == 'form'
+                        and record is not None
+                        and widget.screen.group.model_name
+                        == record.group.model_name):
+                    fields = dict((name, field.attrs) for name, field in
+                        widget.screen.group.fields.items())
+                    record.group.load_fields(fields)
+                    for field_name in fields.keys():
+                        record[field_name].get(record)
+                widget.screen.current_record = record
             widget.display()
 
     def display(self):
@@ -599,9 +604,9 @@ class One2Many(Widget):
         new_group = self.field.get_client(self.record)
 
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
-            if self.screen.current_record is None:
-                self.invisible_set(True)
-        elif id(self.screen.group) != id(new_group):
+            self.invisible_set(self._incompatible_group)
+        if (id(self.screen.group) != id(new_group)
+                and self.screen.model_name == new_group.model_name):
             self.screen.group = new_group
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:

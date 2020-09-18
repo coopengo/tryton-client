@@ -253,8 +253,8 @@ class Group(SignalEvent, list):
             return True
 
         # PJA : Select first entry in list if even if there is only one #3431
-        if len(ids) >= 1:
-            self.lock_signal = True
+        # if len(ids) >= 1:
+        #     self.lock_signal = True
 
         new_records = []
         for id in ids:

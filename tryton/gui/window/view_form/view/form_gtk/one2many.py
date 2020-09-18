@@ -16,6 +16,7 @@ from tryton.gui.window.win_search import WinSearch
 from .widget import Widget
 
 _ = gettext.gettext
+IncompatibleGroup = object()
 
 
 class One2Many(Widget):
@@ -33,6 +34,7 @@ class One2Many(Widget):
         self._required = False
         self._position = 0
         self._length = 0
+        self._incompatible_group = False
 
         self.title_box = hbox = Gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
@@ -553,9 +555,9 @@ class One2Many(Widget):
         new_group = self.field.get_client(self.record)
 
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
-            if self.screen.current_record is None:
-                self.invisible_set(True)
-        elif id(self.screen.group) != id(new_group):
+            self.invisible_set(self._incompatible_group)
+        if (id(self.screen.group) != id(new_group)
+                and self.screen.model_name == new_group.model_name):
             self.screen.group = new_group
             if (self.screen.current_view.view_type == 'tree') \
                     and self.screen.current_view.editable:

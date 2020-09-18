@@ -235,6 +235,9 @@ class FormXMLViewParser(XMLViewParser):
         widget = self.WIDGETS[attributes['widget']](self.view, attributes)
         self.view.widgets[name].append(widget)
 
+        if attributes.get('group'):
+            group = attributes['group']
+
         if widget.expand:
             attributes.setdefault('yexpand', True)
             attributes.setdefault('yfill', True)
@@ -513,7 +516,7 @@ class ViewForm(View):
                         field.get_state_attrs(record)['invalid'] = False
                         widget.display()
 
-    def display(self):
+    def display(self, force=False):
         record = self.record
         if record:
             # Force to set fields in record

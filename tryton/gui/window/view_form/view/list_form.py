@@ -136,13 +136,14 @@ class ViewListForm(View):
 
     @common.idle_add
     def _select_show_row(self, index):
+        if not self.listbox.get_realized():
+            return
         self.listbox.unselect_all()
         row = self.listbox.get_row_at_index(index)
         if not row:
             return
         self.listbox.select_row(row)
-        coord = row.translate_coordinates(self.listbox, 0, 0)
-        y_position = coord[1] if coord else 0
+        y_position = row.translate_coordinates(self.listbox, 0, 0)[1]
         y_size = row.get_allocated_height()
         vadjustment = self.widget.get_vadjustment()
         vadjustment.clamp_page(y_position, y_position + y_size)

@@ -136,6 +136,8 @@ class ViewListForm(View):
 
     @common.idle_add
     def _select_show_row(self, index):
+        if not self.listbox.get_realized():
+            return
         self.listbox.unselect_all()
         row = self.listbox.get_row_at_index(index)
         if not row:

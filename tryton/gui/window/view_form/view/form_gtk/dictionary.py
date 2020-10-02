@@ -2,26 +2,29 @@
 # repository contains the full copyright notices and license terms.
 
 import operator
-import gobject
-import gtk
 import locale
 import decimal
 import gettext
 from decimal import Decimal
 from collections import OrderedDict
 
+from gi.repository import GLib, GObject, Gtk
+
 from .widget import Widget
+
 from tryton.gui.window.win_search import WinSearch
 from tryton.common import Tooltips, timezoned_date, untimezoned_date, \
         IconFactory
 from tryton.common.selection import selection_shortcuts
 from tryton.common.completion import get_completion, update_completion
-from tryton.common.datetime_ import Date, DateTime
+from tryton.common.datetime_ import Date, DateTime, add_operators
 from tryton.common.domain_parser import quote
 from tryton.common.entry_position import reset_position
+from tryton.common.number_entry import NumberEntry
 from tryton.common.underline import set_underline
 from tryton.common.domain_inversion import eval_domain
 from tryton.common.widget_style import widget_class
+from tryton.common.treeviewcontrol import TreeViewControl
 from tryton.pyson import PYSONDecoder
 
 _ = gettext.gettext
@@ -36,9 +39,12 @@ class DictEntry(object):
         self.definition = parent_widget.field.keys[name]
         self.parent_widget = parent_widget
         self.widget = self.create_widget()
+        if self.definition.get('help'):
+            parent_widget.tooltips.set_tip(
+                self.widget, self.definition['help'])
 
     def create_widget(self):
-        widget = gtk.Entry()
+        widget = Gtk.Entry()
         widget.connect('key-press-event', self.parent_widget.send_modified)
         widget.connect('focus-out-event',
             lambda w, e: self.parent_widget._focus_out())
@@ -63,7 +69,7 @@ class DictEntry(object):
 class DictBooleanEntry(DictEntry):
 
     def create_widget(self):
-        widget = gtk.CheckButton()
+        widget = Gtk.CheckButton()
         widget.connect('toggled', self.parent_widget.sig_activate)
         widget.connect('focus-out-event', lambda w, e:
             self.parent_widget._focus_out())
@@ -89,7 +95,7 @@ class DictSelectionEntry(DictEntry):
     fill = False
 
     def create_widget(self):
-        widget = gtk.ComboBoxEntry()
+        widget = Gtk.ComboBox(has_entry=True)
 
         # customizing entry
         child = widget.get_child()
@@ -102,16 +108,17 @@ class DictSelectionEntry(DictEntry):
         widget.connect('notify::active',
             lambda w, e: self.parent_widget._focus_out())
         widget.connect(
-            'scroll-event', lambda c, e: c.emit_stop_by_name('scroll-event'))
+            'scroll-event',
+            lambda c, e: c.stop_emission_by_name('scroll-event'))
         selection_shortcuts(widget)
 
         # setting completion and selection
-        model = gtk.ListStore(gobject.TYPE_STRING)
+        model = Gtk.ListStore(GObject.TYPE_STRING)
         model.append(('',))
         self._selection = {'': None}
         width = 10
         selection = self.definition['selection']
-        if self.definition.get('sorted', True):
+        if self.definition.get('sort', True):
             selection.sort(key=operator.itemgetter(1))
         for value, name in selection:
             name = str(name)
@@ -119,9 +126,9 @@ class DictSelectionEntry(DictEntry):
             model.append((name,))
             width = max(width, len(name))
         widget.set_model(model)
-        widget.set_text_column(0)
+        widget.set_entry_text_column(0)
         child.set_width_chars(width)
-        completion = gtk.EntryCompletion()
+        completion = Gtk.EntryCompletion()
         completion.set_inline_selection(True)
         completion.set_model(model)
         child.set_completion(completion)
@@ -154,41 +161,93 @@ class DictSelectionEntry(DictEntry):
         self.widget.set_sensitive(not readonly)
 
 
+class DictMultiSelectionEntry(DictEntry):
+    expand = False
+
+    def create_widget(self):
+        widget = Gtk.ScrolledWindow()
+        widget.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        widget.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        widget.set_size_request(100, 100)
+
+        model = Gtk.ListStore(GObject.TYPE_STRING, GObject.TYPE_STRING)
+        self.tree = TreeViewControl()
+        self.tree.set_model(model)
+        self.tree.set_search_column(1)
+        self.tree.connect(
+            'focus-out-event', lambda w, e: self.parent_widget._focus_out())
+        self.tree.set_headers_visible(False)
+        selection = self.tree.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        selection.connect('changed', self._changed)
+        widget.add(self.tree)
+        widget_class(widget, 'multiselection', True)
+
+        self.selection = self.definition['selection']
+        width = 10
+        if self.definition.get('sort', True):
+            self.selection.sort(key=operator.itemgetter(1))
+        for value, name in self.selection:
+            name = str(name)
+            model.append((value, name))
+            width = max(width, len(name))
+
+        widget.set_propagate_natural_width(True)
+        widget.set_propagate_natural_height(True)
+
+        name_column = Gtk.TreeViewColumn()
+        name_cell = Gtk.CellRendererText()
+        name_column.pack_start(name_cell, expand=True)
+        name_column.add_attribute(name_cell, 'text', 1)
+        self.tree.append_column(name_column)
+
+        return widget
+
+    def get_value(self):
+        model, paths = self.tree.get_selection().get_selected_rows()
+        return [model[path][0] for path in paths]
+
+    def set_value(self, value):
+        value2path = {v: idx for idx, (v, _) in enumerate(self.selection)}
+        selection = self.tree.get_selection()
+        selection.handler_block_by_func(self._changed)
+        try:
+            selection.unselect_all()
+            for v in value or []:
+                if v in value2path:
+                    selection.select_path(value2path[v])
+        finally:
+            selection.handler_unblock_by_func(self._changed)
+
+    def _changed(self, selection):
+        GLib.idle_add(self.parent_widget._focus_out)
+
+    def set_readonly(self, readonly):
+        selection = self.tree.get_selection()
+        selection.set_select_function(lambda *a: not readonly)
+
+
 class DictIntegerEntry(DictEntry):
     expand = False
     fill = False
 
     def create_widget(self):
-        widget = super(DictIntegerEntry, self).create_widget()
-        widget.set_width_chars(8)
-        widget.set_max_length(0)
-        widget.set_alignment(1.0)
-        widget.connect('insert-text', self.sig_insert_text)
+        widget = NumberEntry()
+        widget.connect('key-press-event', self.parent_widget.send_modified)
+        widget.connect('focus-out-event',
+            lambda w, e: self.parent_widget._focus_out())
+        widget.props.activates_default = True
+        widget.connect('activate', self.parent_widget.sig_activate)
         return widget
 
-    def sig_insert_text(self, entry, new_text, new_text_length, position):
-        value = entry.get_text()
-        position = entry.get_position()
-        new_value = value[:position] + new_text + value[position:]
-        if new_value == '-':
-            return
-        try:
-            locale.atoi(new_value)
-        except ValueError:
-            entry.stop_emission('insert-text')
-
     def get_value(self):
-        txt_value = self.widget.get_text()
-        if txt_value:
-            try:
-                return locale.atoi(txt_value)
-            except ValueError:
-                pass
-        return None
+        if self.widget.value is None:
+            return None
+        return int(self.widget.value)
 
     def set_value(self, value):
         if value is not None:
-            txt_val = locale.format('%d', value, True)
+            txt_val = locale.format_string('%d', value, True)
         else:
             txt_val = ''
         self.widget.set_text(txt_val)
@@ -197,57 +256,38 @@ class DictIntegerEntry(DictEntry):
 
 class DictFloatEntry(DictIntegerEntry):
 
+    @property
     def digits(self):
-        default = (16, 2)
         record = self.parent_widget.record
-        if not record:
-            return default
-        return tuple(y if x is None else x for x, y in zip(
-                record.expr_eval(self.definition.get('digits', default)),
-                default))
+        if record:
+            digits = record.expr_eval(self.definition.get('digits'))
+            if not digits or any(d is None for d in digits):
+                return
+            return digits
 
-    def sig_insert_text(self, entry, new_text, new_text_length, position):
-        value = entry.get_text()
-        position = entry.get_position()
-        new_value = value[:position] + new_text + value[position:]
-        decimal_point = locale.localeconv()['decimal_point']
-
-        if new_value in ('-', decimal_point):
-            return
-
-        digits = self.digits()
-
-        try:
-            locale.atof(new_value)
-        except ValueError:
-            entry.stop_emission('insert-text')
-            return
-
-        new_int = new_value
-        new_decimal = ''
-        if decimal_point in new_value:
-            new_int, new_decimal = new_value.rsplit(decimal_point, 1)
-
-        if (len(new_int) > digits[0]
-                or len(new_decimal) > digits[1]):
-            entry.stop_emission('insert-text')
+    @property
+    def width(self):
+        digits = self.digits
+        if digits:
+            return sum(digits)
+        else:
+            return 18
 
     def get_value(self):
-        txt_value = self.widget.get_text()
-        if txt_value:
-            try:
-                return locale.atof(txt_value)
-            except ValueError:
-                pass
-        return None
+        return self.widget.value
 
     def set_value(self, value):
-        digits = self.digits()
+        digits = self.digits
+        if digits:
+            self.widget.digits = digits[1]
+        else:
+            self.widget.digits = None
+        self.widget.set_width_chars(self.width)
         if value is not None:
-            txt_val = locale.format('%.' + str(digits[1]) + 'f', value, True)
+            txt_val = locale.localize(
+                '{0:.{1}f}'.format(value, digits[1]), True)
         else:
             txt_val = ''
-        self.widget.set_width_chars(sum(digits))
         self.widget.set_text(txt_val)
         reset_position(self.widget)
 
@@ -258,7 +298,7 @@ class DictNumericEntry(DictFloatEntry):
         txt_value = self.widget.get_text()
         if txt_value:
             try:
-                return locale.atof(txt_value, Decimal)
+                return Decimal(locale.delocalize(txt_value))
             except decimal.InvalidOperation:
                 pass
         return None
@@ -269,7 +309,7 @@ class DictDateTimeEntry(DictEntry):
     fill = False
 
     def create_widget(self):
-        widget = DateTime()
+        widget = add_operators(DateTime())
         record = self.parent_widget.record
         field = self.parent_widget.field
         if record and field:
@@ -292,7 +332,7 @@ class DictDateEntry(DictEntry):
     fill = False
 
     def create_widget(self):
-        widget = Date()
+        widget = add_operators(Date())
         record = self.parent_widget.record
         field = self.parent_widget.field
         if record and field:
@@ -314,6 +354,7 @@ DICT_ENTRIES = {
     'char': DictEntry,
     'boolean': DictBooleanEntry,
     'selection': DictSelectionEntry,
+    'multiselection': DictMultiSelectionEntry,
     'datetime': DictDateTimeEntry,
     'date': DictDateEntry,
     'integer': DictIntegerEntry,
@@ -331,40 +372,35 @@ class DictWidget(Widget):
         self.buttons = {}
         self.rows = {}
 
-        self.widget = gtk.Frame()
-        type_ = gtk.SHADOW_NONE
+        self.widget = Gtk.Frame()
         # FEA#5633 Allow to not display label on group
         if not attrs.get('no_label', 0.0):
-            label = gtk.Label(set_underline(attrs.get('string', '')))
+            label = Gtk.Label(label=set_underline(attrs.get('string', '')))
             label.set_use_underline(True)
             self.widget.set_label_widget(label)
-            type_ = gtk.SHADOW_OUT
+            self.widget.set_shadow_type(Gtk.ShadowType.OUT)
 
-        self.widget.set_shadow_type(type_)
-
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         self.widget.add(vbox)
 
-        self.table = gtk.Table(1, 3, homogeneous=False)
-        self.table.set_col_spacings(0)
-        self.table.set_row_spacings(0)
-        self.table.set_border_width(0)
-        vbox.pack_start(self.table, expand=True, fill=True)
+        self.grid = Gtk.Grid(column_spacing=3, row_spacing=3)
+        vbox.pack_start(self.grid, expand=True, fill=True, padding=0)
 
-        no_command = attrs.get('no_command', 0.0)
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         hbox.set_border_width(2)
-        self.wid_text = gtk.Entry()
+        self.wid_text = Gtk.Entry()
         # JCA: specific
+        no_command = attrs.get('no_command', 0.0)
         if not no_command:
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.props.width_chars = 13
             self.wid_text.connect('activate', self._sig_activate)
-            hbox.pack_start(self.wid_text, expand=True, fill=True)
+            hbox.pack_start(self.wid_text, expand=True, fill=True, padding=0)
             label.set_mnemonic_widget(self.wid_text)
+
             if int(self.attrs.get('completion', 1)):
-                self.wid_completion = get_completion(search=False,
-                    create=False)
+                self.wid_completion = get_completion(
+                    search=False, create=False)
                 self.wid_completion.connect('match-selected',
                     self._completion_match_selected)
                 self.wid_text.set_completion(self.wid_completion)
@@ -372,14 +408,14 @@ class DictWidget(Widget):
             else:
                 self.wid_completion = None
 
-            self.but_add = gtk.Button()
+            self.but_add = Gtk.Button(can_focus=False)
             self.but_add.connect('clicked', self._sig_add)
-            self.but_add.add(IconFactory.get_image(
-                    'tryton-add', gtk.ICON_SIZE_SMALL_TOOLBAR))
-            self.but_add.set_relief(gtk.RELIEF_NONE)
-            hbox.pack_start(self.but_add, expand=False, fill=False)
-            hbox.set_focus_chain([self.wid_text])
-        vbox.pack_start(hbox, expand=True, fill=True)
+            self.but_add.add(
+                IconFactory.get_image(
+                    'tryton-add', Gtk.IconSize.SMALL_TOOLBAR))
+            self.but_add.set_relief(Gtk.ReliefStyle.NONE)
+            hbox.pack_start(self.but_add, expand=False, fill=False, padding=0)
+        vbox.pack_start(hbox, expand=True, fill=True, padding=0)
 
         self.tooltips = Tooltips()
         if not no_command:
@@ -394,10 +430,10 @@ class DictWidget(Widget):
         return self.wid_text
 
     def _new_remove_btn(self):
-        but_remove = gtk.Button()
-        but_remove.add(IconFactory.get_image(
-                'tryton-remove', gtk.ICON_SIZE_SMALL_TOOLBAR))
-        but_remove.set_relief(gtk.RELIEF_NONE)
+        but_remove = Gtk.Button()
+        but_remove.add(
+            IconFactory.get_image('tryton-remove', Gtk.IconSize.SMALL_TOOLBAR))
+        but_remove.set_relief(Gtk.ReliefStyle.NONE)
         return but_remove
 
     def _sig_activate(self, *args):
@@ -429,7 +465,7 @@ class DictWidget(Widget):
                 if not focus:
                     # Use idle add because it can be called from the callback
                     # of WinSearch while the popup is still there
-                    gobject.idle_add(self.fields[key_name].widget.grab_focus)
+                    GLib.idle_add(self.fields[key_name].widget.grab_focus)
                     focus = True
 
     def _sig_remove(self, button, key, modified=True):
@@ -437,15 +473,15 @@ class DictWidget(Widget):
         if not self.attrs.get('no_command', 0.0) and self.buttons.get(key):
             del self.buttons[key]
         for widget in self.rows[key]:
-            self.table.remove(widget)
+            self.grid.remove(widget)
             widget.destroy()
         del self.rows[key]
         if modified:
             self.send_modified()
-            self.set_value(self.record, self.field)
+            self.set_value()
 
-    def set_value(self, record, field):
-        field.set_client(record, self.get_value())
+    def set_value(self):
+        self.field.set_client(self.record, self.get_value())
 
     def get_value(self):
         return dict((key, widget.get_value())
@@ -481,80 +517,61 @@ class DictWidget(Widget):
 
     def add_line(self, key):
         key_schema = self.field.keys[key]
-        self.fields[key] = DICT_ENTRIES[key_schema['type_']](key, self)
+        self.fields[key] = DICT_ENTRIES[key_schema['type']](key, self)
         field = self.fields[key]
-        alignment = gtk.Alignment(
-            float(self.attrs.get('xalign', 0.0)),
-            float(self.attrs.get('yalign', 0.5)),
-            float(self.attrs.get('xexpand', 1.0)),
-            float(self.attrs.get('yexpand', 1.0)))
-        hbox = gtk.HBox()
-        hbox.pack_start(field.widget, expand=field.expand, fill=field.fill)
-        alignment.add(hbox)
-        n_rows = self.table.props.n_rows
-        self.table.resize(n_rows + 1, 3)
         text = key_schema['string'] + _(':')
-        label = gtk.Label(set_underline(text))
-        label.set_use_underline(True)
-        label.set_alignment(1., .5)
-        self.table.attach(label, 0, 1, n_rows - 1, n_rows,
-            xoptions=gtk.FILL, yoptions=False, xpadding=4, ypadding=4)
+        label = Gtk.Label(
+            label=set_underline(text),
+            use_underline=True, halign=Gtk.Align.END)
+        self.grid.attach_next_to(
+            label, None, Gtk.PositionType.BOTTOM, 1, 1)
         label.set_mnemonic_widget(field.widget)
         label.show()
-        self.table.attach(alignment, 1, 2, n_rows - 1, n_rows,
-            xoptions=gtk.FILL | gtk.EXPAND, yoptions=False, xpadding=4,
-            ypadding=3)
-        alignment.show_all()
+        hbox = Gtk.HBox(hexpand=True)
+        hbox.pack_start(
+            field.widget, expand=field.expand, fill=field.fill, padding=0)
+        self.grid.attach_next_to(
+            hbox, label, Gtk.PositionType.RIGHT, 1, 1)
+        hbox.show_all()
+        self.rows[key] = [label, hbox]
+
         if not self.attrs.get('no_command', 0.0):
             remove_but = self._new_remove_btn()
             self.tooltips.set_tip(remove_but, _('Remove "%s"') %
                 key_schema['string'])
-            self.table.attach(remove_but, 2, 3, n_rows - 1, n_rows,
-                xoptions=gtk.FILL, yoptions=False, xpadding=2)
+            self.grid.attach_next_to(
+                remove_but, hbox, Gtk.PositionType.RIGHT, 1, 1)
             remove_but.connect('clicked', self._sig_remove, key)
             remove_but.show_all()
-            self.rows[key] = [label, alignment, remove_but]
-        else:
-            self.rows[key] = [label, alignment]
+            self.buttons[key] = remove_but
+            self.rows[key].append(remove_but)
 
-    def display(self, record, field):
-        super(DictWidget, self).display(record, field)
-
-        if field is None:
+    def display(self):
+        super(DictWidget, self).display()
+        if not self.field:
             return
 
-        record_id = record.id if record else None
+        record_id = self.record.id if self.record else None
         if record_id != self._record_id:
             for key in list(self.fields.keys()):
                 self._sig_remove(None, key, modified=False)
             self._record_id = record_id
 
-        value = field.get_client(record) if field else {}
-        new_key_names = set(value.keys()) - set(field.keys)
+        value = self.field.get_client(self.record) if self.field else {}
+        new_key_names = set(value.keys()) - set(self.field.keys)
         if new_key_names:
-            field.add_keys(list(new_key_names), self.record)
+            self.field.add_keys(list(new_key_names), self.record)
         decoder = PYSONDecoder()
 
-        # ABDC: Allow dictschema to be ordered by a sequence
-        value_ordered = OrderedDict()
-        use_sequence = any(
-            x[1].get('sequence_order', None) for x in field.keys.items())
-        if use_sequence:
-            for skey, svalues in sorted(field.keys.items(),
-                    key=lambda x: x[1]['sequence_order']):
-                if skey not in value:
-                    continue
-                value_ordered[skey] = value[skey]
+        def filter_func(item):
+            key, value = item
+            return key in self.field.keys
 
-        def _loop_order_hook():
-            if use_sequence:
-                return value_ordered.items()
-            else:
-                return ((key, val) for key, val in sorted(value.items()))
+        def key(item):
+            key, value = item
+            return self.field.keys[key]['sequence'] or 0
 
-        for key, val in _loop_order_hook():
-            if key not in field.keys:
-                continue
+        for key, val in sorted(filter(filter_func, value.items()), key=key):
             if key not in self.fields:
                 self.add_line(key)
             widget = self.fields[key]

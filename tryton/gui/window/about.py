@@ -10,7 +10,7 @@ from tryton.common import get_toplevel_window
 from tryton import __version_coog__
 
 COPYRIGHT = '''\
-Copyright (C) 2004-2019 Tryton.
+Copyright (C) 2004-2020 Tryton.
 '''
 AUTHORS = [
         'Bertrand Chenal <bertrand.chenal@b2ck.com>',
@@ -44,7 +44,7 @@ class About(object):
         self.win.set_authors(AUTHORS)
         self.win.set_translator_credits(_('translator-credits'))
         self.win.set_logo(GdkPixbuf.Pixbuf.new_from_file(
-                os.path.join(PIXMAPS_DIR, 'tryton.png')))
+                os.path.join(PIXMAPS_DIR, 'tryton.svg')))
         self.win.run()
         parent.present()
         self.win.destroy()

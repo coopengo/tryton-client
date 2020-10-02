@@ -8,7 +8,8 @@ import gettext
 import logging
 import sys
 import locale
-import gtk
+
+from gi.repository import GdkPixbuf
 
 from tryton import __version__
 
@@ -51,9 +52,8 @@ class ConfigManager(object):
             'client.default_height': 750,
             'client.modepda': False,
             'client.toolbar': 'default',
-            'client.save_width_height': True,
+            'client.save_tree_width': True,
             'client.save_tree_state': False,
-            'client.fast_tabbing': True,
             'client.spellcheck': False,
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
@@ -62,9 +62,9 @@ class ConfigManager(object):
             'client.check_version': False,
             'client.bus_timeout': 10 * 60,
             'icon.colors': '#0094d2,#57a639,#cc0000',
+            'tree.colors': '#777,#dff0d8,#fcf8e3,#f2dede',
             'image.max_size': 10 ** 6,
-            'roundup.url': 'http://bugs.tryton.org/',
-            'roundup.xmlrpc': 'roundup-xmlrpc.tryton.org',
+            'bug.url': 'https://support.coopengo.com/',
             'download.url': 'https://downloads.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,
@@ -180,5 +180,5 @@ if not os.path.isdir(PIXMAPS_DIR):
     PIXMAPS_DIR = pkg_resources.resource_filename(
         'tryton', 'data/pixmaps/tryton')
 
-TRYTON_ICON = gtk.gdk.pixbuf_new_from_file(
+TRYTON_ICON = GdkPixbuf.Pixbuf.new_from_file(
     os.path.join(PIXMAPS_DIR, 'tryton-icon.png'))

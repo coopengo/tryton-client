@@ -18,11 +18,23 @@ args = {}
 try:
     from babel.messages import frontend as babel
 
+    class extract_messages(babel.extract_messages):
+        def initialize_options(self):
+            super().initialize_options()
+            self.omit_header = True
+            self.no_location = True
+
+    class update_catalog(babel.update_catalog):
+        def initialize_options(self):
+            super().initialize_options()
+            self.omit_header = True
+            self.ignore_obsolete = True
+
     args['cmdclass'] = {
         'compile_catalog': babel.compile_catalog,
-        'extract_messages': babel.extract_messages,
+        'extract_messages': extract_messages,
         'init_catalog': babel.init_catalog,
-        'update_catalog': babel.update_catalog,
+        'update_catalog': update_catalog,
         }
 
     args['message_extractors'] = {
@@ -32,7 +44,7 @@ try:
         }
 
 except ImportError:
-        pass
+    pass
 
 package_data = {
     'tryton': ['data/pixmaps/tryton/*.png',
@@ -47,6 +59,7 @@ data_files = []
 def get_version():
     init = read(os.path.join('tryton', '__init__.py'))
     return re.search('__version_coog__ = "([0-9.]*)"', init).group(1)
+
 
 name = 'Coog'
 
@@ -76,9 +89,11 @@ dist = setup(name=name,
         'Natural Language :: Czech',
         'Natural Language :: Dutch',
         'Natural Language :: English',
+        'Natural Language :: Finnish',
         'Natural Language :: French',
         'Natural Language :: German',
         'Natural Language :: Hungarian',
+        'Natural Language :: Indonesian',
         'Natural Language :: Italian',
         'Natural Language :: Persian',
         'Natural Language :: Polish',
@@ -86,24 +101,28 @@ dist = setup(name=name,
         'Natural Language :: Russian',
         'Natural Language :: Slovenian',
         'Natural Language :: Spanish',
+        'Natural Language :: Turkish',
         'Natural Language :: Japanese',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Office/Business',
         ],
     platforms='any',
     license='GPL-3',
-    python_requires='>=3.4',
+    python_requires='>=3.5',
     install_requires=[
-        # "py-gobject3",
+        'pycairo',
         "python-dateutil",
+        'PyGObject',
         ],
     extras_require={
-        'calendar': ['GooCalendar>=0.4'],
+        'calendar': ['GooCalendar>=0.7'],
         },
     zip_safe=False,
+    test_suite='tryton.tests',
     **args
     )

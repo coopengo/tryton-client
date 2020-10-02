@@ -111,7 +111,7 @@ class Group(SignalEvent, list):
         super(Group, self).insert(pos, record)
         self.__id2record[record.id] = record
         if not self.lock_signal:
-            self.signal('group-list-changed', ('record-added', record))
+            self.signal('group-list-changed', ('record-added', record, pos))
 
     def append(self, record):
         assert record.group is self
@@ -121,7 +121,8 @@ class Group(SignalEvent, list):
         super(Group, self).append(record)
         self.__id2record[record.id] = record
         if not self.lock_signal:
-            self.signal('group-list-changed', ('record-added', record))
+            self.signal('group-list-changed', (
+                    'record-added', record, self.__len__() - 1))
 
     def _remove(self, record):
         idx = self.index(record)
@@ -131,17 +132,20 @@ class Group(SignalEvent, list):
                     self.__getitem__(idx + 1)
             else:
                 self.__getitem__(idx - 1).next[id(self)] = None
-        self.signal('group-list-changed', ('record-removed', record))
+        self.signal('group-list-changed', ('record-removed', record, idx))
         super(Group, self).remove(record)
         del self.__id2record[record.id]
 
     def clear(self):
         # Use reversed order to minimize the cursor reposition as the cursor
         # has more chances to be on top of the list.
+        length = self.__len__()
         for record in reversed(self[:]):
-            self.signal('group-list-changed', ('record-removed', record))
+            self.signal(
+                'group-list-changed', ('record-removed', record, length - 1))
             record.destroy()
             self.pop()
+            length -= 1
         self.__id2record = {}
         self.record_removed, self.record_deleted = [], []
 
@@ -249,8 +253,8 @@ class Group(SignalEvent, list):
             return True
 
         # PJA : Select first entry in list if even if there is only one #3431
-        if len(ids) >= 1:
-            self.lock_signal = True
+        # if len(ids) >= 1:
+        #     self.lock_signal = True
 
         new_records = []
         for id in ids:
@@ -287,13 +291,24 @@ class Group(SignalEvent, list):
 
     @property
     def context(self):
-        ctx = rpc.CONTEXT.copy()
+        return self._get_context(local=False)
+
+    @property
+    def local_context(self):
+        return self._get_context(local=True)
+
+    def _get_context(self, local=False):
+        if not local:
+            ctx = rpc.CONTEXT.copy()
+        else:
+            ctx = {}
         if self.parent:
-            parent_context = self.parent.get_context()
+            parent_context = self.parent.get_context(local=local)
             ctx.update(parent_context)
             if self.child_name in self.parent.group.fields:
                 field = self.parent.group.fields[self.child_name]
-                ctx.update(field.get_context(self.parent, parent_context))
+                ctx.update(field.get_context(
+                        self.parent, parent_context, local=local))
         ctx.update(self._context)
         if self.parent_datetime_field:
             ctx['_datetime'] = self.parent.get_eval(
@@ -311,16 +326,17 @@ class Group(SignalEvent, list):
             record.signal_connect(self, 'record-changed', self._record_changed)
             record.signal_connect(self, 'record-modified',
                 self._record_modified)
-        if position == -1:
-            self.append(record)
-        else:
-            self.insert(position, record)
+        if record not in self:
+            if position == -1:
+                self.append(record)
+            else:
+                self.insert(position, record)
         for record_rm in self.record_removed:
             if record_rm.id == record.id:
-                self.record_removed.remove(record)
+                self.record_removed.remove(record_rm)
         for record_del in self.record_deleted:
             if record_del.id == record.id:
-                self.record_deleted.remove(record)
+                self.record_deleted.remove(record_del)
         self.current_idx = position
         record.modified_fields.setdefault('id')
         record.signal('record-modified')

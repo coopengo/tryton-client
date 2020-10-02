@@ -4,6 +4,7 @@
 
 import os
 import re
+import ssl
 import sys
 import tempfile
 
@@ -76,8 +77,9 @@ def replace_path(match):
     if sys.platform == 'darwin':
         libs = [os.path.join('@executable_path', l) for l in libs]
     return 'shared-library="%s"' % ','.join(libs)
-lib_re = re.compile(r'shared-library="([^\"]*)"')
 
+
+lib_re = re.compile(r'shared-library="([^\"]*)"')
 required_libs = set()
 temp = tempfile.mkdtemp()
 for ns in required_gi_namespaces:
@@ -108,8 +110,6 @@ if sys.platform == 'win32':
         'libcroco-0.6-3.dll',
         'libepoxy-0.dll',
         ])
-    include_files.append(
-        (os.path.join(sys.prefix, 'ssl'), os.path.join('etc', 'ssl')))
     lib_path = os.getenv('PATH', os.defpath).split(os.pathsep)
 else:
     lib_path = [os.path.join(sys.prefix, 'lib')]
@@ -122,6 +122,13 @@ for lib in required_libs:
         raise Exception('%s not found' % lib)
     include_files.append((path, lib))
 
+ssl_paths = ssl.get_default_verify_paths()
+include_files.append(
+    (ssl_paths.openssl_cafile, os.path.join('etc', 'ssl', 'cert.pem')))
+if os.path.exists(ssl_paths.openssl_capath):
+    include_files.append(
+        (ssl_paths.openssl_capath, os.path.join('etc', 'ssl', 'certs')))
+
 version = Popen(
     'python3.6 setup.py --version', stdout=PIPE, shell=True).stdout.read()
 version = version.strip()
@@ -132,6 +139,7 @@ setup(name='tryton',
         'build_exe': {
             'no_compress': True,
             'include_files': include_files,
+            'excludes': ['tkinter'],
             'silent': True,
             'packages': ['gi'],
             'includes': ['gi', "gi.overrides.Gtk"],

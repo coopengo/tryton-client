@@ -177,16 +177,12 @@ Toolbar:
 
 Form:
 
-  * Save Width/Height:
+  * Save Column Width:
     Check box to enable saving of manually adjusted widths of columns in lists
-    and trees. Additionally saving of manually adjusted widths and heights of
-    dialog and popup windows.
+    and trees.
 
   * Save Tree Expanded State:
     Check box to enable saving of expanded and selected nodes in trees/lists.
-
-  * Fast Tabbing:
-    Check box to enable fast tabbing navigation by skipping readonly entries.
 
   * Spell Checking:
     Check box to enable spell checking in fields.

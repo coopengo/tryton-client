@@ -30,7 +30,7 @@ class Attachment(WinForm):
         screen.search_filter()
 
     def destroy(self):
-        self.prev_view.save_width_height()
+        self.prev_view.save_width()
         super(Attachment, self).destroy()
 
     def callback(self, result):
@@ -44,8 +44,7 @@ class Attachment(WinForm):
         link_field = self.screen.group.fields['link']
         type_field = self.screen.group.fields['type']
         name_field = self.screen.group.fields[data_field.attrs['filename']]
-        # JMO: 'description' is not always there
-        description_field = self.screen.group.fields.get('description', '')
+        description_field = self.screen.group.fields['description']
         new_record = self.screen.new()
         parse = urlparse(uri)
         if not parse.scheme:

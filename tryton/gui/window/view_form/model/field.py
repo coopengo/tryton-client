@@ -3,6 +3,7 @@
 import os
 from itertools import chain
 import tempfile
+import logging
 import locale
 import logging
 from tryton.common import \
@@ -16,8 +17,11 @@ import decimal
 from decimal import Decimal
 import math
 from tryton.common import RPCExecute, RPCException
+from tryton.common.htmltextbuffer import guess_decode
 from tryton.pyson import PYSONDecoder
 from tryton.config import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 class Field(object):
@@ -62,11 +66,11 @@ class Field(object):
     def validation_domains(self, record, pre_validate=None):
         return concat(*self.domains_get(record, pre_validate))
 
-    def get_context(self, record, record_context=None):
+    def get_context(self, record, record_context=None, local=False):
         if record_context is not None:
             context = record_context.copy()
         else:
-            context = record.get_context()
+            context = record.get_context(local=local)
         context.update(record.expr_eval(self.attrs.get('context', {})))
         return context
 
@@ -217,13 +221,45 @@ class CharField(Field):
     def get(self, record):
         return super(CharField, self).get(record) or self._default
 
+    def set_client(self, record, value, force_change=False):
+        if isinstance(value, bytes):
+            try:
+                value = guess_decode(value)
+            except UnicodeDecodeError:
+                logger.warning(
+                    "The encoding can not be guessed for field '%(name)s'",
+                    {'name': self.name})
+                value = None
+        super().set_client(record, value, force_change)
+
 
 class SelectionField(Field):
 
     _default = None
 
-    def get_client(self, record):
-        return record.value.get(self.name)
+
+class MultiSelectionField(Field):
+
+    _default = None
+
+    def get(self, record):
+        value = super().get(record)
+        if not value:
+            value = self._default
+        else:
+            value.sort()
+        return value
+
+    def get_eval(self, record):
+        value = super().get_eval(record)
+        if value is None:
+            value = []
+        return value
+
+    def set_client(self, record, value, force_change=False):
+        if value:
+            value = sorted(value)
+        super().set_client(record, value, force_change=force_change)
 
 
 class DateTimeField(Field):
@@ -355,14 +391,14 @@ class FloatField(Field):
         value = record.value.get(self.name)
         if value is not None:
             digits = self.digits(record, factor=factor)
+            d = value * factor
+            if not isinstance(d, Decimal):
+                d = Decimal(repr(d))
             if digits:
                 p = int(digits[1])
             else:
-                d = value * factor
-                if not isinstance(d, Decimal):
-                    d = Decimal(repr(d))
                 p = -int(d.as_tuple().exponent)
-            return locale.format('%.*f', (p, value * factor), True)
+            return locale.localize('{0:.{1}f}'.format(d, p), True)
         else:
             return ''
 
@@ -371,7 +407,7 @@ class NumericField(FloatField):
 
     def convert(self, value):
         try:
-            return locale.atof(value, Decimal)
+            return Decimal(locale.delocalize(value))
         except decimal.InvalidOperation:
             return self._default
 
@@ -427,26 +463,27 @@ class M2OField(Field):
         return self.get(record) is None
 
     def get_client(self, record):
-        rec_name = record.value.get(self.name + '.rec_name')
+        rec_name = record.value.get(self.name + '.', {}).get('rec_name')
         if rec_name is None:
             self.set(record, self.get(record))
-            rec_name = record.value.get(self.name + '.rec_name') or ''
-        return rec_name
+            rec_name = record.value.get(self.name + '.', {}).get('rec_name')
+        return rec_name or ''
 
     def set_client(self, record, value, force_change=False):
         if isinstance(value, (tuple, list)):
             value, rec_name = value
         else:
             if value == self.get(record):
-                rec_name = record.value.get(self.name + '.rec_name', '')
+                rec_name = record.value.get(
+                    self.name + '.', {}).get('rec_name', '')
             else:
                 rec_name = ''
-        record.value[self.name + '.rec_name'] = rec_name
+        record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
         super(M2OField, self).set_client(record, value,
             force_change=force_change)
 
     def set(self, record, value):
-        rec_name = record.value.get(self.name + '.rec_name') or ''
+        rec_name = record.value.get(self.name + '.', {}).get('rec_name') or ''
         if not rec_name and value is not None and value >= 0:
             try:
                 result, = RPCExecute('model', self.attrs['relation'], 'read',
@@ -454,11 +491,12 @@ class M2OField(Field):
             except RPCException:
                 return
             rec_name = result['rec_name'] or ''
-        record.value[self.name + '.rec_name'] = rec_name
+        record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
         record.value[self.name] = value
 
-    def get_context(self, record, record_context=None):
-        context = super(M2OField, self).get_context(record, record_context)
+    def get_context(self, record, record_context=None, local=False):
+        context = super(M2OField, self).get_context(
+            record, record_context=record_context, local=local)
         if self.attrs.get('datetime_field'):
             context['_datetime'] = record.get_eval(
                 )[self.attrs.get('datetime_field')]
@@ -722,30 +760,38 @@ class O2MField(Field):
             else:
                 fields = {}
 
-        to_remove = []
-        for record2 in record.value[self.name]:
-            if not record2.id:
-                to_remove.append(record2)
+        group = record.value[self.name]
+        if value and value.get('delete'):
+            for record_id in value['delete']:
+                record2 = group.get(record_id)
+                if record2 is not None:
+                    group.remove(
+                        record2, remove=False, signal=False,
+                        force_remove=False)
         if value and value.get('remove'):
             for record_id in value['remove']:
-                record2 = record.value[self.name].get(record_id)
+                record2 = group.get(record_id)
                 if record2 is not None:
-                    to_remove.append(record2)
-        for record2 in to_remove:
-            record.value[self.name].remove(record2, signal=False,
-                force_remove=False)
+                    group.remove(
+                        record2, remove=True, signal=False,
+                        force_remove=False)
 
         if value and (value.get('add') or value.get('update', [])):
             record.value[self.name].add_fields(fields)
             for index, vals in value.get('add', []):
-                new_record = record.value[self.name].new(default=False)
-                record.value[self.name].add(new_record, index, signal=False)
+                new_record = None
+                id_ = vals.pop('id', None)
+                if id_ is not None:
+                    new_record = group.get(id_)
+                if not new_record:
+                    new_record = group.new(obj_id=id_, default=False)
+                group.add(new_record, index, signal=False)
                 new_record.set_on_change(vals)
 
             for vals in value.get('update', []):
                 if 'id' not in vals:
                     continue
-                record2 = record.value[self.name].get(vals['id'])
+                record2 = group.get(vals['id'])
                 if record2 is not None:
                     record2.set_on_change(vals)
 
@@ -810,7 +856,7 @@ class ReferenceField(Field):
     def get_client(self, record):
         if record.value.get(self.name):
             model, _ = record.value[self.name]
-            name = record.value.get(self.name + '.rec_name') or ''
+            name = record.value.get(self.name + '.', {}).get('rec_name') or ''
             return model, name
         else:
             return None
@@ -837,10 +883,11 @@ class ReferenceField(Field):
                     except ValueError:
                         pass
                 if '%s,%s' % (ref_model, ref_id) == self.get(record):
-                    rec_name = record.value.get(self.name + '.rec_name', '')
+                    rec_name = record.value.get(
+                        self.name + '.', {}).get('rec_name') or ''
                 else:
                     rec_name = ''
-            record.value[self.name + '.rec_name'] = rec_name
+            record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
             value = (ref_model, ref_id)
         super(ReferenceField, self).set_client(record, value,
             force_change=force_change)
@@ -860,7 +907,7 @@ class ReferenceField(Field):
                     pass
         else:
             ref_model, ref_id = value
-        rec_name = record.value.get(self.name + '.rec_name') or ''
+        rec_name = record.value.get(self.name + '.', {}).get('rec_name') or ''
         if ref_model and ref_id is not None and ref_id >= 0:
             if not rec_name and ref_id >= 0:
                 try:
@@ -872,13 +919,13 @@ class ReferenceField(Field):
         elif ref_model:
             rec_name = ''
         else:
-            rec_name = str(ref_id)
+            rec_name = str(ref_id) if ref_id is not None else ''
         record.value[self.name] = ref_model, ref_id
-        record.value[self.name + '.rec_name'] = rec_name
+        record.value.setdefault(self.name + '.', {})['rec_name'] = rec_name
 
-    def get_context(self, record, record_context=None):
+    def get_context(self, record, record_context=None, local=False):
         context = super(ReferenceField, self).get_context(
-            record, record_context)
+            record, record_context, local=local)
         if self.attrs.get('datetime_field'):
             context['_datetime'] = record.get_eval(
                 )[self.attrs.get('datetime_field')]
@@ -900,10 +947,10 @@ class ReferenceField(Field):
         else:
             model = None
         screen_domain, attr_domain = self.domains_get(record)
+        screen_domain = filter_leaf(screen_domain, self.name, model)
         screen_domain = prepare_reference_domain(screen_domain, self.name)
         return concat(localize_domain(
-                filter_leaf(screen_domain, self.name, model),
-                strip_target=True), attr_domain)
+                screen_domain, strip_target=True), attr_domain)
 
     def get_models(self, record):
         screen_domain, attr_domain = self.domains_get(record)
@@ -914,6 +961,12 @@ class ReferenceField(Field):
 class _FileCache(object):
     def __init__(self, path):
         self.path = path
+
+    def __del__(self):
+        try:
+            os.remove(self.path)
+        except IOError:
+            pass
 
 
 class BinaryField(Field):
@@ -1081,6 +1134,7 @@ TYPES = {
     'one2many': O2MField,
     'reference': ReferenceField,
     'selection': SelectionField,
+    'multiselection': MultiSelectionField,
     'boolean': BooleanField,
     'datetime': DateTimeField,
     'date': DateField,

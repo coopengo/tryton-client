@@ -33,6 +33,7 @@ class Record(SignalEvent):
         self._timestamp = None
         self.resources = None
         self.button_clicks = {}
+        self.links_counts = {}
         self.next = {}  # Used in Group list
         self.value = {}
         self.autocompletion = {}
@@ -146,8 +147,19 @@ class Record(SignalEvent):
         result = bool(self.modified_fields)
         if not result:
             return result
-        logging.getLogger('root').debug('%s : modfied fields : %s' % (self,
-                self.modified_fields))
+        # JCA #15014 Add a way to make sure some fields are always ignored when
+        # detecting whether the record needs saving
+        for field in self.modified_fields:
+            if field not in self.group.fields:
+                break
+            if not self.group.fields[field].attrs.get(
+                    'never_modified', False):
+                break
+        else:
+            return False
+        logging.getLogger('root').critical(
+            '%s : modified fields : %s' % (
+                self, list(self.modified_fields.keys())))
         return result
 
     @property
@@ -269,7 +281,8 @@ class Record(SignalEvent):
         value = {}
         for name, field in self.group.fields.items():
             if (field.attrs.get('readonly')
-                    and not isinstance(field, fields.O2MField)):
+                    and not (isinstance(field, fields.O2MField)
+                        and not isinstance(field, fields.M2MField))):
                 continue
             if field.name not in self.modified_fields and self.id >= 0:
                 continue
@@ -306,6 +319,7 @@ class Record(SignalEvent):
         self.modified_fields.clear()
         self._timestamp = None
         self.button_clicks.clear()
+        self.links_counts.clear()
 
     def get_timestamp(self):
         result = {self.model_name + ',' + str(self.id): self._timestamp}
@@ -327,8 +341,8 @@ class Record(SignalEvent):
 
     def save(self, force_reload=True):
         if self.id < 0 or self.modified:
+            value = self.get()
             if self.id < 0:
-                value = self.get()
                 try:
                     res, = RPCExecute('model', self.model_name, 'create',
                         [value], context=self.get_context())
@@ -338,7 +352,6 @@ class Record(SignalEvent):
                 self.id = res
                 self.group.id_changed(old_id)
             elif self.modified:
-                value = self.get()
                 if value:
                     context = self.get_context()
                     context = context.copy()
@@ -359,6 +372,7 @@ class Record(SignalEvent):
         return self.id
 
     def default_get(self, rec_name=None):
+        vals = None
         if len(self.group.fields):
             context = self.get_context()
             context.setdefault('default_rec_name', rec_name)
@@ -413,8 +427,11 @@ class Record(SignalEvent):
 
     invalid_fields = property(_get_invalid_fields)
 
-    def get_context(self):
-        return self.group.context
+    def get_context(self, local=False):
+        if not local:
+            return self.group.context
+        else:
+            return self.group.local_context
 
     def set_default(self, val, signal=True, validate=True):
         fieldnames = []
@@ -425,11 +442,8 @@ class Record(SignalEvent):
                 continue
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
-                field_rec_name = fieldname + '.rec_name'
-                if field_rec_name in val:
-                    self.value[field_rec_name] = val[field_rec_name]
-                elif field_rec_name in self.value:
-                    del self.value[field_rec_name]
+                related = fieldname + '.'
+                self.value[related] = val.get(related) or {}
             self.group.fields[fieldname].set_default(self, value)
             self._loaded.add(fieldname)
             fieldnames.append(fieldname)
@@ -458,11 +472,8 @@ class Record(SignalEvent):
                 continue
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
-                field_rec_name = fieldname + '.rec_name'
-                if field_rec_name in val:
-                    self.value[field_rec_name] = val[field_rec_name]
-                elif field_rec_name in self.value:
-                    del self.value[field_rec_name]
+                related = fieldname + '.'
+                self.value[related] = val.get(related) or {}
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
             fieldnames.append(fieldname)
@@ -480,11 +491,8 @@ class Record(SignalEvent):
                 continue
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
-                field_rec_name = fieldname + '.rec_name'
-                if field_rec_name in values:
-                    self.value[field_rec_name] = values[field_rec_name]
-                elif field_rec_name in self.value:
-                    del self.value[field_rec_name]
+                related = fieldname + '.'
+                self.value[related] = values.get(related) or {}
             self.group.fields[fieldname].set_on_change(self, value)
 
     def reload(self, fields=None):
@@ -537,7 +545,6 @@ class Record(SignalEvent):
                 scope = scope[i]
             else:
                 res[arg] = scope
-        res['id'] = self.id
         return res
 
     def on_change(self, fieldnames):
@@ -550,8 +557,16 @@ class Record(SignalEvent):
 
         if values:
             try:
-                changes = RPCExecute('model', self.model_name, 'on_change',
-                    values, fieldnames, context=self.get_context())
+                if len(fieldnames) == 1:
+                    fieldname, = fieldnames
+                    changes = []
+                    changes.append(RPCExecute(
+                            'model', self.model_name, 'on_change_' + fieldname,
+                            values, context=self.get_context()))
+                else:
+                    changes = RPCExecute(
+                        'model', self.model_name, 'on_change',
+                        values, fieldnames, context=self.get_context())
             except RPCException:
                 return
             for change in changes:
@@ -576,13 +591,20 @@ class Record(SignalEvent):
             values.update(self._get_on_change_args(on_change_with))
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
-                field_rec_name = fieldname + '.rec_name'
-                if field_rec_name in self.value:
-                    del self.value[field_rec_name]
+                self.value.pop(fieldname + '.', None)
         if fieldnames:
             try:
-                result = RPCExecute('model', self.model_name, 'on_change_with',
-                    values, list(fieldnames), context=self.get_context())
+                if len(fieldnames) == 1:
+                    fieldname, = fieldnames
+                    result = {}
+                    result[fieldname] = RPCExecute(
+                        'model', self.model_name,
+                        'on_change_with_' + fieldname,
+                        values, context=self.get_context())
+                else:
+                    result = RPCExecute(
+                        'model', self.model_name, 'on_change_with',
+                        values, list(fieldnames), context=self.get_context())
             except RPCException:
                 return
             self.set_on_change(result)
@@ -610,8 +632,9 @@ class Record(SignalEvent):
         autocomplete = self.group.fields[fieldname].attrs['autocomplete']
         args = self._get_on_change_args(autocomplete)
         try:
-            res = RPCExecute('model', self.model_name, 'autocomplete_' +
-                fieldname, args, context=self.get_context())
+            res = RPCExecute(
+                'model', self.model_name,
+                'autocomplete_' + fieldname, args, context=self.get_context())
         except RPCException:
             # ensure res is a list
             res = []

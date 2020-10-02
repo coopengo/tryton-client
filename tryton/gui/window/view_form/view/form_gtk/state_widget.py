@@ -1,10 +1,16 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-import gtk
-import pango
+import functools
 import logging
 
+from gi.repository import Gtk, Pango
+
 import tryton.common as common
+from tryton.action import Action
+from tryton.config import CONFIG
+from tryton.pyson import PYSONDecoder
+
+logger = logging.getLogger(__name__)
 
 
 class StateMixin(object):
@@ -24,7 +30,7 @@ class StateMixin(object):
             self.show()
 
 
-class Label(StateMixin, gtk.Label):
+class Label(StateMixin, Gtk.Label):
 
     def state_set(self, record):
         super(Label, self).state_set(record)
@@ -47,28 +53,31 @@ class Label(StateMixin, gtk.Label):
         readonly = ((field and field.attrs.get('readonly'))
                 or state_changes.get('readonly', not bool(field)))
         common.apply_label_attributes(self, readonly, required)
+        if field:
+            self._format_set(record, field)
 
     def _set_background(self, value, attrlist):
         if value not in common.COLOR_RGB:
-            logging.getLogger(__name__).info('This color is not supported' +
-                '=> %s' % value)
+            logger.info('This color is not supported => %s', value)
         color = common.COLOR_RGB.get(value, common.COLOR_RGB['black'])
-        attrlist.change(pango.AttrBackground(color[0], color[1],
-                color[2], 0, -1))
+        if hasattr(Pango, 'AttrBackground'):
+            attrlist.change(Pango.AttrBackground(
+                    color[0], color[1], color[2], 0, -1))
 
     def _set_foreground(self, value, attrlist):
         if value not in common.COLOR_RGB:
-            logging.getLogger(__name__).info('This color is not supported' +
-                '=> %s' % value)
+            logger.info('This color is not supported => %s', value)
         color = common.COLOR_RGB.get(value, common.COLOR_RGB['black'])
-        attrlist.change(pango.AttrForeground(color[0], color[1],
-                color[2], 0, -1))
+        if hasattr(Pango, 'AttrForeground'):
+            attrlist.change(Pango.AttrForeground(
+                    color[0], color[1], color[2], 0, -1))
 
     def _set_font(self, value, attrlist):
-        attrlist.change(pango.AttrFontDesc(pango.FontDescription(value),
-                0, -1))
+        attrlist.change(Pango.AttrFontDesc(
+                Pango.FontDescription(value), 0, -1))
 
-    def _format_set(self, record, field, attrlist):
+    def _format_set(self, record, field):
+        attrlist = Pango.AttrList()
         functions = {
             'color': self._set_foreground,
             'fg': self._set_foreground,
@@ -94,13 +103,14 @@ class Label(StateMixin, gtk.Label):
                 if len(key) != 2:
                     raise ValueError(common.FORMAT_ERROR + attr)
                 functions[key[0]](key[1], attrlist)
+        self.set_attributes(attrlist)
 
 
-class VBox(StateMixin, gtk.VBox):
+class VBox(StateMixin, Gtk.VBox):
     pass
 
 
-class Image(StateMixin, gtk.Image):
+class Image(StateMixin, Gtk.Image):
 
     def state_set(self, record):
         super(Image, self).state_set(record)
@@ -111,21 +121,21 @@ class Image(StateMixin, gtk.Image):
             field = record.group.fields[name]
             name = field.get(record)
         self.set_from_pixbuf(common.IconFactory.get_pixbuf(
-                name, gtk.ICON_SIZE_DIALOG))
+                name, int(self.attrs.get('size', 48))))
 
 
-class Frame(StateMixin, gtk.Frame):
+class Frame(StateMixin, Gtk.Frame):
 
     def __init__(self, label=None, attrs=None):
         if not label:  # label must be None to have no label widget
             label = None
         super(Frame, self).__init__(label=label, attrs=attrs)
         if not label:
-            self.set_shadow_type(gtk.SHADOW_NONE)
+            self.set_shadow_type(Gtk.ShadowType.NONE)
         self.set_border_width(0)
 
 
-class ScrolledWindow(StateMixin, gtk.ScrolledWindow):
+class ScrolledWindow(StateMixin, Gtk.ScrolledWindow):
 
     def state_set(self, record):
         # Force to show first to ensure it is displayed in the Notebook
@@ -133,7 +143,7 @@ class ScrolledWindow(StateMixin, gtk.ScrolledWindow):
         super(ScrolledWindow, self).state_set(record)
 
 
-class Notebook(StateMixin, gtk.Notebook):
+class Notebook(StateMixin, Gtk.Notebook):
 
     def state_set(self, record):
         super(Notebook, self).state_set(record)
@@ -147,22 +157,116 @@ class Notebook(StateMixin, gtk.Notebook):
                     widget._readonly_set(True)
 
 
-class Alignment(gtk.Alignment):
-
-    def __init__(self, widget, attrs):
-        super(Alignment, self).__init__(
-            float(attrs.get('xalign', 0.0)),
-            float(attrs.get('yalign', 0.5)),
-            float(attrs.get('xexpand', 1.0)),
-            float(attrs.get('yexpand', 1.0)))
-        self.add(widget)
-        widget.connect('show', lambda *a: self.show())
-        widget.connect('hide', lambda *a: self.hide())
-
-
-class Expander(StateMixin, gtk.Expander):
+class Expander(StateMixin, Gtk.Expander):
 
     def __init__(self, label=None, attrs=None):
         if not label:
             label = None
         super(Expander, self).__init__(label=label, attrs=attrs)
+
+
+class Link(StateMixin, Gtk.Button):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_can_focus(False)
+        if self.attrs.get('icon'):
+            self.set_always_show_image(True)
+            self.set_image(common.IconFactory.get_image(
+                    self.attrs['icon'], Gtk.IconSize.LARGE_TOOLBAR))
+            self.set_image_position(Gtk.PositionType.TOP)
+        self._current = None
+
+    @property
+    def action_id(self):
+        return int(self.attrs['id'])
+
+    def state_set(self, record):
+        super().state_set(record)
+        if not self.get_visible():
+            return
+        if CONFIG['client.modepda']:
+            self.hide()
+            return
+        if record:
+            data = {
+                'model': record.model_name,
+                'id': record.id,
+                'ids': [record.id],
+                }
+            context = record.get_context()
+            pyson_ctx = {
+                'active_model': record.model_name,
+                'active_id': record.id,
+                'active_ids': [record.id],
+                }
+            self._current = record.id
+        else:
+            data = {}
+            context = {}
+            pyson_ctx = {}
+            self._current = None
+        pyson_ctx['context'] = context
+        try:
+            self.disconnect_by_func(self.__class__.clicked)
+        except TypeError:
+            pass
+        self.connect('clicked', self.__class__.clicked, [data, context])
+        action = common.RPCExecute(
+            'model', 'ir.action', 'get_action_value', self.action_id,
+            context=context)
+        self.set_label(action['rec_name'])
+
+        decoder = PYSONDecoder(pyson_ctx)
+        domain = decoder.decode(action['pyson_domain'])
+        if action.get('pyson_search_value'):
+            domain = [domain, decoder.decode(action['pyson_search_value'])]
+        tab_domains = [(n, decoder.decode(d))
+            for n, d, c in action['domains'] if c]
+        if tab_domains:
+            label = ('%s\n' % action['rec_name']) + '\n'.join(
+                '%s (%%d)' % n for n, _ in tab_domains)
+        else:
+            label = '%s (%%d)' % action['rec_name']
+        if record and self.action_id in record.links_counts:
+            counter = record.links_counts[self.action_id]
+            self._set_label_counter(label, counter)
+        else:
+            counter = [0] * (len(tab_domains) or 1)
+            if record:
+                record.links_counts[self.action_id] = counter
+            if tab_domains:
+                for i, (_, tab_domain) in enumerate(tab_domains):
+                    common.RPCExecute(
+                        'model', action['res_model'], 'search_count',
+                        ['AND', domain, tab_domain], context=context,
+                        callback=functools.partial(
+                            self._set_count, idx=i, current=self._current,
+                            counter=counter, label=label))
+            else:
+                common.RPCExecute(
+                    'model', action['res_model'], 'search_count', domain,
+                    context=context, callback=functools.partial(
+                        self._set_count, current=self._current,
+                        counter=counter, label=label))
+
+    def _set_count(self, value, idx=0, current=None, counter=None, label=''):
+        if current != self._current:
+            return
+        try:
+            counter[idx] = value()
+        except common.RPCException:
+            pass
+        self._set_label_counter(label, counter)
+
+    def _set_label_counter(self, label, counter):
+        self.set_label(label % tuple(counter))
+        if self.attrs.get('empty') == 'hide':
+            if any(counter):
+                self.show()
+            else:
+                self.hide()
+
+    def clicked(self, data):
+        Action.execute(self.action_id, *data, keyword=True)

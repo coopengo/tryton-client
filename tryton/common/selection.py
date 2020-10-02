@@ -3,8 +3,7 @@
 import operator
 import math
 
-import gtk
-import gobject
+from gi.repository import Gdk, GLib, GObject, Gtk
 
 from tryton.common import RPCExecute, RPCException
 from tryton.common import eval_domain
@@ -53,7 +52,7 @@ class SelectionMixin(object):
         if 'relation' not in self.attrs:
             change_with = self.attrs.get('selection_change_with') or []
             value = record._get_on_change_args(change_with)
-            del value['id']
+            value.pop('id', None)
             self.init_selection(value)
             self.filter_selection(domain, record, field)
         else:
@@ -94,7 +93,7 @@ class SelectionMixin(object):
 
         def _model_evaluator(allowed_models):
             def test(value):
-                return value[0] in allowed_models
+                return value[0] in allowed_models or not allowed_models
             return test
 
         if field.attrs['type'] == 'reference':
@@ -123,9 +122,9 @@ class SelectionMixin(object):
 
 def selection_shortcuts(entry):
     def key_press(widget, event):
-        if (event.type == gtk.gdk.KEY_PRESS
-                and event.state & gtk.gdk.CONTROL_MASK
-                and event.keyval == gtk.keysyms.space):
+        if (event.type == Gdk.EventType.KEY_PRESS
+                and event.state & Gdk.ModifierType.CONTROL_MASK
+                and event.keyval == Gdk.KEY_space):
             widget.popup()
     entry.connect('key_press_event', key_press)
     return entry
@@ -135,7 +134,7 @@ def freeze_value(value):
     if isinstance(value, dict):
         return tuple(sorted((k, freeze_value(v))
                 for k, v in value.items()))
-    elif isinstance(value, (list, set)):
+    elif isinstance(value, (list, set, tuple)):
         return tuple(freeze_value(v) for v in value)
     else:
         return value
@@ -149,20 +148,17 @@ class PopdownMixin(object):
             return
         model, lengths = self.get_popdown_model(selection)
         entry.set_model(model)
-        # GTK 2.24 and above use a ComboBox instead of a ComboBoxEntry
-        if hasattr(entry, 'set_text_column'):
-            entry.set_text_column(0)
-        else:
-            entry.set_entry_text_column(0)
-        completion = gtk.EntryCompletion()
+        entry.set_entry_text_column(0)
+        completion = Gtk.EntryCompletion()
         completion.set_inline_selection(True)
         completion.set_model(model)
         child.set_completion(completion)
         if lengths:
             pop = sorted(lengths, reverse=True)
             average = sum(pop) / len(pop)
-            deviation = int(math.sqrt(sum((x - average) ** 2 for x in pop) /
-                    len(pop)))
+            deviation = int(
+                math.sqrt(sum((x - average) ** 2 for x in pop)
+                    / len(pop)))
             width = max(next((x for x in pop if x < (deviation * 4)), 10), 10)
         else:
             width = 10
@@ -173,7 +169,7 @@ class PopdownMixin(object):
         completion.connect('match-selected', self.match_selected, entry)
 
     def get_popdown_model(self, selection):
-        model = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        model = Gtk.ListStore(GObject.TYPE_STRING, GObject.TYPE_PYOBJECT)
         lengths = []
         for (value, name) in selection:
             name = str(name)
@@ -186,7 +182,7 @@ class PopdownMixin(object):
         model = entry.get_model()
         for i, values in enumerate(model):
             if values[1] == value:
-                gobject.idle_add(entry.set_active, i)
+                GLib.idle_add(entry.set_active, i)
                 break
 
     def get_popdown_value(self, entry, index=1):
@@ -215,10 +211,3 @@ class PopdownMixin(object):
             # When setting no item GTK doesn't clear the entry
             entry.get_child().set_text('')
         return True
-
-
-def test_freeze_value():
-    assert freeze_value({'foo': 'bar'}) == (('foo', 'bar'),)
-    assert freeze_value([1, 42, 2, 3]) == (1, 42, 2, 3)
-    assert freeze_value('foo') == 'foo'
-    assert freeze_value({'foo': {'bar': 42}}) == (('foo', (('bar', 42),)),)

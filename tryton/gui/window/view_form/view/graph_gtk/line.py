@@ -173,10 +173,10 @@ class Line(Graph):
             x = point.x * self.area.w + self.area.x
             y = point.y * self.area.h + self.area.y
 
-            l = (event.x - x) ** 2 + (event.y - y) ** 2
+            square = (event.x - x) ** 2 + (event.y - y) ** 2
 
-            if not nearest or l < nearest[1]:
-                nearest = (point, l)
+            if not nearest or square < nearest[1]:
+                nearest = (point, square)
 
         dia = self.area.w ** 2 + self.area.h ** 2
 
@@ -201,7 +201,8 @@ class Line(Graph):
                                 yfields_timedelta[point.yname])
                         label += common.timedelta.format(point.yval, converter)
                     else:
-                        label += locale.format('%.2f', point.yval, True)
+                        label += locale.localize(
+                            '{:2f}'.format(point.yval), True)
                     label += '\n'
                     label += str(self.labels[point.xname])
                     self.popup.set_text(label)

@@ -36,6 +36,59 @@ assistant .sidebar {
         box-shadow: inset -1px 0 shade (@bg_color, 0.94);
 }
 
+/******************
+ * multiselection *
+ ******************/
+.multiselection {
+    border-radius: 5px;
+    border-width: 1px;
+    border-style: solid;
+    border-top-color: @shape_color;
+    border-right-color: @shape_color;
+    border-bottom-color: @shape_color;
+    border-left-color: @shape_color;
+    border-color: @shape_color;
+    margin:1px;
+    border-image:none;
+}
+
+.multiselection:backdrop {
+    border-color: shade (@shape_color, 1.8);
+}
+
+.multiselection *:focus-within {
+    border-width:2px;
+    border-color: @focus_bg_color;
+    margin:0;
+}
+
+.multiselection:disabled,
+.multiselection:disabled:focus-within {
+    border-color: shade (@shape_color, 1.8);
+    border-width: 1px;
+    margin:1px;
+}
+
+
+.readonly .multiselection *:selected{
+    background-image: -gtk-gradient (linear, left top, left bottom,
+                                     from (shade (@selected_bg_color, 0.98)),
+                                     to (shade (@selected_bg_color, 1)));
+}
+
+.readonly .multiselection > * > *:not(:selected) {
+    background-image: -gtk-gradient (linear, left top, left bottom,
+                                     from (shade (@readonly_bg_color, 1)),
+                                     to (shade (@readonly_bg_color, 1)));
+    color: mix (@text_color, @base_color, 0.4);
+}
+
+.multiselection:focus {
+    border-width:2px;
+    border-color: @focus_bg_color;
+    margin:0;
+}
+
 /**********
  * button *
  **********/
@@ -278,7 +331,7 @@ combobox arrow {
 
 combobox arrow:disabled,
 combobox arrow:backdrop,
-*.readonly combobox arrow {
+*.readonly > combobox arrow {
     color: transparent;
 }
 
@@ -497,22 +550,23 @@ entry:selected:backdrop {
 }
 
 *.readonly spinbutton,
+*.readonly *.multiselection,
 *.readonly entry,
 *.readonly spinbutton:focus,
 *.readonly entry:focus,
-*.readonly combobox button,
-*.readonly combobox entry,
-*.readonly combobox entry:first-child:focus + button:last-child,
-*.readonly combobox entry:last-child:focus ~ button:first-child,
+*.readonly > combobox button,
+*.readonly > combobox entry,
+*.readonly > combobox entry:first-child:focus + button:last-child,
+*.readonly > combobox entry:last-child:focus ~ button:first-child,
 *.readonly entry:focus,
 *.readonly spinbutton:backdrop,
 *.readonly entry:backdrop,
 *.readonly spinbutton:focus:backdrop,
 *.readonly entry:focus:backdrop,
-*.readonly combobox button:backdrop,
-*.readonly combobox entry:backdrop,
-*.readonly combobox entry:first-child:focus + button:last-child:backdrop,
-*.readonly combobox entry:last-child:focus ~ button:first-child:backdrop,
+*.readonly > combobox button:backdrop,
+*.readonly > combobox entry:backdrop,
+*.readonly > combobox entry:first-child:focus + button:last-child:backdrop,
+*.readonly > combobox entry:last-child:focus ~ button:first-child:backdrop,
 *.readonly entry:focus:backdrop{
     background-image: -gtk-gradient (linear, left top, left bottom,
                                      from (shade (@readonly_bg_color, 0.98)),
@@ -623,12 +677,12 @@ frame > border.flat,
     border: none;
 }
 
-scrolledwindow > viewport.frame,
-frame > box > stack > scrolledwindow {
+scrolledwindow:not(:multiselection) > viewport.frame,
+frame > box > stack > scrolledwindow:not(:multiselection) {
     border-style: none;
 }
 
-frame > box.vertical > scrolledwindow.frame {
+frame > box.vertical > scrolledwindow:not(:multiselection).frame {
     border-width: 1px 0px 1px 0px;
 }
 
@@ -773,11 +827,8 @@ infobar.question:backdrop,
                 inset 0 -1px shade (@error_bg_color, 1.04);
 }
 
-infobar.error,
-.error {
-    background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@error_bg_color, 1.04)),
-                                     to (shade (@error_bg_color, 0.96)));
+infobar.error, .error {
+    background-color: mix (@error_bg_color, @bg_color, 0.5);
     border-style: solid;
     border-width: 1px;
 
@@ -797,6 +848,14 @@ infobar.error:backdrop,
 .invalid:backdrop {
     background-image: none;
     background-color: mix (@error_bg_color, @bg_color, 0.5);
+}
+
+frame.invalid:backdrop {
+    background-color: @theme_bg_color;
+}
+
+frame.invalid {
+    background-color: @theme_bg_color;
 }
 
 /********
@@ -1700,7 +1759,7 @@ scrollbar slider:active:backdrop {
  * scrolled window *
  *******************/
 .ubuntu-online-accounts.frame,
-scrolledwindow.frame {
+scrolledwindow:not(:multiselection).frame {
     border-top-color: @borders;
     border-right-color: shade (@bg_color, 0.76);
     border-bottom-color: shade (@bg_color, 0.86);
@@ -1713,6 +1772,7 @@ scrolledwindow.frame {
 .ubuntu-online-accounts.frame {
     border-top-width: 0;
 }
+
 
 /*************
  * separator *

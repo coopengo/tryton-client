@@ -1,5 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import copy
 import xmlrpc.client
 import json
 import ssl
@@ -11,20 +12,19 @@ import hashlib
 import base64
 import threading
 import errno
+import logging
 from functools import partial
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import reduce
-from urllib.parse import urljoin
-import urllib.request
-import urllib.parse
-import urllib.error
-from urllib.parse import urlparse
-
+from urllib.parse import urljoin, quote, urlparse
+from urllib.request import getproxies
 
 __all__ = ["ResponseError", "Fault", "ProtocolError", "Transport",
     "ServerProxy", "ServerPool"]
 CONNECT_TIMEOUT = 5
 DEFAULT_TIMEOUT = None
+logger = logging.getLogger(__name__)
 
 
 class ResponseError(xmlrpc.client.ResponseError):
@@ -37,11 +37,8 @@ class Fault(xmlrpc.client.Fault):
         super(Fault, self).__init__(faultCode, faultString, **extra)
         self.args = faultString
 
-    def __repr__(self):
-        return (
-            "<Fault %s: %s>" %
-            (repr(self.faultCode), repr(self.faultString))
-            )
+    def __str__(self):
+        return str(self.faultCode)
 
 
 class ProtocolError(xmlrpc.client.ProtocolError):
@@ -136,7 +133,8 @@ class Transport(xmlrpc.client.SafeTransport):
     accept_gzip_encoding = True
     encode_threshold = 1400  # common MTU
 
-    def __init__(self, fingerprints=None, ca_certs=None, session=None):
+    def __init__(
+            self, fingerprints=None, ca_certs=None, session=None):
         xmlrpc.client.Transport.__init__(self)
         self._connection = (None, None)
         self.__fingerprints = fingerprints
@@ -152,7 +150,7 @@ class Transport(xmlrpc.client.SafeTransport):
         if not self.use_proxy:
             return
         try:
-            self.__proxies = urllib.getproxies()
+            self.__proxies = getproxies()
         except Exception:
             self.__proxies = None
             return
@@ -188,6 +186,18 @@ class Transport(xmlrpc.client.SafeTransport):
         target = JSONUnmarshaller()
         parser = JSONParser(target)
         return parser, target
+
+    def parse_response(self, response):
+        cache = None
+        if hasattr(response, 'getheader'):
+            cache = int(response.getheader('X-Tryton-Cache', 0))
+        response = super().parse_response(response)
+        if cache:
+            try:
+                response['cache'] = int(cache)
+            except ValueError:
+                pass
+        return response
 
     def get_host_info(self, host):
         host, extra_headers, x509 = xmlrpc.client.Transport.get_host_info(
@@ -267,11 +277,11 @@ class Transport(xmlrpc.client.SafeTransport):
                     peercert = None
 
                 def format_hash(value):
-                    return reduce(lambda x, y: x + y[1].upper() +
-                        ((y[0] % 2 and y[0] + 1 < len(value)) and ':' or ''),
+                    return reduce(lambda x, y: x + y[1].upper()
+                        + ((y[0] % 2 and y[0] + 1 < len(value)) and ':' or ''),
                         enumerate(value), '')
                 return format_hash(hashlib.sha1(peercert).hexdigest())
-            except ssl.SSLError:
+            except (socket.error, ssl.SSLError, ssl.CertificateError):
                 if allow_http:
                     http_connection()
                 else:
@@ -297,23 +307,31 @@ class ServerProxy(xmlrpc.client.ServerProxy):
     __id = 0
 
     def __init__(self, host, port, database='', verbose=0,
-            fingerprints=None, ca_certs=None, session=None):
+            fingerprints=None, ca_certs=None, session=None, cache=None):
         self.__host = '%s:%s' % (host, port)
         if database:
+            database = quote(database)
             self.__handler = '/%s/' % database
         else:
             self.__handler = '/'
         self.__transport = Transport(fingerprints, ca_certs, session)
         self.__verbose = verbose
+        self.__cache = cache
 
     def __request(self, methodname, params):
+        dumper = partial(json.dumps, cls=JSONEncoder, separators=(',', ':'))
         self.__id += 1
         id_ = self.__id
-        request = json.dumps({
+        if self.__cache and self.__cache.cached(methodname):
+            try:
+                return self.__cache.get(methodname, dumper(params))
+            except KeyError:
+                pass
+        request = dumper({
                 'id': id_,
                 'method': methodname,
                 'params': params,
-                }, cls=JSONEncoder, separators=(',', ':')).encode('utf-8')
+                }).encode('utf-8')
 
         try:
             try:
@@ -340,12 +358,15 @@ class ServerProxy(xmlrpc.client.ServerProxy):
         except Exception:
             self.__transport.close()
             raise
-
         if response['id'] != id_:
             raise ResponseError('Invalid response id (%s) excpected %s' %
                 (response['id'], id_))
         if response.get('error'):
             raise Fault(*response['error'])
+        if self.__cache and response.get('cache'):
+            self.__cache.set(
+                methodname, dumper(params), response['cache'],
+                response['result'])
         return response['result']
 
     def close(self):
@@ -359,8 +380,11 @@ class ServerProxy(xmlrpc.client.ServerProxy):
 
 class ServerPool(object):
     keep_max = 4
+    _cache = None
 
     def __init__(self, host, port, database, *args, **kwargs):
+        if kwargs.get('cache'):
+            self._cache = kwargs['cache'] = _Cache()
         self.ServerProxy = partial(
             ServerProxy, host, port, database, *args, **kwargs)
 
@@ -419,3 +443,41 @@ class ServerPool(object):
         conn = self.getconn()
         yield conn
         self.putconn(conn)
+
+    def clear_cache(self, prefix=None):
+        if self._cache:
+            self._cache.clear(prefix)
+
+
+class _Cache:
+
+    def __init__(self):
+        self.store = defaultdict(dict)
+
+    def cached(self, prefix):
+        return prefix in self.store
+
+    def set(self, prefix, key, expire, value):
+        if isinstance(expire, (int, float)):
+            expire = datetime.timedelta(seconds=expire)
+        if isinstance(expire, datetime.timedelta):
+            expire = datetime.datetime.now() + expire
+        self.store[prefix][key] = (expire, copy.deepcopy(value))
+
+    def get(self, prefix, key):
+        now = datetime.datetime.now()
+        try:
+            expire, value = self.store[prefix][key]
+        except ValueError:
+            raise KeyError
+        if expire < now:
+            self.store.pop(key)
+            raise KeyError
+        logger.info('(cached) %s %s', prefix, key)
+        return copy.deepcopy(value)
+
+    def clear(self, prefix=None):
+        if prefix:
+            self.store[prefix].clear()
+        else:
+            self.store.clear()

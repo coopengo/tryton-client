@@ -5,8 +5,9 @@ import os
 import locale
 import gettext
 import logging
-import gtk
 import sys
+
+from gi.repository import Gtk
 
 from tryton.config import CURRENT_DIR
 
@@ -85,9 +86,7 @@ _LOCALE2WIN32 = {
     'ga': 'Scottish Gaelic',
     'gl_ES': 'Galician_Spain',
     'gu': 'Gujarati_India',
-    'he_IL': 'Hebrew',
     'he_IL': 'Hebrew_Israel',
-    'hi_IN': 'Hindi',
     'hi_IN': 'Hindi',
     'hr_HR': 'Croatian',
     'hu_HU': 'Hungarian',
@@ -199,6 +198,7 @@ def setlang(lang=None, locale_dict=None):
 
 def set_language_direction(direction):
     if direction == 'rtl':
-        gtk.widget_set_default_direction(gtk.TEXT_DIR_RTL)
+        direction = Gtk.TextDirection.RTL
     else:
-        gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
+        direction = Gtk.TextDirection.LTR
+    Gtk.Widget.set_default_direction(direction)

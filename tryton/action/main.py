@@ -66,23 +66,20 @@ class Action(object):
         return True
 
     @staticmethod
-    def execute(act_id, data, action_type=None, context=None, keyword=False):
-        # Must be executed synchronously to avoid double execution
-        # on double click.
-        if not action_type:
-            action, = RPCExecute('model', 'ir.action', 'read', [act_id],
-                ['type'], context=context)
-            action_type = action['type']
-        action, = RPCExecute('model', action_type, 'search_read',
-            [('action', '=', act_id)], 0, 1, None, None,
-            context=context)
+    def execute(action, data, context=None, keyword=False):
+        if isinstance(action, int):
+            # Must be executed synchronously to avoid double execution
+            # on double click.
+            action = RPCExecute(
+                'model', 'ir.action', 'get_action_value', action,
+                context=context)
         if keyword:
             keywords = {
                 'ir.action.report': 'form_report',
                 'ir.action.wizard': 'form_action',
                 'ir.action.act_window': 'form_relate',
                 }
-            action.setdefault('keyword', keywords.get(action_type, ''))
+            action.setdefault('keyword', keywords.get(action['type'], ''))
         Action._exec_action(action, data, context=context)
 
     @staticmethod
@@ -134,18 +131,22 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
-            # TODO: comment changes
             action_ctx = context.copy()
-            action_ctx.update(decoder.decode(
-                    action.get('pyson_context') or '{}'))
-            action_ctx.update(ctx)
+            action_ctx.update(
+                decoder.decode(action.get('pyson_context') or '{}'))
+            # XXX: add extra_context
             action_ctx.update(data.get('extra_context', {}))
-            action_ctx['context'] = ctx
+            ctx.update(action_ctx)
 
+            ctx['context'] = copy.deepcopy(ctx)
+            action_ctx.update(ctx)
             decoder = PYSONDecoder(action_ctx)
-            domain = action['pyson_domain']
+            domain = decoder.decode(action['pyson_domain'])
             order = decoder.decode(action['pyson_order'])
             search_value = decoder.decode(action['pyson_search_value'] or '[]')
+            # XXX: Evaluate tab domain later
+            # Dynamic domain evaluation in screens and tabs
+            # see : 4cfefeab5
             tab_domain = [(n, (action_ctx, d), c)
                 for n, d, c in action['domains']]
 
@@ -214,7 +215,7 @@ class Action(object):
         res = selection(_('Select your action'), keyact, alwaysask=alwaysask)
         if res:
             (name, action) = res
-            Action._exec_action(action, data, context=context)
+            Action.execute(action, data, context=context)
             return (name, action)
         elif not len(keyact) and warning:
             message(_('No action defined.'))

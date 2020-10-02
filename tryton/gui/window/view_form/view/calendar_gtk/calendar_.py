@@ -5,15 +5,17 @@ import datetime
 import goocalendar
 from .dates_period import DatesPeriod
 
+from tryton.common import MODELACCESS
+
 
 class Calendar_(goocalendar.Calendar):
     'Calendar'
 
-    def __init__(self, attrs, screen, fields, event_store=None):
+    def __init__(self, attrs, view, fields, event_store=None):
         super(Calendar_, self).__init__(
             event_store, attrs.get('mode', 'month'))
         self.attrs = attrs
-        self.screen = screen
+        self.view_calendar = view
         self.fields = fields
         self.event_store = event_store
         self.current_domain_period = self.get_displayed_period()
@@ -27,6 +29,9 @@ class Calendar_(goocalendar.Calendar):
 
     def get_displayed_period(self):
         cal = calendar.Calendar(self.firstweekday)
+        if self.view == 'day':
+            first_date = self.selected_date
+            last_date = self.selected_date + datetime.timedelta(1)
         if self.view == 'week':
             week = goocalendar.util.my_weekdatescalendar(cal,
                 self.selected_date)
@@ -74,38 +79,41 @@ class Calendar_(goocalendar.Calendar):
         return text_color, bg_color
 
     def display(self, group):
+        def is_date_only(value):
+            return (isinstance(value, datetime.date)
+                and not isinstance(value, datetime.datetime))
         dtstart = self.attrs['dtstart']
         dtend = self.attrs.get('dtend')
-        if self.screen.current_record:
-            record = self.screen.current_record
+        if self.view_calendar.record:
+            record = self.view_calendar.record
             date = record[dtstart].get(record)
             if date:  # select the day of the current record
                 self.select(date)
 
-        if self._event_store:
-            self._event_store.clear()
-        else:
-            event_store = goocalendar.EventStore()
-            self.event_store = event_store
+        event_store = goocalendar.EventStore()
+
+        model_access = MODELACCESS[self.view_calendar.screen.model_name]
+        editable = (
+            bool(int(self.view_calendar.attributes.get('editable', 1)))
+            and model_access['write'])
 
         for record in group:
             if not record[dtstart].get(record):
                 continue
 
             start = record[dtstart].get_client(record)
+            record[dtstart].state_set(record)
             if dtend:
                 end = record[dtend].get_client(record)
+                record[dtend].state_set(record)
             else:
                 end = None
             midnight = datetime.time(0)
-            all_day = False
+            all_day = is_date_only(start) and (not end or is_date_only(end))
             if not isinstance(start, datetime.datetime):
                 start = datetime.datetime.combine(start, midnight)
             if end and not isinstance(end, datetime.datetime):
                 end = datetime.datetime.combine(end, midnight)
-                all_day = True
-            elif not end:
-                all_day = True
 
             # Skip invalid event
             if end is not None and start > end:
@@ -114,9 +122,17 @@ class Calendar_(goocalendar.Calendar):
             text_color, bg_color = self.get_colors(record)
             label = '\n'.join(record[attrs['name']].get_client(record)
                 for attrs in self.fields).rstrip()
+            event_editable = (
+                editable
+                and not record[dtstart].get_state_attrs(record).get(
+                    'readonly', False)
+                and (not dtend
+                    or not record[dtend].get_state_attrs(record).get(
+                        'readonly', False)))
             event = goocalendar.Event(label, start, end, text_color=text_color,
-                bg_color=bg_color, all_day=all_day)
+                bg_color=bg_color, all_day=all_day, editable=event_editable)
             event.record = record
-            self._event_store.add(event)
+            event_store.add(event)
+        self.event_store = event_store
 
         self.grab_focus(self.get_root_item())

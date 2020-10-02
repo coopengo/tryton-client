@@ -56,7 +56,8 @@ def format(value, converter=None):
 
     for (k, _), v in zip(converter[:-3], values):
         if v:
-            text.append(locale.format('%d', v, True) + _get_separators()[k])
+            text.append(
+                locale.format_string('%d', v, True) + _get_separators()[k])
     if any(values[-3:]) or not text:
         time = '%02d:%02d' % tuple(values[-3:-1])
         if values[-1] or value:
@@ -86,7 +87,7 @@ def parse(text, converter=None):
             for t, v in zip(part.split(':'),
                     [converter['h'], converter['m'], converter['s']]):
                 try:
-                    seconds += abs(float(t)) * v
+                    seconds += abs(locale.atof(t)) * v
                 except ValueError:
                     pass
         else:
@@ -94,55 +95,16 @@ def parse(text, converter=None):
                 if part.endswith(separator):
                     part = part[:-len(separator)]
                     try:
-                        seconds += abs(int(part)) * converter[key]
+                        seconds += abs(locale.atof(part)) * converter[key]
                     except ValueError:
                         pass
                     break
             else:
                 try:
-                    seconds += abs(float(part))
+                    seconds += abs(locale.atof(part))
                 except ValueError:
                     pass
 
     if '-' in text:
         seconds *= -1
     return datetime.timedelta(seconds=seconds)
-
-_tests = [
-    (None, ''),
-    (datetime.timedelta(), '00:00'),
-    (datetime.timedelta(days=3, hours=5, minutes=30), '3d 05:30'),
-    (datetime.timedelta(weeks=48), '11M 6d'),
-    (datetime.timedelta(weeks=50), '11M 2w 6d'),
-    (datetime.timedelta(weeks=52), '12M 4d'),
-    (datetime.timedelta(days=360), '12M'),
-    (datetime.timedelta(days=364), '12M 4d'),
-    (datetime.timedelta(days=365), '1Y'),
-    (datetime.timedelta(days=366), '1Y 1d'),
-    (datetime.timedelta(hours=2, minutes=5, seconds=10), '02:05:10'),
-    (datetime.timedelta(minutes=15, microseconds=42), '00:15:00.000042'),
-    (datetime.timedelta(days=1, microseconds=42), '1d .000042'),
-    (datetime.timedelta(seconds=-1), '-00:00:01'),
-    (datetime.timedelta(days=-1, hours=-5, minutes=-30), '-1d 05:30'),
-    ]
-
-
-def test_format():
-    for timedelta, text in _tests:
-        assert format(timedelta) == text
-
-
-_tests_parse = [
-    (datetime.timedelta(), '  '),
-    (datetime.timedelta(), 'foo'),
-    (datetime.timedelta(), '1.5d'),
-    (datetime.timedelta(days=-2), '1d -1d'),
-    (datetime.timedelta(hours=1, minutes=5, seconds=10), '1:5:10:42'),
-    (datetime.timedelta(hours=2), '1: 1:'),
-    (datetime.timedelta(hours=.25), ':15'),
-    ]
-
-
-def test_parse():
-    for timedelta, text, in _tests + _tests_parse:
-        assert parse(text) == timedelta

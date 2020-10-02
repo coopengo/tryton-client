@@ -9,6 +9,17 @@ from html.parser import HTMLParser
 
 from gi.repository import Gtk, Gdk, Pango
 
+
+def guess_decode(bytes, errors='strict'):
+    for encoding in [sys.getfilesystemencoding(), 'utf-8', 'utf-16', 'utf-32']:
+        try:
+            return bytes.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    else:
+        return bytes.decode('ascii', errors=errors)
+
+
 MIME = Gdk.Atom.intern('text/html', False)
 # Disable serialize/deserialize registration function because it does not work
 # on GTK-3, the "guint8 *data" is converted into a Gtk.TextIter
@@ -17,6 +28,7 @@ use_serialize_func = False
 
 def _reverse_dict(dct):
     return {j: i for i, j in dct.items()}
+
 
 SIZE2SCALE = {
     '1': 1 / (1.2 * 1.2 * 1.2),
@@ -268,15 +280,7 @@ def serialize(register, content, start, end, data):
 
 def deserialize(register, content, iter_, text, create_tags, data):
     if not isinstance(text, str):
-        for encoding in [sys.getfilesystemencoding(),
-                'utf-8', 'utf-16', 'utf-32']:
-            try:
-                text = text.decode(encoding)
-            except UnicodeDecodeError:
-                continue
-            break
-        else:
-            text = text.decode('ascii', errors='replace')
+        text = guess_decode(text, errors='replace')
     text, tags = parse_markup(normalize_markup(text, method='xml'))
     offset = iter_.get_offset()
     content.insert(iter_, text)
@@ -296,6 +300,8 @@ def deserialize(register, content, iter_, text, create_tags, data):
 def setup_tags(text_buffer):
     for name, props in reversed(_TAGS):
         text_buffer.create_tag(name, **props)
+
+
 _TAGS = [
     ('bold', {'weight': Pango.Weight.BOLD}),
     ('italic', {'style': Pango.Style.ITALIC}),
@@ -310,7 +316,7 @@ _TAGS.extend([('justification %s' % align, {'justification': justification})
 
 
 def register_foreground(text_buffer, color):
-    name = 'foreground %s' % color
+    name = 'foreground %s' % color.to_string()
     tag_table = text_buffer.get_tag_table()
     tag = tag_table.lookup(name)
     if not tag:
@@ -407,7 +413,7 @@ if __name__ == '__main__':
 <div><br/></div>
 <div align="center">Center</div>
 <div><font face="sans" size="6">Sans6<font color="#ff0000">red</font></font></div>
-<div align="center"> <b> <i><u>Title</u></i> </b></div>'''
+<div align="center"> <b> <i><u>Title</u></i> </b></div>'''  # noqa: E501
 
     win = Gtk.Window()
     win.set_title('HTMLTextBuffer')

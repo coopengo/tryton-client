@@ -750,7 +750,9 @@ class Screen(SignalEvent):
         if self._multiview_form:
             root_parent = self.current_record.root_parent
             assert root_parent.model_name \
-                == self._multiview_form.screen.model_name
+                == self._multiview_form.screen.model_name, (
+                    root_parent.model_name, 'is not',
+                    self._multiview_form.screen.model_name)
             self._multiview_form.screen.reload([root_parent.id])
 
     def unremove(self):

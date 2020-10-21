@@ -524,7 +524,7 @@ class ViewForm(View):
                     if (not f.startswith('_parent')
                         and f in record.group.fields))
             fields = []
-            for name in self.widgets:
+            for name in fields2set:
                 field = record.group.fields[name]
                 fields.append((name,
                         field.attrs.get('loading', 'eager') == 'eager',

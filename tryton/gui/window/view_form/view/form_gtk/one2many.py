@@ -585,7 +585,7 @@ class One2Many(Widget):
         new_group = self.field.get_client(self.record)
 
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
-            self.invisible_set(self._incompatible_group)
+            self.invisible_set(not self.visible or self._incompatible_group)
         if (id(self.screen.group) != id(new_group)
                 and self.screen.model_name == new_group.model_name):
             self.screen.group = new_group

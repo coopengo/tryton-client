@@ -824,7 +824,12 @@ class Screen:
             self.parent.root_parent.reload()
         self.display()
         if self._multiview_form:
-            self._multiview_form.screen.reload([self.parent.root_parent.id])
+            root_parent = self.current_record.root_parent
+            assert root_parent.model_name \
+                == self._multiview_form.screen.model_name, (
+                    root_parent.model_name, 'is not',
+                    self._multiview_form.screen.model_name)
+            self._multiview_form.screen.reload([root_parent.id])
 
     def unremove(self):
         records = self.selected_records

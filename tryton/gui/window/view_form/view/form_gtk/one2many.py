@@ -560,10 +560,9 @@ class One2Many(Widget):
                     or widget.attrs.get('group') != self.attrs['group']
                     or not hasattr(widget, 'screen')):
                 continue
-            if widget.screen.current_record == current_record:
-                continue
             record = current_record
-            if not is_compatible(widget.screen, record):
+            if (record is not None
+                    and not is_compatible(widget.screen, record)):
                 record = IncompatibleGroup
             if not widget._validate():
                 def go_previous():

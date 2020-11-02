@@ -178,7 +178,6 @@ class One2Many(Widget):
                 lambda screen, _: GLib.idle_add(self.group_sync, screen,
                     screen.current_record))
             self.screen._multiview_form = view
-            self.screen._multiview_group = self.attrs['group']
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True, padding=0)
 
@@ -532,7 +531,7 @@ class One2Many(Widget):
 
         def is_compatible(screen, record):
             return (screen.current_view.view_type != 'form'
-                or screen.model_name == record.model_name)
+                or record and screen.model_name == record.model_name)
 
         current_record = self.screen.current_record
         to_sync = []
@@ -541,10 +540,9 @@ class One2Many(Widget):
                     or widget.attrs.get('group') != self.attrs['group']
                     or not hasattr(widget, 'screen')):
                 continue
-            if widget.screen.current_record == current_record:
-                continue
             record = current_record
-            if not is_compatible(widget.screen, record):
+            if (record is not None
+                    and not is_compatible(widget.screen, record)):
                 record = IncompatibleGroup
             if not widget._validate():
                 def go_previous():
@@ -585,7 +583,7 @@ class One2Many(Widget):
         new_group = self.field.get_client(self.record)
 
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
-            self.invisible_set(self._incompatible_group)
+            self.invisible_set(not self.visible or self._incompatible_group)
         if (id(self.screen.group) != id(new_group)
                 and self.screen.model_name == new_group.model_name):
             self.screen.group = new_group

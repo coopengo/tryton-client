@@ -77,7 +77,6 @@ class Screen(SignalEvent):
             'alternate_view', False)
         self.widget = self.screen_container.widget_get()
         self._multiview_form = None
-        self._multiview_group = None
 
         self.context_screen = None
         if attributes.get('context_model'):
@@ -749,7 +748,12 @@ class Screen(SignalEvent):
             self.parent.root_parent.reload()
         self.display()
         if self._multiview_form:
-            self._multiview_form.screen.reload([self.parent.root_parent.id])
+            root_parent = self.current_record.root_parent
+            assert root_parent.model_name \
+                == self._multiview_form.screen.model_name, (
+                    root_parent.model_name, 'is not',
+                    self._multiview_form.screen.model_name)
+            self._multiview_form.screen.reload([root_parent.id])
 
     def unremove(self):
         records = self.selected_records

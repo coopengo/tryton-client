@@ -607,6 +607,7 @@ class Form(SignalEvent, TabContent):
             menu = tbutton._menu
             if menu.get_children():
                 menu.add(Gtk.SeparatorMenuItem())
+            # Coog: move available exports to a submenu
             exports_menuitem = Gtk.MenuItem(set_underline('Exports'))
             exports_menuitem.set_use_underline(True)
             menu.add(exports_menuitem)

@@ -753,11 +753,19 @@ class Form(TabContent):
             menu = tbutton._menu
             if menu.get_children():
                 menu.add(Gtk.SeparatorMenuItem())
+            # Coog: move available exports to a submenu
+            exports_menuitem = Gtk.MenuItem(set_underline('Exports'))
+            exports_menuitem.set_use_underline(True)
+            menu.add(exports_menuitem)
+
+            submenu = Gtk.Menu()
+            exports_menuitem.set_submenu(submenu)
+
             for export in exports:
                 menuitem = Gtk.MenuItem(set_underline(export['name']))
                 menuitem.set_use_underline(True)
                 menuitem.connect('activate', self.do_export, export)
-                menu.add(menuitem)
+                submenu.add(menuitem)
 
         last_item = gtktoolbar.get_nth_item(gtktoolbar.get_n_items() - 1)
         if not isinstance(last_item, Gtk.SeparatorToolItem):

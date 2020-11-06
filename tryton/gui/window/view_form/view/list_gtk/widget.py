@@ -209,6 +209,7 @@ class Affix(Cell):
 class GenericText(Cell):
     align = 0
     editable = None
+    editing = None
 
     def __init__(self, view, attrs, renderer=None):
         super(GenericText, self).__init__()
@@ -350,15 +351,21 @@ class GenericText(Cell):
         if callback:
             callback()
 
-    def set_editable(self, record):
-        if not record or not self.editable:
+    def set_editable(self):
+        if not self.editable or not self.editing:
             return
+        record, field = self.editing
         self.editable.set_text(self.get_textual_value(record))
 
     def editing_started(self, cell, editable, path):
         def remove(editable):
             self.editable = None
+            self.editing = None
         self.editable = editable
+        store = self.view.treeview.get_model()
+        record = store.get_value(store.get_iter(path), 0)
+        field = record[self.attrs['name']]
+        self.editing = record, field
         editable.connect('remove-widget', remove)
         return False
 
@@ -417,7 +424,7 @@ class Boolean(GenericText):
             self.view.treeview.set_cursor(path)
         return True
 
-    def set_editable(self, record):
+    def set_editable(self):
         pass
 
 
@@ -1036,10 +1043,10 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         if callback:
             callback()
 
-    def set_editable(self, record):
-        if not record or not self.editable:
+    def set_editable(self):
+        if not self.editable and not self.editing:
             return
-        field = record[self.attrs['name']]
+        record, field = self.editing
         value = self.get_value(record, field)
         self.update_selection(record, field)
         self.set_popdown_value(self.editable, value)

@@ -229,7 +229,7 @@ class FormXMLViewParser(XMLViewParser):
             self.container.add(None, attributes)
             return
 
-        #RSE Display more useful info when trying to display unexisting field
+        # RSE Display more useful info when trying to display unexisting field
         if 'widget' not in attributes:
             raise Exception('Unknown field %s' % attributes['name'])
         widget = self.WIDGETS[attributes['widget']](self.view, attributes)

@@ -898,6 +898,8 @@ class Screen:
 
     def set_tree_state(self):
         view = self.current_view
+        if not view:
+            return
         if view.view_type not in ('tree', 'form'):
             return
         if id(view) in self.tree_states_done:

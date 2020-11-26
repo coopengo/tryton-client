@@ -334,7 +334,8 @@ class One2Many(Widget):
     def _validate(self):
         record = self.screen.current_record
         if record:
-            fields = self.screen.current_view.get_fields()
+            fields = self.screen.current_view.get_fields() \
+                if self.screen.current_view else None
             if not record.validate(fields):
                 self.screen.display(set_cursor=True)
                 return False
@@ -558,7 +559,8 @@ class One2Many(Widget):
         for widget, record in to_sync:
             widget._incompatible_group = record is IncompatibleGroup
             if not widget._incompatible_group:
-                if (widget.screen.current_view.view_type == 'form'
+                if (widget.screen.current_view
+                        and widget.screen.current_view.view_type == 'form'
                         and record is not None
                         and widget.screen.group.model_name
                         == record.group.model_name):

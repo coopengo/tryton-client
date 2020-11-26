@@ -530,7 +530,8 @@ class One2Many(Widget):
             return
 
         def is_compatible(screen, record):
-            return (screen.current_view.view_type != 'form'
+            return (screen and screen.current_view and
+                screen.current_view.view_type != 'form'
                 or record and screen.model_name == record.model_name)
 
         current_record = self.screen.current_record

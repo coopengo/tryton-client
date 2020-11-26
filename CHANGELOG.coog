@@ -1,3 +1,4 @@
+* BUG#18140 Fix message error raised randomly when reloading view
 * BUG#17600 Fix client crash when consulting contracts
 * BUG#00000 Fix win-make.sh to make it work with Tryton 5.6
 * OTH#00000 Fix multi selection size in dictionaries

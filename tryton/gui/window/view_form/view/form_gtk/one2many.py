@@ -361,7 +361,8 @@ class One2Many(Widget):
     def _validate(self):
         record = self.screen.current_record
         if record:
-            fields = self.screen.current_view.get_fields()
+            fields = self.screen.current_view.get_fields() \
+                if self.screen.current_view else None
             if not record.validate(fields):
                 self.screen.display(set_cursor=True)
                 return False

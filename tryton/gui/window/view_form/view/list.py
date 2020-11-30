@@ -305,6 +305,10 @@ class TreeXMLViewParser(XMLViewParser):
 
     def _parse_field(self, node, attributes):
         name = attributes['name']
+
+        # RSE Display more useful info when trying to display unexisting field
+        if 'widget' not in attributes:
+            raise Exception('Unknown field %s' % attributes['name'])
         widget = self.WIDGETS[attributes['widget']](self.view, attributes)
         self.view.widgets[name].append(widget)
 

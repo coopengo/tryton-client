@@ -777,6 +777,15 @@ class O2MField(Field):
                         force_remove=False)
 
         if value and (value.get('add') or value.get('update', [])):
+            for vals in value.get('update', []):
+                if 'id' not in vals:
+                    continue
+                loaded_vals = {k: v for k, v in vals.items()
+                    if k not in fields}
+                record2 = group.get(vals['id'])
+                if record2 is not None:
+                    record2.set_on_change(loaded_vals)
+
             record.value[self.name].add_fields(fields)
             for index, vals in value.get('add', []):
                 new_record = None

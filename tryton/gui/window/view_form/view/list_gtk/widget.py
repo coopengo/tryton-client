@@ -339,7 +339,7 @@ class GenericText(Cell):
         if callback:
             callback()
 
-    def set_editable(self, record):
+    def set_editable(self):
         if not self.editable or not self.editing:
             return
         record, field = self.editing
@@ -417,7 +417,7 @@ class Boolean(GenericText):
             self.view.treeview.set_cursor(path)
         return True
 
-    def set_editable(self, record):
+    def set_editable(self):
         pass
 
 
@@ -876,7 +876,7 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         if callback:
             callback()
 
-    def set_editable(self, record):
+    def set_editable(self):
         if not self.editable or not self.editing:
             return
         record, field = self.editing

@@ -723,7 +723,7 @@ class Screen(SignalEvent):
 
     def remove(self, delete=False, remove=False, force_remove=False,
             records=None):
-        records = records or self.selected_records
+        records = list(reversed(records or self.selected_records))
         if not records:
             return
         if delete:
@@ -732,7 +732,7 @@ class Screen(SignalEvent):
             if not self.group.delete(records):
                 return False
 
-        top_record = records[0]
+        top_record = records[-1]
         top_group = top_record.group
         idx = top_group.index(top_record)
         path = top_record.get_path(self.group)

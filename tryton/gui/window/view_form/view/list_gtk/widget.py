@@ -880,7 +880,7 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         if not self.editable or not self.editing:
             return
         record, field = self.editing
-        value = self.get_value(record, field)
+        value = field.get(record)
         self.update_selection(record, field)
         self.set_popdown_value(self.editable, value)
 

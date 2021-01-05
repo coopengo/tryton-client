@@ -1211,6 +1211,7 @@ class Screen(SignalEvent):
 
     def _button_class(self, button):
         ids = [r.id for r in self.selected_records]
+        current_id = self.current_record.id
         context = self.context
         context['_timestamp'] = {}
         for record in self.selected_records:
@@ -1235,7 +1236,7 @@ class Screen(SignalEvent):
         if action_id:
             Action.execute(action_id, {
                     'model': self.model_name,
-                    'id': self.current_record.id,
+                    'id': current_id,
                     'ids': ids,
                     }, context=self.context, keyword=True)
 

@@ -58,7 +58,8 @@ class ConfigManager(object):
             'client.lang': locale.getdefaultlocale()[0],
             'client.language_direction': 'ltr',
             'client.email': '',
-            'client.limit': 1000,
+            # JCA: Set default limit to 100 for performances
+            'client.limit': 100,
             'client.check_version': False,
             'client.bus_timeout': 10 * 60,
             'icon.colors': '#0094d2,#57a639,#cc0000',

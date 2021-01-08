@@ -1233,7 +1233,6 @@ class Screen(SignalEvent):
         self.reload(ids, written=True)
         if isinstance(action, str):
             self.client_action(action)
-        print('_button_class', self.current_record.id)
         if action_id:
             Action.execute(action_id, {
                     'model': self.model_name,

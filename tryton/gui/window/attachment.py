@@ -24,6 +24,8 @@ class Attachment(WinForm):
         title = _('Attachments (%s)') % (record.rec_name())
         screen = Screen('ir.attachment', domain=[
             ('resource', '=', self.resource),
+            # Coog: no display of technical attachments
+            ('technical', '=', False),
             ], mode=['tree', 'form'])
         super(Attachment, self).__init__(screen, self.callback,
             view_type='tree', title=title)
@@ -75,6 +77,8 @@ class Attachment(WinForm):
                     'search_read', [
                         ('resource', '=', '%s,%s' % (
                                 record.model_name, record.id)),
+                        # Coog: no display of technical attachments
+                        ('technical', '=', False),
                         ], 0, 20, None, ['rec_name', 'name', 'type', 'link'],
                     context=context)
             except RPCException:

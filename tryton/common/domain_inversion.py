@@ -173,6 +173,15 @@ def prepare_reference_domain(domain, reference):
             local_name, target_name = domain[0].split('.', 1)
             if local_name == reference:
                 return [target_name] + list(domain[1:3] + domain[4:])
+        # Coog specific
+        # When a Reference field is used in a domain like:
+        # ['reference_field', '=', 'model_name,id']
+        # the domain must be changed to ['model_name', '=', id]
+        # see https://support.coopengo.com/issues/15135
+        elif domain[0] == reference and len(domain) == 3 \
+                and domain[2].count(','):
+            model_name, id_ = domain[2].split(',', 1)
+            return ['id', '=', int(id_)]
         return domain
     else:
         return [prepare_reference_domain(d, reference) for d in domain]

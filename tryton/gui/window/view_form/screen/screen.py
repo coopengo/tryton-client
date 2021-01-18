@@ -362,6 +362,8 @@ class Screen(SignalEvent):
             self.screen_container.get_text(), with_tab=False)
         for idx, (name, (ctx, domain), count) in enumerate(
                 self.screen_container.tab_domain):
+            if not count:
+                continue
             decoder = PYSONDecoder(ctx)
             domain = ['AND', decoder.decode(domain), screen_domain]
             set_tab_counter(lambda: None, idx)

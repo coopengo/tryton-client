@@ -612,10 +612,6 @@ class One2Many(Widget):
         return True
 
     def set_value(self):
-        if (self.screen.current_view.view_type == 'form'
-                and self.attrs.get('group')
-                and self.screen.model_name != self.record.model_name):
-            return True
         self.screen.current_view.set_value()
         if self.screen.modified():  # TODO check if required
             self.record.modified_fields.setdefault(self.field.name)

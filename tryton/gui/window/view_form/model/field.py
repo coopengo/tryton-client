@@ -738,6 +738,7 @@ class O2MField(Field):
         record.modified_fields.setdefault(self.name)
 
     def set_on_change(self, record, value):
+        record[self.name]
         record.modified_fields.setdefault(self.name)
         self._set_default_value(record)
         if isinstance(value, (list, tuple)):

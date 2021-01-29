@@ -80,7 +80,13 @@ class Record(SignalEvent):
 
             record_context = self.get_context()
             if loading == 'eager':
-                limit = int(CONFIG['client.limit'] / len(fnames))
+                # JCA: This controls how many lines will be fetched at once
+                # (typically when opening a list view).
+                # The "client.limit / len(fnames)" is not bad heuristic, but
+                # for models with a lot of fields, reading "one by one" is
+                # probably not the solution anyway. A minimum of 20 makes it 2
+                # calls to fill a list view, and seems good enough
+                limit = max(int(CONFIG['client.limit'] / len(fnames)), 20)
 
                 def filter_group(record):
                     return name not in record._loaded and record.id >= 0

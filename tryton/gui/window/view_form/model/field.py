@@ -797,7 +797,8 @@ class O2MField(Field):
                     new_record = group.get(id_)
                 if not new_record:
                     new_record = group.new(obj_id=id_, default=False)
-                group.add(new_record, index, signal=False)
+                else:
+                    group.add(new_record, index, signal=False)
                 new_record.set_on_change(vals)
 
             for vals in value.get('update', []):

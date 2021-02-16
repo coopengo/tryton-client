@@ -650,6 +650,9 @@ class Form(SignalEvent, TabContent):
             if not icon:
                 icon = 'tryton-executable'
 
+            def make_func(n, *args):
+                return lambda z: n(*args)
+
             # Fix for #8825
             common.IconFactory.register_icon(icon)
             qbutton = Gtk.ToolButton()
@@ -658,7 +661,7 @@ class Form(SignalEvent, TabContent):
                     icon, Gtk.IconSize.LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
-                lambda b: self._action(quick_action, 'quick_actions'))
+                make_func(self._action, quick_action, 'quick_actions'))
             self.tooltips.set_tip(qbutton, _(quick_action['name']))
             gtktoolbar.insert(qbutton, -1)
 

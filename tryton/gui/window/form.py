@@ -646,7 +646,7 @@ class Form(SignalEvent, TabContent):
         if quick_actions:
             gtktoolbar.insert(Gtk.SeparatorToolItem(), -1)
         for quick_action in quick_actions:
-            icon = quick_action.get('icon.rec_name')
+            icon = quick_action.get('icon.', {}).get('rec_name')
             if not icon:
                 icon = 'tryton-executable'
 

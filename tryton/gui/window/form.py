@@ -646,9 +646,16 @@ class Form(SignalEvent, TabContent):
         if quick_actions:
             gtktoolbar.insert(Gtk.SeparatorToolItem(), -1)
         for quick_action in quick_actions:
-            icon = quick_action.get('icon.rec_name')
+            icon = quick_action.get('icon.', {}).get('rec_name')
             if not icon:
                 icon = 'tryton-executable'
+
+            # prevent problem with variables scopes in lambda
+            # cf. https://docs.python.org/3/faq/programming.html#
+            # why-do-lambdas-defined-in-a-loop-with-different-values
+            # -all-return-the-same-result
+            def make_func(n, *args):
+                return lambda z: n(*args)
 
             # Fix for #8825
             common.IconFactory.register_icon(icon)
@@ -658,7 +665,7 @@ class Form(SignalEvent, TabContent):
                     icon, Gtk.IconSize.LARGE_TOOLBAR))
             qbutton.set_label(quick_action['name'])
             qbutton.connect('clicked',
-                lambda b: self._action(quick_action, 'quick_actions'))
+                make_func(self._action, quick_action, 'quick_actions'))
             self.tooltips.set_tip(qbutton, _(quick_action['name']))
             gtktoolbar.insert(qbutton, -1)
 

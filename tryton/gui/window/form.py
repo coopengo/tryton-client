@@ -650,6 +650,10 @@ class Form(SignalEvent, TabContent):
             if not icon:
                 icon = 'tryton-executable'
 
+            # prevent problem with variables scopes in lambda
+            # cf. https://docs.python.org/3/faq/programming.html#
+            # why-do-lambdas-defined-in-a-loop-with-different-values
+            # -all-return-the-same-result
             def make_func(n, *args):
                 return lambda z: n(*args)
 

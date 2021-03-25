@@ -118,10 +118,14 @@ class ViewListForm(View):
     def group_list_changed(self, group, action, *args):
         if action == 'record-added':
             record, position = args
+            if group != record.group:
+                return
             self._model.emit('items-changed', position, 0, 1)
             self._view_forms.insert(position, self._view_forms.pop())
         elif action == 'record-removed':
             record, position = args
+            if group != record.group:
+                return
             self._model.emit('items-changed', position, 1, 0)
             self._view_forms.pop(position)
 

@@ -29,7 +29,7 @@ SYNTAX = 'darkred'
 
 MARKS = {
     SYNTAX: (3, 'tryton-dialog-error'),
-    ERROR: (2, 'tryton-dialog-warning'),
+    ERROR: (2, 'tryton-warning'),
     WARNING: (1, 'tryton-dialog-information'),
     }
 

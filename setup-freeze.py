@@ -130,7 +130,7 @@ if os.path.exists(ssl_paths.openssl_capath):
         (ssl_paths.openssl_capath, os.path.join('etc', 'ssl', 'certs')))
 
 version = Popen(
-    'python3.6 setup.py --version', stdout=PIPE, shell=True).stdout.read()
+    'python setup.py --version', stdout=PIPE, shell=True).stdout.read()
 version = version.strip()
 
 setup(name='tryton',

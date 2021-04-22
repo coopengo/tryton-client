@@ -32,7 +32,7 @@ deps() {
         mingw-w64-i686-gtksourceview3
 
 
-    pip3.6 install \
+    pip install \
         python-dateutil \
         chardet \
         pyflakes
@@ -48,7 +48,7 @@ clean() {
 build() {
     clean
     local v; v=$(version)
-    python3.6 setup-freeze.py install_exe -d dist
+    python setup-freeze.py install_exe -d dist
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
     makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
 }

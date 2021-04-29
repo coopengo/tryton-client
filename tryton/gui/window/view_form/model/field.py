@@ -1079,16 +1079,9 @@ class DictField(Field):
         for i in range(0, len(keys), batchlen):
             sub_keys = keys[i:i + batchlen]
             try:
-                key_ids = RPCExecute('model', schema_model, 'search',
-                    [('name', 'in', sub_keys), domain], 0,
-                    CONFIG['client.limit'], None, context=context)
-            except RPCException:
-                key_ids = []
-            if not key_ids:
-                continue
-            try:
-                values = RPCExecute('model', schema_model,
-                    'get_keys', key_ids, context=context)
+                values = RPCExecute('model', schema_model, 'search_get_keys',
+                    [('name', 'in', sub_keys), domain], CONFIG['client.limit'],
+                    context=context)
             except RPCException:
                 values = []
             if not values:
@@ -1100,7 +1093,7 @@ class DictField(Field):
         context = self.get_context(record)
         try:
             new_fields = RPCExecute('model', schema_model,
-                'get_keys', key_ids, context=context)
+                'search_get_keys', [('id', 'in', key_ids)], context=context)
         except RPCException:
             new_fields = []
 

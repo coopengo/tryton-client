@@ -58,7 +58,7 @@ required_gi_namespaces = [
     'Gdk-3.0',
     'GdkPixbuf-2.0',
     'Gio-2.0',
-    'GooCanvas-2.0',
+    'GooCanvas-3.0',
     'Gtk-3.0',
     'GtkSource-3.0',
     'Pango-1.0',

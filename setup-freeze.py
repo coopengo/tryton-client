@@ -97,7 +97,7 @@ for ns in required_gi_namespaces:
 
     include_files.append((typefile_tmp, typefile_file))
 
-if sys.platform == 'win32':
+if sys.platform in ('win32', 'win64'):
     include_files.extend([
         ('share/themes/Coog', 'share/themes/Coog'),
         (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
@@ -155,7 +155,7 @@ setup(name='tryton',
     executables=[Executable(
             'bin/tryton',
             targetName='coog.exe',
-            base='Win32GUI' if sys.platform == 'win32' else None,
+            base='Win32GUI' if sys.platform in ('win32', 'win64') else None,
             icon=os.path.join(
                 'tryton', 'data', 'pixmaps', 'tryton', 'tryton.ico'),
             )])

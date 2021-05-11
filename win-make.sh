@@ -49,8 +49,10 @@ build() {
     clean
     local v; v=$(version)
     python setup-freeze.py install_exe -d dist
-    makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
-    makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
+    local bits
+    bits=$(python -c "import sys; print(sys.platform[:-2])")
+    makensis -DVERSION="$v" -DBITS=$bits -DSERIES="$v" setup.nsi
+    makensis -DVERSION="$v" -DBITS=$bits setup-single.nsi
 }
 
 upload() {

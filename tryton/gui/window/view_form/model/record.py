@@ -71,9 +71,13 @@ class Record(SignalEvent):
             fnames = [fname for fname, field in fields
                 if fname not in self._loaded
                 and (not views or (views & field.views))]
-            fnames.extend(('%s.rec_name' % fname for fname in fnames[:]
-                    if self.group.fields[fname].attrs['type']
-                    in ('many2one', 'one2one', 'reference')))
+            for fname in fnames[:]:
+                f_attrs = self.group.fields[fname].attrs
+                if f_attrs['type'] in {'many2one', 'one2one', 'reference'}:
+                    fnames.append('%s.rec_name' % fname)
+                elif (f_attrs['type'] == 'selection'
+                        and f_attrs.get('loading', 'eager') == 'eager'):
+                    fnames.append('%s.string' % fname)
             if 'rec_name' not in fnames:
                 fnames.append('rec_name')
             fnames.append('_timestamp')

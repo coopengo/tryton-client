@@ -1022,15 +1022,20 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
             kwargs['renderer'] = CellRendererCombo
         super(Selection, self).__init__(*args, **kwargs)
         self.init_selection()
-        # Use a variable let Python holding reference when calling set_property
-        model = self.get_popdown_model(self.selection)[0]
-        self.renderer.set_property('model', model)
-        self.renderer.set_property('text-column', 0)
+        if self.view.editable:
+            # Use a variable let Python holding reference when calling
+            # set_property
+            model = self.get_popdown_model(self.selection)[0]
+            self.renderer.set_property('model', model)
+            self.renderer.set_property('text-column', 0)
 
     def get_value(self, record, field):
         return field.get(record)
 
     def get_textual_value(self, record):
+        if not self.view.editable:
+            return record.value[self.attrs['name'] + ':string']
+
         field = record[self.attrs['name']]
         self.update_selection(record, field)
         value = self.get_value(record, field)

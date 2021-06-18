@@ -1033,8 +1033,9 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
         return field.get(record)
 
     def get_textual_value(self, record):
-        if not self.view.editable:
-            return record.value[self.attrs['name'] + ':string']
+        related = self.attrs['name'] + ':string'
+        if not self.view.editable and record.value.get(related):
+            return record.value[related]
 
         field = record[self.attrs['name']]
         self.update_selection(record, field)

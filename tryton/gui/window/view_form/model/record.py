@@ -77,7 +77,7 @@ class Record(SignalEvent):
                     fnames.append('%s.rec_name' % fname)
                 elif (f_attrs['type'] == 'selection'
                         and f_attrs.get('loading', 'eager') == 'eager'):
-                    fnames.append('%s.string' % fname)
+                    fnames.append('%s:string' % fname)
             if 'rec_name' not in fnames:
                 fnames.append('rec_name')
             fnames.append('_timestamp')
@@ -484,6 +484,9 @@ class Record(SignalEvent):
                         fields.ReferenceField)):
                 related = fieldname + '.'
                 self.value[related] = val.get(related) or {}
+            if isinstance(self.group.fields[fieldname], fields.SelectionField):
+                related = fieldname + ':string'
+                self.value[related] = val.get(related)
             self.group.fields[fieldname].set(self, value)
             self._loaded.add(fieldname)
             fieldnames.append(fieldname)

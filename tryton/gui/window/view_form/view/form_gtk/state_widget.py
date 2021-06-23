@@ -38,8 +38,8 @@ class Label(StateMixin, Gtk.Label):
             field = record.group.fields[self.attrs['name']]
         else:
             field = None
-        if not self.attrs.get('string', True) and field:
-            if record:
+        if not self.attrs.get('string', True):
+            if field and record:
                 text = field.get_client(record) or ''
             else:
                 text = ''
@@ -120,8 +120,13 @@ class Image(StateMixin, Gtk.Image):
         if name in record.group.fields:
             field = record.group.fields[name]
             name = field.get(record)
-        self.set_from_pixbuf(common.IconFactory.get_pixbuf(
-                name, int(self.attrs.get('size', 48))))
+        size = int(self.attrs.get('size', 48))
+        if self.attrs.get('type') == 'url':
+            pixbuf = common.IconFactory.get_pixbuf_url(
+                name, size=size, size_param=self.attrs.get('url_size'))
+        else:
+            pixbuf = common.IconFactory.get_pixbuf(name, size)
+        self.set_from_pixbuf(pixbuf)
 
 
 class Frame(StateMixin, Gtk.Frame):
@@ -144,17 +149,7 @@ class ScrolledWindow(StateMixin, Gtk.ScrolledWindow):
 
 
 class Notebook(StateMixin, Gtk.Notebook):
-
-    def state_set(self, record):
-        super(Notebook, self).state_set(record)
-        if record:
-            state_changes = record.expr_eval(self.attrs.get('states', {}))
-        else:
-            state_changes = {}
-        if state_changes.get('readonly', self.attrs.get('readonly')):
-            for widgets in self.widgets.values():
-                for widget in widgets:
-                    widget._readonly_set(True)
+    pass
 
 
 class Expander(StateMixin, Gtk.Expander):
@@ -216,7 +211,7 @@ class Link(StateMixin, Gtk.Button):
         action = common.RPCExecute(
             'model', 'ir.action', 'get_action_value', self.action_id,
             context=context)
-        self.set_label(action['rec_name'])
+        self.set_label(action['name'])
 
         decoder = PYSONDecoder(pyson_ctx)
         domain = decoder.decode(action['pyson_domain'])
@@ -225,10 +220,10 @@ class Link(StateMixin, Gtk.Button):
         tab_domains = [(n, decoder.decode(d))
             for n, d, c in action['domains'] if c]
         if tab_domains:
-            label = ('%s\n' % action['rec_name']) + '\n'.join(
+            label = ('%s\n' % action['name']) + '\n'.join(
                 '%s (%%d)' % n for n, _ in tab_domains)
         else:
-            label = '%s (%%d)' % action['rec_name']
+            label = '%s (%%d)' % action['name']
         if record and self.action_id in record.links_counts:
             counter = record.links_counts[self.action_id]
             self._set_label_counter(label, counter)

@@ -369,6 +369,28 @@ class FloatField(Field):
         shift = int(round(math.log(abs(factor), 10)))
         return (digits[0] + shift, digits[1] - shift)
 
+    def get_symbol(self, record, symbol):
+        if record and symbol in record.group.fields:
+            value = self.get(record) or 0
+            sign = 1
+            if value < 0:
+                sign = -1
+            elif value == 0:
+                sign = 0
+            symbol_field = record.group.fields[symbol]
+            symbol_name = symbol_field.attrs.get('relation')
+            symbol_id = symbol_field.get(record)
+            if symbol_name and symbol_id is not None and symbol_id >= 0:
+                try:
+                    return RPCExecute(
+                        'model', symbol_name, 'get_symbol', symbol_id, sign,
+                        context=record.get_context())
+                except RPCException:
+                    logger.warn(
+                        "Fail to fetch symbol for %s,%s",
+                        symbol_name, symbol_id)
+        return '', 1
+
     def convert(self, value):
         try:
             return locale.atof(value)
@@ -674,7 +696,7 @@ class O2MField(Field):
             for old_record in group:
                 if old_record.id not in value:
                     group.remove(old_record, remove=True, signal=False)
-            group.load(value, modified=modified)
+            group.load(value, modified=modified or default)
         else:
             for vals in value:
                 new_record = record.value[self.name].new(default=False)
@@ -783,10 +805,10 @@ class O2MField(Field):
             for vals in value.get('update', []):
                 if 'id' not in vals:
                     continue
-                vals_to_set = {k: v for k, v in vals.items()
-                    if k not in new_fields}
                 record2 = group.get(vals['id'])
                 if record2 is not None:
+                    vals_to_set = {
+                        k: v for k, v in vals.items() if k not in new_fields}
                     record2.set_on_change(vals_to_set)
 
             record.value[self.name].add_fields(new_fields)

@@ -10,7 +10,7 @@ from tryton.common import get_toplevel_window
 from tryton import __version_coog__
 
 COPYRIGHT = '''\
-Copyright (C) 2004-2020 Tryton.
+Copyright (C) 2004-2021 Tryton.
 '''
 AUTHORS = [
         'Bertrand Chenal <bertrand.chenal@b2ck.com>',
@@ -19,6 +19,7 @@ AUTHORS = [
         'Hartmut Goebel',
         'Korbinian Preisler <info@virtual-things.biz>',
         'Mathias Behrle <info@m9s.biz>',
+        'Maxime Richez <maxime.richez@saluc.com>',
         'Nicolas Évrard <nicolas.evrard@b2ck.com>',
         'Sednacom <contact@sednacom.fr>',
         'Udo Spallek <info@virtual-things.biz>',

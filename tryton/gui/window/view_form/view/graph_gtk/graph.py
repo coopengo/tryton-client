@@ -14,6 +14,7 @@ from gi.repository import Gdk, Gtk
 import tryton.rpc as rpc
 from tryton.action import Action
 from tryton.common import hex2rgb, generateColorscheme, COLOR_SCHEMES
+from tryton.config import CONFIG
 from tryton.gui.window import Window
 from tryton.pyson import PYSONDecoder
 
@@ -369,7 +370,6 @@ class Graph(Gtk.DrawingArea):
             self.datas.setdefault(x, {})
             for yfield in self.yfields:
                 key = yfield.get('key', yfield['name'])
-                self.datas[x].setdefault(key, 0.0)
                 if yfield.get('domain'):
                     context = rpc.CONTEXT.copy()
                     context['context'] = context.copy()
@@ -378,6 +378,7 @@ class Graph(Gtk.DrawingArea):
                         context[field] = model[field].get(model)
                     if not PYSONDecoder(context).decode(yfield['domain']):
                         continue
+                self.datas[x].setdefault(key, 0.0)
                 if yfield['name'] == '#':
                     self.datas[x][key] += 1
                 else:
@@ -460,7 +461,7 @@ class Graph(Gtk.DrawingArea):
 
     def setColorScheme(self):
         keys = self._getDatasKeys()
-        color = self.attrs.get('color', 'blue')
+        color = self.attrs.get('color', CONFIG['graph.color'])
         r, g, b = hex2rgb(COLOR_SCHEMES.get(color, color))
         maxcolor = max(max(r, g), b)
         self.colorScheme = generateColorscheme(color, keys,

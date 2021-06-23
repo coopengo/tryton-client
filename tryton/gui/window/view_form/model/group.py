@@ -1,5 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import operator
+
 from .record import Record
 from .field import Field, M2OField, ReferenceField
 from tryton import rpc
@@ -102,6 +104,7 @@ class Group(SignalEvent, list):
 
     def insert(self, pos, record):
         assert record.group is self
+        pos = min(pos, len(self))
         if pos >= 1:
             self.__getitem__(pos - 1).next[id(self)] = record
         if pos < self.__len__():
@@ -206,6 +209,8 @@ class Group(SignalEvent, list):
                 context=ctx)
         except RPCException:
             return False
+        for rec in records:
+            rec.destroy()
         if reload_ids:
             root_group.reload(reload_ids)
         return True
@@ -248,7 +253,7 @@ class Group(SignalEvent, list):
                 return []
         return list({}.fromkeys(res))
 
-    def load(self, ids, modified=False):
+    def load(self, ids, modified=False, position=-1):
         if not ids:
             return True
 
@@ -261,7 +266,11 @@ class Group(SignalEvent, list):
             new_record = self.get(id)
             if not new_record:
                 new_record = Record(self.model_name, id, group=self)
-                self.append(new_record)
+                if position == -1:
+                    self.append(new_record)
+                else:
+                    self.insert(position, new_record)
+                    position += 1
                 new_record.signal_connect(self, 'record-changed',
                     self._record_changed)
                 new_record.signal_connect(self, 'record-modified',
@@ -352,9 +361,13 @@ class Group(SignalEvent, list):
                     field.set_client(record, value)
         return record
 
-    def set_sequence(self, field='sequence'):
+    def set_sequence(self, field='sequence', position=-1):
         changed = False
         prev = None
+        if position == 0:
+            cmp = operator.gt
+        else:
+            cmp = operator.lt
         for record in self:
             # Assume not loaded records are correctly ordered
             # as far as we do not change any previous records.
@@ -368,11 +381,17 @@ class Group(SignalEvent, list):
                 if value is None:
                     if index:
                         update = True
-                    elif prev and record.id >= 0:
-                        update = record.id < prev.id
+                    elif prev:
+                        if record.id >= 0:
+                            update = cmp(record.id, prev.id)
+                        elif position == 0:
+                            update = True
                 elif value == index:
-                    if prev and record.id >= 0:
-                        update = record.id < prev.id
+                    if prev:
+                        if record.id >= 0:
+                            update = cmp(record.id, prev.id)
+                        elif position == 0:
+                            update = True
                 elif value <= (index or 0):
                     update = True
                 if update:
@@ -409,23 +428,25 @@ class Group(SignalEvent, list):
     def remove(self, record, remove=False, modified=True, signal=True,
             force_remove=False):
         idx = self.index(record)
-        if self[idx].id >= 0:
+        if record.id >= 0:
             if remove:
-                if self[idx] in self.record_deleted:
-                    self.record_deleted.remove(self[idx])
-                self.record_removed.append(self[idx])
+                if record in self.record_deleted:
+                    self.record_deleted.remove(record)
+                if record not in self.record_removed:
+                    self.record_removed.append(record)
             else:
-                if self[idx] in self.record_removed:
-                    self.record_removed.remove(self[idx])
-                self.record_deleted.append(self[idx])
+                if record in self.record_removed:
+                    self.record_removed.remove(record)
+                if record not in self.record_deleted:
+                    self.record_deleted.append(record)
         if record.parent:
             record.parent.modified_fields.setdefault('id')
             record.parent.signal('record-modified')
         if modified:
             record.modified_fields.setdefault('id')
             record.signal('record-modified')
-        if self[idx].id < 0 or force_remove:
-            self._remove(self[idx])
+        if record.id < 0 or force_remove:
+            self._remove(record)
 
         if len(self):
             self.current_idx = min(idx, len(self) - 1)

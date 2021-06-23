@@ -11,7 +11,7 @@ from gi.repository import Gdk, GLib, Gtk
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-from tryton.common import COLORS, file_selection, file_open, file_write
+from tryton.common import file_selection, file_open, file_write
 import tryton.common as common
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
@@ -151,6 +151,9 @@ class Cell(object):
             cell.set_property('foreground', foreground)
             cell.set_property('foreground-set', bool(foreground))
 
+    def set_editable(self):
+        pass
+
 
 class Affix(Cell):
     expand = False
@@ -184,7 +187,12 @@ class Affix(Cell):
                 value = record[self.icon].get_client(record) or ''
             else:
                 value = self.icon
-            pixbuf = common.IconFactory.get_pixbuf(value, Gtk.IconSize.BUTTON)
+            if self.attrs.get('icon_type') == 'url':
+                pixbuf = common.IconFactory.get_pixbuf_url(
+                    value, size_param=self.attrs.get('url_size'))
+            else:
+                pixbuf = common.IconFactory.get_pixbuf(
+                    value, Gtk.IconSize.BUTTON)
             cell.set_property('pixbuf', pixbuf)
         else:
             text = self.attrs.get('string', '')
@@ -204,6 +212,39 @@ class Affix(Cell):
             elif self.protocol == 'sip':
                 value = 'sip:%s' % value
             webbrowser.open(value, new=2)
+
+
+class Symbol(Cell):
+    expand = False
+
+    def __init__(self, view, attrs, position):
+        super().__init__()
+        self.attrs = attrs
+        self.symbol = attrs.get('symbol')
+        self.position = position
+        self.renderer = Gtk.CellRendererText()
+        self.renderer.set_property('yalign', 0)
+        self.renderer.set_property('xalign', 0 if position else 1)
+        self.view = view
+
+    @realized
+    @CellCache.cache
+    def setter(self, column, cell, store, iter_, user_data=None):
+        record, field = self._get_record_field_from_iter(iter_, store)
+        field.state_set(record, states=('invisible',))
+        invisible = field.get_state_attrs(record).get('invisible', False)
+        if invisible:
+            cell.set_property('text', '')
+            cell.set_property('visible', not invisible)
+            return
+        symbol, position = field.get_symbol(record, self.symbol)
+        if round(position) == self.position:
+            cell.set_property('text', symbol)
+            cell.set_property('visible', True)
+        else:
+            cell.set_property('text', '')
+            cell.set_property('visible', False)
+        self._set_visual(cell, record)
 
 
 class GenericText(Cell):
@@ -362,10 +403,7 @@ class GenericText(Cell):
             self.editable = None
             self.editing = None
         self.editable = editable
-        store = self.view.treeview.get_model()
-        record = store.get_value(store.get_iter(path), 0)
-        field = record[self.attrs['name']]
-        self.editing = record, field
+        self.editing = self._get_record_field_from_path(path)
         editable.connect('remove-widget', remove)
         return False
 
@@ -391,6 +429,22 @@ class Int(GenericText):
             renderer = CellRendererInteger
         super(Int, self).__init__(view, attrs, renderer=renderer)
         self.factor = float(attrs.get('factor', 1))
+        self.symbol = attrs.get('symbol')
+        if self.symbol:
+            self.renderer_prefix = Symbol(view, attrs, 0)
+            self.renderer_suffix = Symbol(view, attrs, 1)
+
+    @property
+    def prefixes(self):
+        if self.symbol:
+            return [self.renderer_prefix]
+        return []
+
+    @property
+    def suffixes(self):
+        if self.symbol:
+            return [self.renderer_suffix]
+        return []
 
     def get_textual_value(self, record):
         if not record:
@@ -417,6 +471,10 @@ class Boolean(GenericText):
 
     def _sig_toggled(self, renderer, path):
         record, field = self._get_record_field_from_path(path)
+        if (self.view.record and self.view.record != record
+                and not self.view.record.validate(self.view.get_fields())):
+            renderer.stop_emission_by_name('toggled')
+            return True
         if not self.attrs.get('readonly',
                 field.get_state_attrs(record).get('readonly', False)):
             value = record[self.attrs['name']].get_client(record)
@@ -492,6 +550,12 @@ class Time(Date):
             return value.strftime(self.renderer.props.format)
         else:
             return ''
+
+    def set_editable(self):
+        if not self.editable or not self.editing:
+            return
+        record, field = self.editing
+        self.editable.get_child().set_text(self.get_textual_value(record))
 
 
 class TimeDelta(GenericText):
@@ -844,9 +908,13 @@ class M2O(GenericText):
             return
         target_id = self.id_from_value(field.get(record))
 
+        breadcrumb = list(self.view.screen.breadcrumb)
+        breadcrumb.append(
+            field.attrs.get('string') or common.MODELNAME.get(model))
         screen = Screen(model, domain=domain, context=context,
             mode=['form'], view_ids=self.attrs.get('view_ids', '').split(','),
-            exclude_field=field.attrs.get('relation_field'))
+            exclude_field=field.attrs.get('relation_field'),
+            breadcrumb=breadcrumb)
 
         def open_callback(result):
             if result:
@@ -859,11 +927,10 @@ class M2O(GenericText):
                 callback()
         if target_id and target_id >= 0:
             screen.load([target_id])
-            WinForm(screen, open_callback, save_current=True,
-                title=field.attrs.get('string'))
+            WinForm(screen, open_callback, save_current=True)
         else:
             WinForm(screen, open_callback, new=True, save_current=True,
-                title=field.attrs.get('string'), rec_name=text)
+                rec_name=text)
 
     def search_remote(self, record, field, text, callback=None):
         model = self.get_model(record, field)
@@ -899,23 +966,21 @@ class M2O(GenericText):
             search=access['read'],
             create=self.attrs.get('create', True) and access['create'])
         completion.connect('match-selected', self._completion_match_selected,
-            path, model)
+            record, field, model)
         completion.connect('action-activated',
-            self._completion_action_activated, path)
+            self._completion_action_activated, record, field)
         entry.set_completion(completion)
-        entry.connect('key-press-event', self._key_press, path)
-        entry.connect('changed', self._update_completion, path)
+        entry.connect('key-press-event', self._key_press, record, field)
+        entry.connect('changed', self._update_completion, record, field)
 
-    def _key_press(self, entry, event, path):
-        record, field = self._get_record_field_from_path(path)
+    def _key_press(self, entry, event, record, field):
         if (self.has_target(field.get(record))
                 and event.keyval in [Gdk.KEY_Delete, Gdk.KEY_BackSpace]):
             entry.set_text('')
         return False
 
     def _completion_match_selected(
-            self, completion, model, iter_, path, model_name):
-        record, field = self._get_record_field_from_path(path)
+            self, completion, model, iter_, record, field, model_name):
         rec_name, record_id = model.get(iter_, 0, 1)
         field.set_client(
             record, self.value_from_id(model_name, record_id, rec_name))
@@ -926,8 +991,7 @@ class M2O(GenericText):
         completion_model.search_text = rec_name
         return True
 
-    def _update_completion(self, entry, path):
-        record, field = self._get_record_field_from_path(path)
+    def _update_completion(self, entry, record, field):
         value = field.get(record)
         if self.has_target(value):
             id_ = self.id_from_value(value)
@@ -936,8 +1000,7 @@ class M2O(GenericText):
         model = self.get_model(record, field)
         update_completion(entry, record, field, model)
 
-    def _completion_action_activated(self, completion, index, path):
-        record, field = self._get_record_field_from_path(path)
+    def _completion_action_activated(self, completion, index, record, field):
         entry = completion.get_entry()
         entry.handler_block(entry.editing_done_id)
 
@@ -980,17 +1043,20 @@ class O2M(GenericText):
         if not access['read']:
             return
 
+        breadcrumb = list(self.view.screen.breadcrumb)
+        breadcrumb.append(
+            field.attrs.get('string') or common.MODELNAME.get(relation))
         screen = Screen(relation, mode=['tree', 'form'],
             view_ids=self.attrs.get('view_ids', '').split(','),
-            exclude_field=field.attrs.get('relation_field'))
+            exclude_field=field.attrs.get('relation_field'),
+            breadcrumb=breadcrumb)
         screen.pre_validate = bool(int(self.attrs.get('pre_validate', 0)))
         screen.group = group
 
         def open_callback(result):
             if callback:
                 callback()
-        WinForm(screen, open_callback, view_type='tree', context=context,
-            title=field.attrs.get('string'))
+        WinForm(screen, open_callback, view_type='tree', context=context)
 
 
 class M2M(O2M):
@@ -1003,16 +1069,20 @@ class M2M(O2M):
         context = field.get_context(record)
         domain = field.domain_get(record)
 
+        breadcrumb = list(self.view.screen.breadcrumb)
+        breadcrumb.append(
+            field.attrs.get('string') or common.MODELNAME.get(relation))
         screen = Screen(relation, mode=['tree', 'form'],
             view_ids=self.attrs.get('view_ids', '').split(','),
-            exclude_field=field.attrs.get('relation_field'))
+            exclude_field=field.attrs.get('relation_field'),
+            breadcrumb=breadcrumb)
         screen.group = group
 
         def open_callback(result):
             if callback:
                 callback()
         WinForm(screen, open_callback, view_type='tree', domain=domain,
-            context=context, title=field.attrs.get('string'))
+            context=context)
 
 
 class Selection(GenericText, SelectionMixin, PopdownMixin):
@@ -1060,6 +1130,10 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
     def editing_started(self, cell, editable, path):
         super(Selection, self).editing_started(cell, editable, path)
         record, field = self._get_record_field_from_path(path)
+        # Combobox does not emit remove-widget when focus is changed
+        self.editable.connect(
+            'editing-done',
+            lambda *a: self.editable.emit('remove-widget'))
 
         selection_shortcuts(editable)
 

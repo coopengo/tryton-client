@@ -17,7 +17,7 @@ try:
     from http import HTTPStatus
 except ImportError:
     from http import client as HTTPStatus
-from functools import wraps
+from functools import wraps, lru_cache
 from tryton.config import CONFIG
 from tryton.config import TRYTON_ICON, PIXMAPS_DIR
 import sys
@@ -35,6 +35,7 @@ try:
     import ssl
 except ImportError:
     ssl = None
+import zipfile
 from threading import Lock
 
 from gi.repository import Gdk, GdkPixbuf, GLib, GObject, Gtk
@@ -172,6 +173,36 @@ class IconFactory:
             image.set_from_pixbuf(pixbuf)
         return image
 
+    @classmethod
+    def _convert_url(cls, value, size=16, size_param=None):
+        if not value:
+            return
+        parts = urllib.parse.urlsplit(value)
+        parts = list(parts)
+        if not parts[0]:
+            parts[0] = 'https' if rpc.CONNECTION.ssl else 'http'
+        if not parts[1]:
+            hostname = get_hostname(CONFIG['login.host'])
+            port = get_port(CONFIG['login.host'])
+            parts[1] = '%s:%s' % (hostname, port)
+        if size_param:
+            query = urllib.parse.parse_qsl(parts[4])
+            query.append((size_param, size))
+            parts[4] = urllib.parse.urlencode(query)
+        return urllib.parse.urlunsplit(parts)
+
+    @classmethod
+    @lru_cache(maxsize=CONFIG['image.cache_size'])
+    def get_pixbuf_url(cls, url, size=16, size_param=None):
+        if not url:
+            return
+        url = cls._convert_url(url, size, size_param=size_param)
+        try:
+            with urllib.request.urlopen(url) as response:
+                return data2pixbuf(response.read(), size, size)
+        except urllib.error.URLError:
+            logger.info("Can not fetch %s", url, exc_info=True)
+
 
 IconFactory.load_local_icons()
 
@@ -231,6 +262,28 @@ class ModelHistory(object):
 MODELHISTORY = ModelHistory()
 
 
+class ModelName:
+    _names = {}
+
+    def load_names(self):
+        try:
+            self._names = rpc.execute(
+                'model', 'ir.model', 'get_names', rpc.CONTEXT)
+        except TrytonServerError:
+            pass
+
+    def get(self, model):
+        if not self._names:
+            self.load_names()
+        return self._names.get(model, '')
+
+    def clear(self):
+        return self._names.clear()
+
+
+MODELNAME = ModelName()
+
+
 class ViewSearch(object):
     searches = {}
 
@@ -262,7 +315,7 @@ class ViewSearch(object):
                         }])
         except RPCException:
             return
-        self.searches.setdefault(model, []).append((id_, name, domain))
+        self.searches.setdefault(model, []).append((id_, name, domain, True))
 
     def remove(self, model, id_):
         try:
@@ -455,6 +508,15 @@ def file_open(filename, type=None, print_p=False):
             save_p.close()
             file_p.close()
 
+    if print_p and type == 'zip':
+        with zipfile.ZipFile(filename, 'r') as zip_file:
+            for name in zip_file.namelist():
+                ztype = os.path.splitext(name)
+                with zip_file.open(name) as zfile:
+                    zfilename = file_write(name, zfile.read())
+                    file_open(zfilename, type=ztype, print_p=True)
+        return
+
     if os.name == 'nt':
         operation = 'open'
         if print_p:
@@ -463,6 +525,20 @@ def file_open(filename, type=None, print_p=False):
             os.startfile(os.path.normpath(filename), operation)
         except WindowsError:
             save()
+    elif print_p:
+        if type in {'odt', 'odp', 'ods', 'odg'}:
+            try:
+                subprocess.Popen(['soffice', '-p', filename])
+            except OSError:
+                save()
+        else:
+            try:
+                subprocess.Popen(['lpr', filename])
+            except OSError:
+                try:
+                    subprocess.Popen(['lp', filename])
+                except OSError:
+                    save()
     elif sys.platform == 'darwin':
         try:
             subprocess.Popen(['/usr/bin/open', filename])
@@ -547,6 +623,7 @@ class UniqueDialog(object):
             parent = get_toplevel_window()
         dialog = self.build_dialog(parent, *args, **kwargs)
         dialog.set_icon(TRYTON_ICON)
+        setup_window(dialog)
         self.running = True
         dialog.show_all()
         response = dialog.run()
@@ -590,16 +667,14 @@ class UserWarningDialog(WarningDialog):
 
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
-
-        # Coog: Disable Warning Automatic By Pass
-        # self.always = Gtk.CheckButton(label=_('Always ignore this warning.'))
-        # alignment = Gtk.Alignment(xalign=0, yalign=0.5)
-        # alignment.add(self.always)
-        # dialog.vbox.pack_start(alignment, expand=True, fill=False, padding=0)
-
         label = Gtk.Label(
-            label=_('Do you want to proceed?'), halign=Gtk.Align.END)
+            label=_('Do you want to proceed?'),
+            halign=Gtk.Align.FILL, valign=Gtk.Align.END)
         dialog.vbox.pack_start(label, expand=True, fill=True, padding=0)
+        # Coog: Disable Warning Automatic By Pass
+        #self.always = Gtk.CheckButton(
+        #    label=_('Always ignore this warning.'), halign=Gtk.Align.START)
+        #dialog.vbox.pack_start(self.always, expand=True, fill=False, padding=0)
         return dialog
 
     def process_response(self, response):
@@ -720,7 +795,7 @@ class ConcurrencyDialog(UniqueDialog):
                 Window.create(
                     model,
                     res_id=id_,
-                    name=_("Compare: %s", name),
+                    name=_("Compare: %s") % name,
                     domain=[('id', '=', id_)],
                     context=context,
                     mode=['form'])
@@ -889,6 +964,7 @@ def process_exception(exception, *args, **kwargs):
                 except TrytonError as exception:
                     if exception.faultCode == 'QueryCanceled':
                         Main().on_quit()
+                        sys.exit()
                     raise
                 finally:
                     PLOCK.release()
@@ -1096,11 +1172,9 @@ def RPCContextReload(callback=None):
             rpc.CONTEXT['client_defined_date'] = rpc._CLIENT_DATE
         if callback:
             callback()
-    # Use RPCProgress to not send rpc.CONTEXT
-    context = RPCProgress(
-        'execute',
-        ('model', 'res.user', 'get_preferences', True, {})).run(
-            True, update if callback else None)
+    context = RPCExecute(
+        'model', 'res.user', 'get_preferences', True,
+        callback=update if callback else None)
     if not callback:
         rpc.context_reset()
         rpc.CONTEXT.update(context)
@@ -1298,3 +1372,8 @@ def idle_add(func):
     def wrapper(*args, **kwargs):
         GLib.idle_add(func, *args, **kwargs)
     return wrapper
+
+
+def setup_window(window):
+    if sys.platform == 'darwin':
+        window.set_mnemonic_modifier(Gdk.ModifierType.CONTROL_MASK)

@@ -40,6 +40,7 @@ class DBListEditor(object):
             set_underline(_("Close")), Gtk.ResponseType.CLOSE)
         self.dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
         self.dialog.set_icon(TRYTON_ICON)
+        common.setup_window(self.dialog)
 
         tooltips = common.Tooltips()
 
@@ -314,7 +315,8 @@ class DBListEditor(object):
         elif dbs is None:
             label = _('Could not connect to the server.')
         if label:
-            self.database_label.set_label('<b>%s</b>' % label)
+            self.database_label.set_label(
+                '<b>%s</b>' % GLib.markup_escape_text(label))
             self.database_label.show()
         else:
             self.database_combo.remove_all()
@@ -395,6 +397,7 @@ class DBLogin(object):
         self.dialog.set_icon(TRYTON_ICON)
         self.dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.dialog.set_resizable(False)
+        common.setup_window(self.dialog)
 
         tooltips = common.Tooltips()
         button_cancel = Gtk.Button(label=_('_Cancel'), use_underline=True)
@@ -409,11 +412,9 @@ class DBLogin(object):
         tooltips.set_tip(self.button_connect, _('Connect the Tryton server'))
         self.dialog.add_action_widget(self.button_connect, Gtk.ResponseType.OK)
         self.dialog.set_default_response(Gtk.ResponseType.OK)
-        alignment = Gtk.Alignment(yalign=0, yscale=0, xscale=1)
-        grid = Gtk.Grid(column_spacing=3, row_spacing=3)
-        alignment.add(grid)
-        self.dialog.vbox.pack_start(
-            alignment, expand=True, fill=True, padding=0)
+        grid = Gtk.Grid(
+            column_spacing=3, row_spacing=3, valign=Gtk.Align.START)
+        self.dialog.vbox.pack_start(grid, expand=True, fill=True, padding=0)
 
         image = Gtk.Image()
         image.set_from_file(os.path.join(PIXMAPS_DIR, 'tryton.png'))

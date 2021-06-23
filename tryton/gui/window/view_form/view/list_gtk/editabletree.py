@@ -13,10 +13,13 @@ _ = gettext.gettext
 
 def focusable_cells(column, editable=True):
     for cell in column.get_cells():
-        if not editable or isinstance(cell, (
-                    Gtk.CellRendererText,
-                    Gtk.CellRendererCombo,
-                    Gtk.CellRendererToggle)):
+        if (not editable
+                or (isinstance(cell, (
+                            Gtk.CellRendererText,
+                            Gtk.CellRendererCombo))
+                    and cell.get_property('editable'))
+                or (isinstance(cell, Gtk.CellRendererToggle)
+                    and cell.get_property('activatable'))):
             yield cell
 
 
@@ -129,7 +132,8 @@ class EditableTreeView(TreeView):
         res = method(new_record)
         sequence = self.view.attributes.get('sequence')
         if sequence:
-            model.group.set_sequence(field=sequence)
+            model.group.set_sequence(
+                field=sequence, position=self.view.screen.new_position)
         return res
 
     def set_cursor(

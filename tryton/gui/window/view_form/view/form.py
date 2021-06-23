@@ -13,6 +13,7 @@ from tryton.common.underline import set_underline
 from tryton.common.button import Button
 from tryton.config import CONFIG
 from .form_gtk.calendar_ import Date, Time, DateTime
+from .form_gtk.document import Document
 from .form_gtk.float import Float
 from .form_gtk.integer import Integer
 from .form_gtk.selection import Selection
@@ -169,6 +170,7 @@ class FormXMLViewParser(XMLViewParser):
         'date': Date,
         'datetime': DateTime,
         'dict': DictWidget,
+        'document': Document,
         'email': Email,
         'float': Float,
         'html': HTML,
@@ -502,7 +504,7 @@ class ViewForm(View):
             for w in widgets)
 
     def get_buttons(self):
-        return [b for b in self.state_widgets if isinstance(b, Gtk.Button)]
+        return [b for b in self.state_widgets if isinstance(b, Button)]
 
     def reset(self):
         record = self.record
@@ -519,18 +521,18 @@ class ViewForm(View):
         if record:
             # Force to set fields in record
             # Get first the lazy one from the view to reduce number of requests
-            fields2set = set()
+            field_names = set()
             for name in self.widgets:
                 field = record.group.fields[name]
-                fields2set.add(name)
-                fields2set.update(f for f in field.attrs.get('depends', [])
+                field_names.add(name)
+                field_names.update(f for f in field.attrs.get('depends', [])
                     if (not f.startswith('_parent')
                         and f in record.group.fields))
             fields = []
-            for name in fields2set:
+            for name in field_names:
                 field = record.group.fields[name]
-                fields.append((name,
-                        field.attrs.get('loading', 'eager') == 'eager',
+                fields.append(
+                    (name, field.attrs.get('loading', 'eager') == 'eager',
                         len(field.views)))
             fields = sorted(fields, key=operator.itemgetter(1, 2))
             for field, _, _ in fields:

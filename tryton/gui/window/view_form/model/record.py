@@ -31,6 +31,8 @@ class Record(SignalEvent):
         self.state_attrs = {}
         self.modified_fields = {}
         self._timestamp = None
+        self._write = True
+        self._delete = True
         self.resources = None
         self.button_clicks = {}
         self.links_counts = {}
@@ -41,7 +43,7 @@ class Record(SignalEvent):
         self.destroyed = False
 
     def __getitem__(self, name):
-        if name not in self._loaded and self.id >= 0:
+        if not self.destroyed and self.id >= 0 and name not in self._loaded:
             id2record = {
                 self.id: self,
                 }
@@ -80,7 +82,7 @@ class Record(SignalEvent):
                     fnames.append('%s:string' % fname)
             if 'rec_name' not in fnames:
                 fnames.append('rec_name')
-            fnames.append('_timestamp')
+            fnames.extend(['_timestamp', '_write', '_delete'])
 
             record_context = self.get_context()
             if loading == 'eager':
@@ -93,7 +95,9 @@ class Record(SignalEvent):
                 limit = max(int(CONFIG['client.limit'] / len(fnames)), 20)
 
                 def filter_group(record):
-                    return name not in record._loaded and record.id >= 0
+                    return (not record.destroyed
+                        and record.id >= 0
+                        and name not in record._loaded)
 
                 def filter_parent_group(record):
                     return (filter_group(record)
@@ -147,7 +151,8 @@ class Record(SignalEvent):
                     for key in record.modified_fields:
                         value.pop(key, None)
                     record.set(value, signal=False)
-        return self.group.fields[name]
+        if name != '*':
+            return self.group.fields[name]
 
     def __repr__(self):
         return '<Record %s@%s at %s>' % (self.id, self.model_name, id(self))
@@ -262,9 +267,16 @@ class Record(SignalEvent):
     deleted = property(get_deleted)
 
     def get_readonly(self):
-        return self.deleted or self.removed or self.exception
+        return (self.deleted
+            or self.removed
+            or self.exception
+            or not self._write)
 
     readonly = property(get_readonly)
+
+    @property
+    def deletable(self):
+        return self._delete
 
     def fields_get(self):
         return self.group.fields
@@ -341,7 +353,7 @@ class Record(SignalEvent):
     def pre_validate(self):
         if not self.modified_fields:
             return True
-        values = self._get_on_change_args(self.modified_fields)
+        values = self._get_on_change_args(['id'] + list(self.modified_fields))
         try:
             RPCExecute('model', self.model_name, 'pre_validate', values,
                 context=self.get_context())
@@ -473,6 +485,9 @@ class Record(SignalEvent):
                 if not self._timestamp:
                     self._timestamp = value
                 continue
+            if fieldname in {'_write', '_delete'}:
+                setattr(self, fieldname, value)
+                continue
             if fieldname not in self.group.fields:
                 if fieldname == 'rec_name':
                     self.value['rec_name'] = value
@@ -506,7 +521,8 @@ class Record(SignalEvent):
                         fields.ReferenceField)):
                 related = fieldname + '.'
                 self.value[related] = values.get(related) or {}
-            self.group.fields[fieldname].set_on_change(self, value)
+            # Load fieldname before setting value
+            self[fieldname].set_on_change(self, value)
 
     def reload(self, fields=None):
         if self.id < 0:
@@ -631,7 +647,8 @@ class Record(SignalEvent):
                     context=self.get_context())
             except RPCException:
                 return
-            self.group.fields[fieldname].set_on_change(self, result)
+            # Load fieldname before setting value
+            self[fieldname].set_on_change(self, result)
 
     def autocomplete_with(self, field_name):
         for fieldname, fieldinfo in self.group.fields.items():

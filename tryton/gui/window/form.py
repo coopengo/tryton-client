@@ -614,7 +614,9 @@ class Form(SignalEvent, TabContent):
         name = '_'
         if signal_data[0]:
             name = str(signal_data[0])
-        for button_id in ('print', 'relate', 'email', 'open', 'save',
+        # JMO: hide direct print button
+        #for button_id in ('print', 'relate', 'email', 'open', 'save',
+        for button_id in ('relate', 'email', 'open', 'save',
                 'attach'):
             button = self.buttons[button_id]
             can_be_sensitive = getattr(button, '_can_be_sensitive', True)
@@ -727,14 +729,14 @@ class Form(SignalEvent, TabContent):
             'action': 'tryton-launch',
             'relate': 'tryton-link',
             'email': 'tryton-email',
-            'open': 'tryton-open',
+            'open': 'tryton-print',
         }
         for action_type, special_action, action_name, tooltip in (
                 ('action', 'action', _('Action'), _('Launch action')),
                 ('relate', 'relate', _('Relate'), _('Open related records')),
                 (None,) * 4,
                 ('print', 'open', _('Report'), _('Open report')),
-                ('print', 'print', _('Print'), _('Print report')),
+                #('print', 'print', _('Print'), _('Print report')),
                 ):
             if action_type is not None:
                 tbutton = Gtk.ToggleToolButton()

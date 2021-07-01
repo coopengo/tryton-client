@@ -131,13 +131,14 @@ class TabContent(InfoBar):
             ToolbarItem(
                 id='print_open',
                 label=_("_Report..."),
-                icon_name='tryton-open',
-                accel_path='<tryton>/Form/Report'),
-            ToolbarItem(
-                id='print',
-                label=_("_Print..."),
                 icon_name='tryton-print',
-                accel_path='<tryton>/Form/Print'),
+                accel_path='<tryton>/Form/Report'),
+            # JMO: hide direct print button
+            #ToolbarItem(
+            #    id='print',
+            #    label=_("_Print..."),
+            #    icon_name='tryton-print',
+            #    accel_path='<tryton>/Form/Print'),
             ToolbarItem(
                 id='email',
                 label=_("_E-Mail..."),

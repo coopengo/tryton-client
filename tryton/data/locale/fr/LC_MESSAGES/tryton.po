@@ -937,6 +937,18 @@ msgstr "Assistant"
 msgid "ID"
 msgstr "ID"
 
+msgid "Created at"
+msgstr "Crée le"
+
+msgid "Created by"
+msgstr "Créé par"
+
+msgid "Edited at"
+msgstr "Édité le"
+
+msgid "Edited by"
+msgstr "Édité par"
+
 msgid "Creation User"
 msgstr "Créé par l'utilisateur"
 

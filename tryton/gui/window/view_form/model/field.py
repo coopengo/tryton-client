@@ -220,7 +220,8 @@ class CharField(Field):
 
     def set(self, record, value):
         super().set(
-            record, value.strip() if self.attrs.get('strip') else value)
+            record, value.strip()
+            if value and self.attrs.get('strip') else value)
 
     def get(self, record):
         return super(CharField, self).get(record) or self._default

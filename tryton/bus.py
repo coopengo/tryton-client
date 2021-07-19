@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 
 from gi.repository import GLib
 
+import tryton.rpc as rpc
 from tryton.jsonrpc import object_hook
 from tryton.config import CONFIG
 
@@ -97,3 +98,5 @@ def handle(message):
         app.show_notification(
             message.get('title', ''), message.get('body', ''),
             message.get('priority', 1))
+    elif message['type'] == 'system:clear_cache':
+        rpc.clear_cache(message['prefix'])

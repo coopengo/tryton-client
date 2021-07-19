@@ -1281,6 +1281,9 @@ class Screen(SignalEvent):
             RPCContextReload(Main().sig_win_menu)
         elif action == 'reload context':
             RPCContextReload()
+        elif action.startswith('clear_cache'):
+            _, prefix = action.split(None, 1)
+            clear_cache(prefix)
 
     def get_url(self, name=''):
         query_string = []

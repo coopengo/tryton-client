@@ -496,6 +496,14 @@ class ScreenContainer(object):
         decoder = PYSONDecoder(ctx)
         return decoder.decode(domain)
 
+    # JCA : Allow to get the resolved domain for any index
+    def get_tab_domain_for_idx(self, idx):
+        if idx < 0:
+            return []
+        ctx, domain = self.tab_domain[idx][1]
+        decoder = PYSONDecoder(ctx)
+        return decoder.decode(domain)
+
     def set_tab_counter(self, count, idx=None):
         if not self.tab_counter or not self.notebook:
             return

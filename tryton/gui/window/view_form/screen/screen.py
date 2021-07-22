@@ -382,7 +382,8 @@ class Screen(SignalEvent):
                 self.screen_container.tab_domain):
             if not count or (current and idx != index):
                 continue
-            domain = ['AND', domain, screen_domain]
+            domain = ['AND', self.screen_container.get_tab_domain_for_idx(idx),
+                screen_domain]
             set_tab_counter(lambda: None, idx)
             RPCExecute('model', self.model_name,
                 'search_count', domain, context=self.context,

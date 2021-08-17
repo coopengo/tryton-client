@@ -131,18 +131,20 @@ class TabContent(InfoBar):
             ToolbarItem(
                 id='print_open',
                 label=_("_Report..."),
-                icon_name='tryton-open',
+                icon_name='tryton-print',
                 accel_path='<tryton>/Form/Report'),
+            # JMO: hide direct print button
+            #ToolbarItem(
+            #    id='print',
+            #    label=_("_Print..."),
+            #    icon_name='tryton-print',
+            #    accel_path='<tryton>/Form/Print'),
             ToolbarItem(
-                id='print_email',
+                id='email',
                 label=_("_E-Mail..."),
+                tooltip=_("Send an e-mail using the record"),
                 icon_name='tryton-email',
                 accel_path='<tryton>/Form/Email'),
-            ToolbarItem(
-                id='print',
-                label=_("_Print..."),
-                icon_name='tryton-print',
-                accel_path='<tryton>/Form/Print'),
             None,
             ToolbarItem(
                 id='export',
@@ -186,6 +188,11 @@ class TabContent(InfoBar):
             self.widget.pack_start(
                 self.toolbar, expand=False, fill=True, padding=0)
 
+        self.main = Gtk.HPaned()
+        self.main.show()
+        self.widget.pack_start(
+            self.main, expand=True, fill=True, padding=0)
+
         viewport = Gtk.Viewport()
         viewport.set_shadow_type(Gtk.ShadowType.NONE)
         viewport.add(self.widget_get())
@@ -196,9 +203,7 @@ class TabContent(InfoBar):
             Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.scrolledwindow.add(viewport)
         self.scrolledwindow.show()
-
-        self.widget.pack_start(
-            self.scrolledwindow, expand=True, fill=True, padding=0)
+        self.main.pack1(self.scrolledwindow, resize=True, shrink=False)
 
         self.create_info_bar()
         self.widget.pack_start(

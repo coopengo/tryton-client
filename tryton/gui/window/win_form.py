@@ -1,12 +1,13 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+from itertools import chain
 import gettext
 
 from gi.repository import Gdk, Gtk, Pango
 
 from .infobar import InfoBar
 import tryton.common as common
-from tryton.common import TRYTON_ICON
+from tryton.common import TRYTON_ICON, MODELNAME
 from tryton.common.domain_parser import quote
 from tryton.common.underline import set_underline
 from tryton.common.widget_style import widget_class
@@ -30,7 +31,19 @@ class WinForm(NoModal, InfoBar):
         self.domain = domain
         self.context = context
         self.save_current = save_current
-        self.title = title
+        if screen.breadcrumb:
+            breadcrumb = list(screen.breadcrumb)
+            if title:
+                breadcrumb.append(title)
+            self.title = ' › '.join(chain(
+                    (common.ellipsize(x, 30) for x in breadcrumb[-3:-1]),
+                    breadcrumb[-1:]))
+            if len(breadcrumb) > 3:
+                self.title = '... › ' + self.title
+        else:
+            if not title:
+                title = MODELNAME.get(screen.model_name)
+            self.title = title
         self.prev_view = self.screen.current_view
         self.screen.screen_container.alternate_view = True
         self.screen.switch_view(view_type=view_type)
@@ -67,7 +80,12 @@ class WinForm(NoModal, InfoBar):
                 label, icon = _("Delete"), 'tryton-delete'
             else:
                 label, icon = _("Cancel"), 'tryton-cancel'
-                self._initial_value = self.screen.current_record.get_eval()
+                record = self.screen.current_record
+                self._initial_value = record.get_on_change_value()
+                if record.parent and record.parent_name in record.group.fields:
+                    parent_field = record.group.fields[record.parent_name]
+                    self._initial_value[record.parent_name] = (
+                        parent_field.get_eval(record))
             self.but_cancel = self.win.add_button(
                 set_underline(label), Gtk.ResponseType.CANCEL)
             self.but_cancel.set_image(common.IconFactory.get_image(
@@ -106,11 +124,23 @@ class WinForm(NoModal, InfoBar):
 
         self.win.set_title(self.title)
 
+        revision = self.screen.context.get('_datetime')
+        if revision and self.screen.model_name in common.MODELHISTORY:
+            format_ = self.screen.context.get('date_format', '%x')
+            format_ += ' %H:%M:%S.%f'
+            revision_label = ' @ %s' % revision.strftime(format_)
+            label = common.ellipsize(
+                self.title, 80 - len(revision_label)) + revision_label
+            tooltip = self.title + revision_label
+        else:
+            label = common.ellipsize(self.title, 80)
+            tooltip = self.title
+
         title = Gtk.Label(
-            label=common.ellipsize(self.title, 80),
+            label=label,
             halign=Gtk.Align.START, margin=5,
             ellipsize=Pango.EllipsizeMode.END)
-        tooltips.set_tip(title, self.title)
+        tooltips.set_tip(title, tooltip)
         title.set_size_request(0, -1)  # Allow overflow
         title.show()
 
@@ -323,6 +353,9 @@ class WinForm(NoModal, InfoBar):
     def _sig_label(self, screen, signal_data):
         name = '_'
         access = common.MODELACCESS[screen.model_name]
+        deletable = True
+        if screen.current_record:
+            deletable = screen.current_record.deletable
         readonly = screen.group.readonly
         if signal_data[0] >= 1:
             name = str(signal_data[0])
@@ -336,7 +369,7 @@ class WinForm(NoModal, InfoBar):
                 self.but_pre.set_sensitive(True)
             else:
                 self.but_pre.set_sensitive(False)
-            if access['delete'] and not readonly:
+            if access['delete'] and not readonly and deletable:
                 self.but_del.set_sensitive(True)
                 self.but_undel.set_sensitive(True)
         else:
@@ -404,19 +437,17 @@ class WinForm(NoModal, InfoBar):
         if (self.screen.current_record
                 and not readonly
                 and response_id in cancel_responses):
+            record = self.screen.current_record
+            added = 'id' in record.modified_fields
             if (self.screen.current_record.id < 0
                     or self.save_current):
-                if (self.save_current
-                        or common.sur(
-                            _('Are you sure you want to delete this record?')
-                            )):
-                    self.screen.cancel_current(self._initial_value)
-                elif not self.save_current:
-                    return
-            elif self.screen.current_record.modified:
-                self.screen.current_record.cancel()
-                self.screen.current_record.reload()
-                self.screen.current_record.signal('record-changed')
+                self.screen.cancel_current(self._initial_value)
+            elif record.modified:
+                record.cancel()
+                record.reload()
+                record.signal('record-changed')
+            if added:
+                record.modified_fields.setdefault('id')
             result = False
         else:
             result = response_id not in cancel_responses

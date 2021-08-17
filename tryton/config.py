@@ -64,9 +64,12 @@ class ConfigManager(object):
             'client.bus_timeout': 10 * 60,
             'icon.colors': '#0094d2,#57a639,#cc0000',
             'tree.colors': '#777,#dff0d8,#fcf8e3,#f2dede',
+            'calendar.colors': '#fff,#3465a4',
+            'graph.color': '#3465a4',
             'image.max_size': 10 ** 6,
+            'image.cache_size': 1024,
             'bug.url': 'https://support.coopengo.com/',
-            'download.url': 'https://downloads.tryton.org/',
+            'download.url': 'https://downloads-cdn.tryton.org/',
             'download.frequency': 60 * 60 * 8,
             'menu.pane': 200,
         }

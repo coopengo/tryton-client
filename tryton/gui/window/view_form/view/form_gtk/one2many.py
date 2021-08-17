@@ -163,14 +163,19 @@ class One2Many(Widget):
             frame.set_shadow_type(Gtk.ShadowType.OUT)
             vbox.pack_start(frame, expand=False, fill=True, padding=0)
 
-        self.screen = Screen(attrs['relation'],
+        model = attrs['relation']
+        breadcrumb = list(self.view.screen.breadcrumb)
+        breadcrumb.append(
+            attrs.get('string') or common.MODELNAME.get(model))
+        self.screen = Screen(model,
             mode=attrs.get('mode', 'tree,form').split(','),
             view_ids=attrs.get('view_ids', '').split(','),
             views_preload=attrs.get('views', {}),
             order=attrs.get('order'),
             row_activate=self._on_activate,
             exclude_field=attrs.get('relation_field', None),
-            limit=None)
+            limit=None,
+            breadcrumb=breadcrumb)
         self.screen.pre_validate = bool(int(attrs.get('pre_validate', 0)))
         self.screen.signal_connect(self, 'record-message', self._sig_label)
         if self.attrs.get('group'):
@@ -291,6 +296,7 @@ class One2Many(Widget):
         if isinstance(self._position, int):
             first = self._position <= 1
             last = self._position >= self._length
+        deletable = self.screen.deletable
 
         self.but_new.set_sensitive(bool(
                 not self._readonly
@@ -301,6 +307,7 @@ class One2Many(Widget):
         self.but_del.set_sensitive(bool(
                 not self._readonly
                 and self.attrs.get('delete', True)
+                and deletable
                 and self._position
                 and access['delete']))
         self.but_undel.set_sensitive(bool(
@@ -366,7 +373,8 @@ class One2Many(Widget):
 
         def update_sequence():
             if sequence:
-                self.screen.group.set_sequence(field=sequence)
+                self.screen.group.set_sequence(
+                    field=sequence, position=self.screen.new_position)
 
         for widget in [self] + self.view.widgets[self.field_name]:
             if ((self.attrs.get('group')
@@ -385,7 +393,7 @@ class One2Many(Widget):
             field_size = self.record.expr_eval(self.attrs.get('size')) or -1
             field_size -= len(self.field.get_eval(self.record)) + 1
             WinForm(self.screen, lambda a: update_sequence(), new=True,
-                many=field_size, title=self.attrs.get('string'))
+                many=field_size)
 
     def _new_product(self):
         fields = self.attrs['product'].split(',')
@@ -435,7 +443,8 @@ class One2Many(Widget):
 
             sequence = self._sequence()
             if sequence:
-                self.screen.group.set_sequence(field=sequence)
+                self.screen.group.set_sequence(
+                    field=sequence, position=self.screen.new_position)
 
         search_set()
 
@@ -446,8 +455,7 @@ class One2Many(Widget):
             return
         record = self.screen.current_record
         if record:
-            WinForm(self.screen, lambda a: None,
-                title=self.attrs.get('string'))
+            WinForm(self.screen, lambda a: None)
 
     def _sig_next(self, widget):
         if not self._validate():
@@ -461,11 +469,13 @@ class One2Many(Widget):
 
     def _sig_remove(self, widget, remove=False):
         access = common.MODELACCESS[self.screen.model_name]
+        writable = not self.screen.readonly
+        deletable = self.screen.deletable
         if remove:
-            if not access['write'] or not access['read']:
+            if not access['write'] or not writable or not access['read']:
                 return
         else:
-            if not access['delete']:
+            if not access['delete'] or not deletable:
                 return
         self.screen.remove(remove=remove)
 
@@ -496,7 +506,8 @@ class One2Many(Widget):
                 self.screen.load(ids, modified=True)
                 self.screen.display(res_id=ids[0])
                 if sequence:
-                    self.screen.group.set_sequence(field=sequence)
+                    self.screen.group.set_sequence(
+                        field=sequence, position=self.screen.new_position)
             self.screen.set_cursor()
             self.wid_text.set_text('')
 

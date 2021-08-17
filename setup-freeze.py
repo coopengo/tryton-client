@@ -33,8 +33,8 @@ include_files = [
         os.path.join('lib', 'girepository-1.0')),
     (os.path.join(sys.prefix, 'lib', 'gdk-pixbuf-2.0'),
         os.path.join('lib', 'gdk-pixbuf-2.0')),
-    (os.path.join(sys.prefix, 'lib', 'gtkglext-1.0'),
-        os.path.join('lib', 'gtkglext-1.0')),
+    (os.path.join(sys.prefix, 'lib', 'evince'),
+        os.path.join('lib', 'evince')),
     (os.path.join(sys.prefix, 'share', 'locale'),
         os.path.join('share', 'locale')),
     (os.path.join(sys.prefix, 'share', 'icons', 'Adwaita'),
@@ -53,6 +53,8 @@ for dll in [x for x in os.listdir(BIN_DIR) if x.endswith('.dll')]:
 
 required_gi_namespaces = [
     'Atk-1.0',
+    'EvinceDocument-3.0',
+    'EvinceView-3.0',
     'GLib-2.0',
     'GModule-2.0',
     'GObject-2.0',
@@ -62,6 +64,7 @@ required_gi_namespaces = [
     'GooCanvas-[2-3].0',
     'Gtk-3.0',
     'GtkSource-3.0',
+    'HarfBuzz-0.0',
     'Pango-1.0',
     'PangoCairo-1.0',
     'PangoFT2-1.0',

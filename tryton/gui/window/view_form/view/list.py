@@ -491,6 +491,8 @@ class TreeXMLViewParser(XMLViewParser):
                 width = int(attributes['width'])
             elif field_attrs:
                 width = default_width.get(field_attrs['type'], 100)
+                if attributes.get('symbol'):
+                    width += 20
             else:
                 width = 80
         column.width = width
@@ -577,6 +579,7 @@ class ViewTree(View):
         self.sum_box.show()
         self.widget.pack_start(
             self.sum_box, expand=False, fill=False, padding=0)
+        self.treeview.set_search_equal_func(self.search_equal_func)
 
         self.display()
 
@@ -585,6 +588,22 @@ class ViewTree(View):
         idx = [c for c in self.treeview.get_columns()
             if c.name == column.name].index(column)
         return self.widgets[column.name][idx]
+
+    def search_equal_func(self, model, column, key, iter_):
+        key = key.lower()
+        record = model.get_value(iter_, 0)
+        for field_name in self.get_fields(visible_only=True):
+            field = record[field_name]
+            field.state_set(record, states=('invisible',))
+            if not field.get_state_attrs(record).get('invisible', False):
+                for widget in self.widgets[field_name]:
+                    text = str(widget.get_textual_value(record)).lower()
+                    # Simple search by word
+                    while text:
+                        if text.startswith(key):
+                            return False
+                        text = ' '.join(text.split()[1:])
+        return True
 
     def sort_model(self, column):
         up = common.IconFactory.get_pixbuf('tryton-arrow-up')
@@ -619,7 +638,7 @@ class ViewTree(View):
         if order and len(order) == 1:
             (name, direction), = order
             if direction:
-                direction = direction.split()[0]
+                direction = direction.split(None, 1)[0]
                 direction = {
                     'ASC': common.IconFactory.get_pixbuf('tryton-arrow-down'),
                     'DESC': common.IconFactory.get_pixbuf('tryton-arrow-up'),
@@ -696,8 +715,9 @@ class ViewTree(View):
     def editable(self):
         return self._editable and not self.screen.readonly
 
-    def get_fields(self):
-        return [col.name for col in self.treeview.get_columns() if col.name]
+    def get_fields(self, visible_only=False):
+        return [col.name for col in self.treeview.get_columns()
+            if col.name and (not visible_only or col.get_visible())]
 
     def get_buttons(self):
         return [b for b in self.state_widgets
@@ -894,7 +914,9 @@ class ViewTree(View):
         selection.unselect_all()
         selection.select_path(record.get_index_path(model.group))
         if self.attributes.get('sequence'):
-            record.group.set_sequence(field=self.attributes['sequence'])
+            record.group.set_sequence(
+                field=self.attributes['sequence'],
+                position=self.screen.new_position)
         return True
 
     def drag_drop(self, treeview, context, x, y, time):
@@ -1108,6 +1130,8 @@ class ViewTree(View):
                 # JCA : Check selection is not empty before updateing path
                 if selection:
                     selection.select_path(path)
+            # The search column must be set each time the model is changed
+            self.treeview.set_search_column(0)
         if not current_record:
             selection = self.treeview.get_selection()
             selection.unselect_all()
@@ -1252,6 +1276,50 @@ class ViewTree(View):
                 id_path.append(model.get_value(iter_, 0).id)
             id_paths.append(id_path)
         return id_paths
+
+    @property
+    def listed_records(self):
+        model = self.treeview.get_model()
+        if not self.children_field:
+            return list(model.group)
+
+        def get_listed_records(start):
+            records = []
+            if start:
+                iter_ = model.get_iter(Gtk.TreePath(start))
+            else:
+                iter_ = None
+            for idx in range(model.iter_n_children(iter_)):
+                path = start + (idx,)
+                iter_ = model.get_iter(path)
+                record = model.get_value(iter_, 0)
+                records.append(record)
+                if self.treeview.row_expanded(Gtk.TreePath(path)):
+                    records += get_listed_records(path)
+            return records
+        return get_listed_records(())
+
+    def get_listed_paths(self):
+        model = self.treeview.get_model()
+        if not self.children_field:
+            return [[r.id] for r in model.group]
+
+        def get_listed_paths(start=None, start_path=None):
+            paths = []
+            if start:
+                iter_ = model.get_iter(Gtk.TreePath(start))
+            else:
+                iter_ = None
+            for idx in range(model.iter_n_children(iter_)):
+                path = start + (idx,)
+                iter_ = model.get_iter(path)
+                record = model.get_value(iter_, 0)
+                id_path = start_path + [record.id]
+                paths.append(id_path)
+                if self.treeview.row_expanded(Gtk.TreePath(path)):
+                    paths += get_listed_paths(path, id_path)
+            return paths
+        return get_listed_paths((), [])
 
     def select_nodes(self, nodes):
         selection = self.treeview.get_selection()

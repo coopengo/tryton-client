@@ -24,7 +24,7 @@ msgstr "zadejte uživatelské jméno"
 msgid "specify the server hostname:port"
 msgstr "zadejte název hostitele pro server"
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "Unable to write config file %s."
 msgstr "Nelze zapsat konfigurační soubor %s!"
 
@@ -36,9 +36,8 @@ msgstr "Nemohu nastavit lokalizaci %s"
 msgid ", "
 msgstr ", "
 
-#, fuzzy
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ""
 
 #, python-format
 msgid "%s (%s)"
@@ -77,11 +76,11 @@ msgstr "_Uložit"
 msgid "Save As..."
 msgstr "Uložit jako..."
 
-msgid "Always ignore this warning."
-msgstr "zadejte alternativní konfigurační soubor"
-
 msgid "Do you want to proceed?"
 msgstr ""
+
+msgid "Always ignore this warning."
+msgstr "zadejte alternativní konfigurační soubor"
 
 msgid "No"
 msgstr ""
@@ -110,6 +109,10 @@ msgstr "Přesto zapsat"
 msgid "Save your current version"
 msgstr ""
 
+#, fuzzy, python-format
+msgid "Compare: %s"
+msgstr "Porovnat: %s"
+
 msgid "Close"
 msgstr ""
 
@@ -124,13 +127,16 @@ msgstr "Nahlásit chybu"
 msgid "Check URL: %s"
 msgstr ""
 
-msgid "Unable to check for new version"
+msgid "Unable to check for new version."
 msgstr ""
 
 msgid "A new version is available!"
 msgstr ""
 
 msgid "Download"
+msgstr ""
+
+msgid "Too many requests. Try again later."
 msgstr ""
 
 #, fuzzy
@@ -190,6 +196,10 @@ msgid "The number of decimal"
 msgstr ""
 
 #, fuzzy
+msgid "Template"
+msgstr "_Vytvořit"
+
+#, fuzzy
 msgid "Edit..."
 msgstr "Konec..."
 
@@ -213,12 +223,39 @@ msgid "Report..."
 msgstr "Importovat data..."
 
 #, fuzzy
+msgid "Print..."
+msgstr "_Tisk..."
+
+#, fuzzy
 msgid "E-Mail..."
 msgstr "_Email..."
 
-#, fuzzy
-msgid "Print..."
-msgstr "_Tisk..."
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+msgid "Underline"
+msgstr ""
+
+msgid "Align Left"
+msgstr ""
+
+msgid "Align Center"
+msgstr ""
+
+msgid "Align Right"
+msgstr ""
+
+msgid "Justify"
+msgstr ""
+
+msgid "Foreground Color"
+msgstr ""
+
+msgid "Select a color"
+msgstr ""
 
 msgid "Y"
 msgstr ""
@@ -269,13 +306,10 @@ msgstr "_Ikony"
 msgid "Form"
 msgstr "Formulář"
 
-msgid "Save Width/Height"
+msgid "Save Column Width"
 msgstr ""
 
 msgid "Save Tree State"
-msgstr ""
-
-msgid "Fast Tabbing"
 msgstr ""
 
 msgid "Spell Checking"
@@ -286,10 +320,6 @@ msgstr ""
 
 msgid "Search Limit..."
 msgstr ""
-
-#, fuzzy
-msgid "Email..."
-msgstr "_Email..."
 
 msgid "Check Version"
 msgstr ""
@@ -309,9 +339,6 @@ msgstr "_O programu..."
 #, fuzzy
 msgid "Help"
 msgstr "Nápo_věda"
-
-msgid "Quit"
-msgstr ""
 
 msgid "No result found."
 msgstr ""
@@ -336,6 +363,9 @@ msgstr ""
 msgid "Global"
 msgstr ""
 
+msgid "Preferences"
+msgstr "Nastavení"
+
 msgid "Search menu"
 msgstr ""
 
@@ -350,6 +380,9 @@ msgid "Next tab"
 msgstr ""
 
 msgid "Shortcuts"
+msgstr ""
+
+msgid "Quit"
 msgstr ""
 
 msgid "Edition Shortcuts"
@@ -479,7 +512,7 @@ msgstr ""
 msgid "translator-credits"
 msgstr ""
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "Attachments (%s)"
 msgstr "Příloha(%s)"
 
@@ -511,11 +544,11 @@ msgid "Username:"
 msgstr "Uživatelské jméno:"
 
 #, fuzzy
-msgid "Incompatible version of the server"
+msgid "Incompatible version of the server."
 msgstr "Verze serveru není kompatibilní!"
 
 #, fuzzy
-msgid "Could not connect to the server"
+msgid "Could not connect to the server."
 msgstr "Nelze se spojit se serverem!"
 
 msgid "Login"
@@ -542,37 +575,67 @@ msgstr ""
 msgid "User name:"
 msgstr "Uživatelské jméno:"
 
-msgid "Email"
-msgstr "Email"
+#, fuzzy
+msgid "Unable to complete email entry"
+msgstr "Nemohu nastavit lokalizaci %s"
 
-msgid "Email Program Settings"
-msgstr "Poslat nastavení programu emailem"
-
-msgid "Command Line:"
-msgstr "Příkazový řádek:"
-
-msgid "Legend of Available Placeholders:"
-msgstr "Seznam dostupných náhrad:"
+#, fuzzy, python-format
+msgid "E-mail %s"
+msgstr "Email %s"
 
 msgid "To:"
 msgstr "Komu:"
 
-msgid "CC:"
+#, fuzzy
+msgid "Cc:"
 msgstr "CC:"
 
-msgid "Subject:"
-msgstr "Předmět: "
+msgid "Bcc:"
+msgstr ""
 
-msgid "Body:"
+msgid "Subject:"
+msgstr "Předmět:"
+
+#, fuzzy
+msgid "Body"
 msgstr "Tělo:"
 
-msgid "Attachment:"
+#, fuzzy
+msgid "Reports"
+msgstr "Sestavy"
+
+#, fuzzy
+msgid "Attachments"
 msgstr "Příloha:"
+
+msgid "Files"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+#, fuzzy
+msgid "Select File"
+msgstr "Výběr"
+
+#, fuzzy
+msgid "Remove File"
+msgstr "_Odstranit"
 
 msgid "Add..."
 msgstr ""
 
-#, python-format, fuzzy
+#, fuzzy
+msgid "Preview"
+msgstr "Předchozí"
+
+msgid "Previous"
+msgstr "Předchozí"
+
+msgid "Next"
+msgstr "Další"
+
+#, fuzzy, python-format
 msgid "Attachment (%s)"
 msgstr "Příloha(%s)"
 
@@ -587,17 +650,20 @@ msgstr "Musíte vybrat právě jeden záznam!"
 msgid "ID:"
 msgstr "ID:"
 
-msgid "Creation User:"
-msgstr "Vytvořeno uživatelem:"
-
-msgid "Creation Date:"
+#, fuzzy
+msgid "Created by:"
 msgstr "Datum vytvoření:"
 
-msgid "Latest Modification by:"
-msgstr "Poslední úpravu provedl:"
+#, fuzzy
+msgid "Created at:"
+msgstr "Datum vytvoření:"
 
-msgid "Latest Modification Date:"
-msgstr "Datum poslední úpravy:"
+msgid "Edited by:"
+msgstr ""
+
+#, fuzzy
+msgid "Edited at:"
+msgstr "Datum vytvoření:"
 
 msgid "Model:"
 msgstr "Model:"
@@ -654,13 +720,6 @@ msgstr "Sestavy"
 msgid "Open report"
 msgstr "Otevřít záznam"
 
-#, fuzzy
-msgid "E-Mail"
-msgstr "Email"
-
-msgid "E-Mail report"
-msgstr ""
-
 msgid "Print"
 msgstr "Tisk"
 
@@ -690,9 +749,6 @@ msgstr "Omezit:"
 #, python-format
 msgid "Notes (%s)"
 msgstr ""
-
-msgid "Preferences"
-msgstr "Nastavení"
 
 msgid "Edit User Preferences"
 msgstr "Upravit uživatelské nastavení"
@@ -790,12 +846,16 @@ msgstr "_Odstranit..."
 msgid "_Report..."
 msgstr "Importovat data..."
 
+msgid "_Print..."
+msgstr "_Tisk..."
+
 #, fuzzy
 msgid "_E-Mail..."
 msgstr "_Email..."
 
-msgid "_Print..."
-msgstr "_Tisk..."
+#, fuzzy
+msgid "Send an e-mail using the record"
+msgstr "Uložit tento záznam"
 
 msgid "_Export Data..."
 msgstr "Exportovat data"
@@ -852,6 +912,10 @@ msgid "_Save Export"
 msgstr "Uložit exportu"
 
 #, fuzzy
+msgid "_URL Export"
+msgstr "Uložit exportu"
+
+#, fuzzy
 msgid "_Delete Export"
 msgstr "Smazat exportu"
 
@@ -863,6 +927,17 @@ msgstr ""
 
 msgid "Open"
 msgstr "Otevřít"
+
+#, fuzzy
+msgid "Listed Records"
+msgstr "Upravit vybraný záznam"
+
+#, fuzzy
+msgid "Selected Records"
+msgstr "Upravit vybraný záznam"
+
+msgid "Ignore search limit"
+msgstr ""
 
 #, fuzzy
 msgid "Add field names"
@@ -887,15 +962,15 @@ msgstr ""
 msgid "Override '%s' definition?"
 msgstr ""
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "%d record saved."
 msgstr "%d záznam uložen!"
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "%d records saved."
 msgstr "%d záznamů uloženo!"
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid ""
 "Operation failed.\n"
 "Error message:\n"
@@ -919,12 +994,6 @@ msgstr "_Nový"
 
 msgid "Switch"
 msgstr "Přepnout"
-
-msgid "Previous"
-msgstr "Předchozí"
-
-msgid "Next"
-msgstr "Další"
 
 msgid "Add"
 msgstr "Přidat"
@@ -968,15 +1037,15 @@ msgstr "Nejprve je nutné vybrat soubor pro import!"
 msgid "Error opening CSV file"
 msgstr "Chyba při otevírání CSV souboru"
 
-#, python-format, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "Error processing the file at field %s."
 msgstr "Chyba při zpracování souboru u pole %s.\n"
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "%d record imported."
 msgstr "%d záznam načten!"
 
-#, python-format, python-format, fuzzy, python-format
+#, fuzzy, python-format
 msgid "%d records imported."
 msgstr "%d záznamů načteno!"
 
@@ -987,34 +1056,31 @@ msgstr "Hledat"
 msgid "Search %s"
 msgstr ""
 
+msgid "Wizard"
+msgstr "Průvodce"
+
 #, python-format
 msgid "Unable to delete wizard %s"
 msgstr ""
-
-msgid "Wizard"
-msgstr "Průvodce"
 
 #, fuzzy
 msgid "ID"
 msgstr "Najít"
 
-#, fuzzy
-msgid "Creation User"
-msgstr "Vytvořeno uživatelem:"
+msgid "Create by"
+msgstr ""
 
 #, fuzzy
-msgid "Creation Date"
+msgid "Created at"
 msgstr "Datum vytvoření:"
 
-#, fuzzy
-msgid "Modification User"
-msgstr "Datum poslední úpravy:"
+msgid "Edited by"
+msgstr ""
 
-#, fuzzy
-msgid "Modification Date"
-msgstr "Datum poslední úpravy:"
+msgid "Edited at"
+msgstr ""
 
-#, python-format, python-format, fuzzy
+#, fuzzy, python-format
 msgid "Unable to get view tree state for %s"
 msgstr "Nemohu nastavit lokalizaci %s"
 
@@ -1023,15 +1089,15 @@ msgid "Unable to set view tree state"
 msgstr "Nemohu nastavit lokalizaci %s"
 
 #, python-format
-msgid "\"%s\" is not valid according to its domain"
+msgid "\"%s\" is not valid according to its domain."
 msgstr ""
 
 #, python-format
-msgid "\"%s\" is required"
+msgid "\"%s\" is required."
 msgstr ""
 
 #, python-format
-msgid "The values of \"%s\" are not valid"
+msgid "The values of \"%s\" are not valid."
 msgstr ""
 
 msgid "Pre-validation"
@@ -1173,33 +1239,6 @@ msgstr "Smazat vybraný záznam"
 
 #, python-format
 msgid "%s%%"
-msgstr ""
-
-msgid "Bold"
-msgstr ""
-
-msgid "Italic"
-msgstr ""
-
-msgid "Underline"
-msgstr ""
-
-msgid "Align Left"
-msgstr ""
-
-msgid "Align Center"
-msgstr ""
-
-msgid "Align Right"
-msgstr ""
-
-msgid "Justify"
-msgstr ""
-
-msgid "Foreground Color"
-msgstr ""
-
-msgid "Select a color"
 msgstr ""
 
 msgid "Choose a language"

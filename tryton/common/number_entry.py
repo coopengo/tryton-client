@@ -58,8 +58,6 @@ class NumberEntry(Gtk.Entry, Gtk.Editable):
         if (value and self.__digits is not None
                 and round(value, self.__digits) != value):
             return position
-        # Fix link to https://bugs.tryton.org/issue9390 backport in coog
-        # https://codereview.tryton.org/321561002/
         buffer_.insert_text(position, new_text, len(new_text))
         return position + len(new_text)
 

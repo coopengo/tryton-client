@@ -100,10 +100,6 @@ class Main(Gtk.Application):
         action.connect('activate', lambda *a: self.edit_limit())
         self.add_action(action)
 
-        action = Gio.SimpleAction.new('email', None)
-        action.connect('activate', lambda *a: self.edit_email())
-        self.add_action(action)
-
         self._shortcuts = None
         action = Gio.SimpleAction.new('shortcuts', None)
         action.connect('activate', lambda *a: self.shortcuts())
@@ -132,44 +128,16 @@ class Main(Gtk.Application):
         self.window.set_icon(TRYTON_ICON)
         self.window.connect("destroy", self.on_quit)
         self.window.connect("delete_event", self.on_quit)
+        common.setup_window(self.window)
 
         self.header = Gtk.HeaderBar.new()
         self.header.set_show_close_button(True)
         self.window.set_titlebar(self.header)
         self.set_title()
 
-        menu = Gio.Menu.new()
-        menu.append(_("Preferences..."), 'app.preferences')
-
-        section = Gio.Menu.new()
-        toolbar = Gio.Menu.new()
-        section.append_submenu(_("Toolbar"), toolbar)
-        toolbar.append(_("Default"), 'app.toolbar::default')
-        toolbar.append(_("Text and Icons"), 'app.toolbar::both')
-        toolbar.append(_("Text"), 'app.toolbar::text')
-        toolbar.append(_("Icons"), 'app.toolbar::icons')
-
-        form = Gio.Menu.new()
-        section.append_submenu(_("Form"), form)
-        form.append(_("Save Column Width"), 'app.save-tree-width')
-        form.append(_("Save Tree State"), 'app.save-tree-state')
-        form.append(_("Spell Checking"), 'app.spell-checking')
-
-        section.append(_("PDA Mode"), 'app.mode-pda')
-        section.append(_("Search Limit..."), 'app.search-limit')
-        section.append(_("Email..."), 'app.email')
-        section.append(_("Check Version"), 'app.check-version')
-
-        menu.append_section(_("Options"), section)
-
-        section = Gio.Menu.new()
-        section.append(_("Keyboard Shortcuts..."), 'app.shortcuts')
-        section.append(_("About..."), 'app.about')
-        menu.append_section(_("Help"), section)
-
-        primary_menu = Gtk.MenuButton.new()
-        primary_menu.set_menu_model(menu)
-        self.header.pack_end(primary_menu)
+        self.primary_menu = Gtk.MenuButton.new()
+        self.primary_menu.set_menu_model(self._get_primary_menu())
+        self.header.pack_end(self.primary_menu)
 
         menu = Gtk.Button.new()
         menu.set_relief(Gtk.ReliefStyle.NONE)
@@ -184,7 +152,7 @@ class Main(Gtk.Application):
                 'tryton-bookmarks', Gtk.IconSize.BUTTON))
         self.menu_favorite = Gtk.Menu.new()
         favorite.set_popup(self.menu_favorite)
-        favorite.connect('clicked', self.favorite_set)
+        favorite.connect('button-press-event', self.favorite_set)
         self.header.pack_start(favorite)
 
         self.set_global_search()
@@ -227,7 +195,11 @@ class Main(Gtk.Application):
         Gtk.AccelMap.add_entry(
             '<tryton>/Form/Report', Gdk.KEY_P, Gdk.ModifierType.CONTROL_MASK)
         Gtk.AccelMap.add_entry(
-            '<tryton>/Form/Search', Gdk.KEY_F, Gdk.ModifierType.CONTROL_MASK)
+            '<tryton>/Form/Email', Gdk.KEY_E,
+            Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)
+        Gtk.AccelMap.add_entry(
+            '<tryton>/Form/Search', Gdk.KEY_F,
+            Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)
 
         Gtk.AccelMap.load(os.path.join(get_config_dir(), 'accel.map'))
 
@@ -307,6 +279,40 @@ class Main(Gtk.Application):
             pass
         rpc.logout()
         self.quit()
+
+    def add_window(self, window):
+        super().add_window(window)
+        common.setup_window(window)
+
+    def _get_primary_menu(self):
+        menu = Gio.Menu.new()
+        menu.append(_("Preferences..."), 'app.preferences')
+
+        section = Gio.Menu.new()
+        toolbar = Gio.Menu.new()
+        section.append_submenu(_("Toolbar"), toolbar)
+        toolbar.append(_("Default"), 'app.toolbar::default')
+        toolbar.append(_("Text and Icons"), 'app.toolbar::both')
+        toolbar.append(_("Text"), 'app.toolbar::text')
+        toolbar.append(_("Icons"), 'app.toolbar::icons')
+
+        form = Gio.Menu.new()
+        section.append_submenu(_("Form"), form)
+        form.append(_("Save Column Width"), 'app.save-tree-width')
+        form.append(_("Save Tree State"), 'app.save-tree-state')
+        form.append(_("Spell Checking"), 'app.spell-checking')
+
+        section.append(_("PDA Mode"), 'app.mode-pda')
+        section.append(_("Search Limit..."), 'app.search-limit')
+        section.append(_("Check Version"), 'app.check-version')
+
+        menu.append_section(_("Options"), section)
+
+        section = Gio.Menu.new()
+        section.append(_("Keyboard Shortcuts..."), 'app.shortcuts')
+        section.append(_("About..."), 'app.about')
+        menu.append_section(_("Help"), section)
+        return menu
 
     def set_global_search(self):
         self.global_search_entry = Gtk.Entry.new()
@@ -458,7 +464,7 @@ class Main(Gtk.Application):
 
     def favorite_set(self, *args):
         if self.menu_favorite.get_children():
-            return True
+            return
 
         def _action_favorite(widget, id_):
             event = Gtk.get_current_event()
@@ -491,7 +497,6 @@ class Main(Gtk.Application):
         manage_favorites.connect('activate', _manage_favorites)
         self.menu_favorite.add(manage_favorites)
         self.menu_favorite.show_all()
-        return True
 
     def favorite_unset(self):
         for child in self.menu_favorite.get_children():
@@ -516,10 +521,6 @@ class Main(Gtk.Application):
     def edit_limit(self):
         from tryton.gui.window.limit import Limit
         Limit().run()
-
-    def edit_email(self):
-        from tryton.gui.window.email_ import Email
-        Email().run()
 
     def win_next(self):
         page = self.notebook.get_current_page()
@@ -570,7 +571,9 @@ class Main(Gtk.Application):
             translate.setlang(prefs['language'], prefs.get('locale'))
             if CONFIG['client.lang'] != prefs['language']:
                 self.favorite_unset()
+                self.primary_menu.set_menu_model(self._get_primary_menu())
             CONFIG['client.lang'] = prefs['language']
+        common.MODELNAME.clear()
         # Set placeholder after language is set to get correct translation
         self.global_search_entry.set_placeholder_text(_("Action"))
         CONFIG.save()
@@ -1054,8 +1057,6 @@ class Main(Gtk.Application):
                 data = json.loads(params.get('data', '{}'),
                     object_hook=object_hook)
                 direct_print = json.loads(params.get('direct_print', 'false'))
-                email_print = json.loads(params.get('email_print', 'false'))
-                email = json.loads(params.get('email', 'null'))
                 name = json.loads(params.get('name', '""'))
                 window = json.loads(params.get('window', 'false'))
                 context = json.loads(params.get('context', '{}'),
@@ -1063,8 +1064,8 @@ class Main(Gtk.Application):
             except ValueError:
                 return
             try:
-                Window.create_wizard(wizard, data, direct_print=direct_print,
-                    email_print=email_print, email=email, name=name,
+                Window.create_wizard(
+                    wizard, data, direct_print=direct_print, name=name,
                     context=context, window=window)
             except Exception:
                 # Prevent crashing the client
@@ -1076,15 +1077,13 @@ class Main(Gtk.Application):
             try:
                 data = json.loads(params.get('data'), object_hook=object_hook)
                 direct_print = json.loads(params.get('direct_print', 'false'))
-                email_print = json.loads(params.get('email_print', 'false'))
-                email = json.loads(params.get('email', 'null'))
                 context = json.loads(params.get('context', '{}'),
                     object_hook=object_hook)
             except ValueError:
                 return
             try:
-                Action.exec_report(report, data, direct_print=direct_print,
-                    email_print=email_print, email=email, context=context)
+                Action.exec_report(
+                    report, data, direct_print=direct_print, context=context)
             except Exception:
                 # Prevent crashing the client
                 return

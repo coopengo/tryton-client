@@ -77,6 +77,7 @@ class Screen(SignalEvent):
             'alternate_view', False)
         self.widget = self.screen_container.widget_get()
         self._multiview_form = None
+        self.breadcrumb = attributes.get('breadcrumb') or []
 
         self.context_screen = None
         if attributes.get('context_model'):
@@ -143,6 +144,19 @@ class Screen(SignalEvent):
     def __repr__(self):
         return '<Screen %s at %s>' % (self.model_name, id(self))
 
+    @property
+    def readonly(self):
+        return (self.__readonly
+            or any(r.readonly for r in self.selected_records))
+
+    @readonly.setter
+    def readonly(self, value):
+        self.__readonly = value
+
+    @property
+    def deletable(self):
+        return all(r.deletable for r in self.selected_records)
+
     def search_active(self, active=True):
         if active and not self.parent:
             self.screen_container.set_screen(self)
@@ -197,6 +211,9 @@ class Screen(SignalEvent):
                 for attr in ['string', 'factor']:
                     if attributes.get(attr):
                         ofields[name][attr] = attributes[attr]
+                symbol = attributes.get('symbol')
+                if symbol and symbol not in ofields:
+                    ofields[symbol] = fields[symbol]
             fields = ofields
 
         if 'active' in view_tree['fields']:
@@ -351,7 +368,7 @@ class Screen(SignalEvent):
                 domain = ['AND', domain, tab_domain]
         return domain
 
-    def count_tab_domain(self):
+    def count_tab_domain(self, current=False):
         def set_tab_counter(count, idx):
             try:
                 count = count()
@@ -360,12 +377,13 @@ class Screen(SignalEvent):
             self.screen_container.set_tab_counter(count, idx)
         screen_domain = self.search_domain(
             self.screen_container.get_text(), with_tab=False)
-        for idx, (name, (ctx, domain), count) in enumerate(
+        index = self.screen_container.get_tab_index()
+        for idx, (name, domain, count) in enumerate(
                 self.screen_container.tab_domain):
-            if not count:
+            if not count or (current and idx != index):
                 continue
-            decoder = PYSONDecoder(ctx)
-            domain = ['AND', decoder.decode(domain), screen_domain]
+            domain = ['AND', self.screen_container.get_tab_domain_for_idx(idx),
+                screen_domain]
             set_tab_counter(lambda: None, idx)
             RPCExecute('model', self.model_name,
                 'search_count', domain, context=self.context,
@@ -397,12 +415,16 @@ class Screen(SignalEvent):
                 fields[name] = field.attrs
                 fields_views[name] = field.views
         self.tree_states_done.clear()
-        self.order = None
         self.__group = group
         self.parent = group.parent
         self.parent_name = group.parent_name
         if self.parent:
             self.filter_widget = None
+            self.order = None
+        if len(group):
+            self.current_record = group[0]
+        else:
+            self.current_record = None
         self.__group.signal_connect(self, 'group-cleared', self._group_cleared)
         self.__group.signal_connect(self, 'group-list-changed',
                 self._group_list_changed)
@@ -424,7 +446,7 @@ class Screen(SignalEvent):
     def new_group(self, context=None):
         context = context if context is not None else self.context
         self.group = Group(self.model_name, {}, domain=self.domain,
-            context=context, readonly=self.readonly)
+            context=context, readonly=self.__readonly)
 
     def _group_cleared(self, group, signal):
         for view in self.views:
@@ -646,8 +668,12 @@ class Screen(SignalEvent):
 
     @property
     def new_position(self):
-        if self.order:
-            for oexpr, otype in self.order:
+        if self.order is not None:
+            order = self.order
+        else:
+            order = self.default_order
+        if order:
+            for oexpr, otype in order:
                 if oexpr == 'id' and otype:
                     if otype.startswith('DESC'):
                         return 0
@@ -819,7 +845,7 @@ class Screen(SignalEvent):
                 context=self.context)
         except RPCException:
             return False
-        self.load(new_ids)
+        self.load(new_ids, position=self.new_position)
         return True
 
     def set_tree_state(self):
@@ -927,10 +953,9 @@ class Screen(SignalEvent):
             domain, cls=JSONEncoder, separators=(',', ':'))
         return json_domain
 
-    def load(self, ids, set_cursor=True, modified=False):
-        self.tree_states.clear()
+    def load(self, ids, set_cursor=True, modified=False, position=-1):
         self.tree_states_done.clear()
-        self.group.load(ids, modified=modified)
+        self.group.load(ids, modified=modified, position=position)
         self.current_view.reset()
         if ids and self.current_view.view_type != 'calendar':
             self.display(ids[0])
@@ -1147,7 +1172,26 @@ class Screen(SignalEvent):
 
     @property
     def selected_records(self):
-        return self.current_view.selected_records
+        return self.current_view.selected_records if self.current_view else []
+
+    @property
+    def selected_paths(self):
+        if self.current_view and self.current_view.view_type == 'tree':
+            return self.current_view.get_selected_paths()
+
+    @property
+    def listed_records(self):
+        if self.current_view and self.current_view.view_type == 'tree':
+            return self.current_view.listed_records
+        elif self.current_record:
+            return [self.current_record]
+        else:
+            return []
+
+    @property
+    def listed_paths(self):
+        if self.current_view and self.current_view.view_type == 'tree':
+            return self.current_view.get_listed_paths()
 
     def clear(self):
         self.current_record = None
@@ -1254,7 +1298,9 @@ class Screen(SignalEvent):
             if access['create']:
                 self.new()
         elif action == 'delete':
-            if access['delete']:
+            if (access['delete']
+                    and (self.current_record.deletable
+                        if self.current_record else True)):
                 self.remove(delete=not self.parent,
                     force_remove=not self.parent)
         elif action == 'remove':

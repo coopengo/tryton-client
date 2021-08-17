@@ -109,7 +109,7 @@ Tabbed Main Frame
 This part of the client contains all the related contents and
 functions provided by the :term:`Tryton server` :term:`modules`.
 All aspects inside the *main frame* depend at least on the individual set
-of installed modules.
+of activated modules.
 
 The main frame provides a `tabbed document interface`__ to arrange different
 views side by side. New :term:`tabs` are opened by special :term:`actions`,
@@ -128,7 +128,7 @@ __ TDI_
 Menu
 ++++
 The *menu* does not contain fixed menu items.
-All of them are dynamically provided by the actual set of the installed
+All of them are dynamically provided by the actual set of the activated
 :term:`modules` depending on the access rules of the current user. If a menu
 item is clicked, the appropriate action will open in a new tab.
 
@@ -196,30 +196,6 @@ PDA Mode:
 
 Search Limit:
   Open a dialog to set up the maximum number of records displayed on a list.
-
-.. _Menu-Options-Email:
-
-Email:
-  Open a dialog to set up an email reader.
-
-  * Command Line: The command line calling the email reader.
-  * Placeholders:
-
-    - ``${to}``: the destination email address
-    - ``${cc}``: the carbon copy email address
-    - ``${subject}``: the subject of the email
-    - ``${body}``: the body of the email
-    - ``${attachment}``: the attachment of the email
-
-  * Examples:
-
-    - Thunderbird 2 on Linux:
-      ``thunderbird -compose "to='${to}',cc='${cc}',subject='${subject}',body='${body}',attachment='file://${attachment}'"``
-
-    - Thunderbird 2 on Windows XP SP3:
-      ``"C:\\Program Files\\Mozilla Thunderbird\\thunderbird.exe" -compose to="${to}",cc="${cc}",subject="${subject}",body="${body}",attachment="${attachment}"``
-
-.. note:: The path of *Program Files* may vary dependent on the localization of your Windows version.
 
 .. _Menu-Options-Check_Version:
 
@@ -348,7 +324,7 @@ Report...:
 .. _Toolbar-Email:
 
 E-Mail...:
-  Shows all email reports for the actual view, model and record.
+  Open an editor to send an email related to the actual record.
 
 .. _Toolbar-Print:
 
@@ -431,6 +407,30 @@ increases if lower case or decreases if upper case:
     - `h`: by one hour
     - `i`: by one minute
     - `s`: by one second
+
+The `=` key sets the widget value to the current date and time.
+
+TimeDelta Widgets
+^^^^^^^^^^^^^^^^^
+
+This widget represent a duration using different symbol of time separated by
+space:
+
+   - `Y`: for years (default: 365 days)
+   - `M`: for months (default: 30 days)
+   - `w`: for weeks (default: 7 days)
+   - `d`: for days (default: 24 hours)
+   - `h`: for hours (default: 60 minutes)
+   - `m`: for minutes (default: 60 seconds)
+   - `s`: for seconds (default: 1 seconds)
+
+The hours, minutes and seconds are also represented as `H:M:s`.
+
+For example: ``2w 3d 4:30`` which represents: two weeks, three days and four
+and an half hours.
+
+The value of each symbol may be changed by the context of the widget. For
+example, a day could be configured as 8 hours.
 
 Search Widget
 ^^^^^^^^^^^^^

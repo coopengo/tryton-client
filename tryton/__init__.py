@@ -1,7 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 __version_coog__ = "2.13"
-__version__ = "5.6.3"
+__version__ = "6.0.3"
 import gi
 import locale
 
@@ -11,6 +11,11 @@ gi.require_foreign('cairo')
 gi.require_version('GtkSource', '3.0')
 try:
     gi.require_version('GtkSpell', '3.0')
+except ValueError:
+    pass
+try:
+    gi.require_version('EvinceDocument', '3.0')
+    gi.require_version('EvinceView', '3.0')
 except ValueError:
     pass
 

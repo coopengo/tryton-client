@@ -226,20 +226,9 @@ class Transport(xmlrpc.client.SafeTransport):
     def make_connection(self, host):
         if self._connection and host == self._connection[0]:
             return self._connection[1]
-        host, self._extra_headers, x509 = self.get_host_info(host)
+        chost, self._extra_headers, x509 = self.get_host_info(host)
 
         ssl_ctx = ssl.create_default_context(cafile=self.__ca_certs)
-
-        class HTTPSConnection(http.client.HTTPSConnection):
-
-            def connect(self):
-                sock = socket.create_connection((self.host, self.port),
-                    self.timeout)
-                if self._tunnel_host:
-                    self.sock = sock
-                    self._tunnel()
-                self.sock = ssl_ctx.wrap_socket(
-                    sock, server_hostname=self.host)
 
         def set_connection(ConnectionClass):
             if self.http_proxy:
@@ -253,7 +242,7 @@ class Transport(xmlrpc.client.SafeTransport):
                 self._connection[1].set_tunnel(real_host, real_port,
                     self.get_proxy_headers())
             else:
-                self._connection = host, ConnectionClass(host,
+                self._connection = host, ConnectionClass(chost,
                     timeout=CONNECT_TIMEOUT)
 
         def http_connection():
@@ -264,8 +253,8 @@ class Transport(xmlrpc.client.SafeTransport):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         def https_connection(allow_http=False):
-            self._connection = host, HTTPSConnection(host,
-                timeout=CONNECT_TIMEOUT)
+            self._connection = host, http.client.HTTPSConnection(chost,
+                timeout=CONNECT_TIMEOUT, context=ssl_ctx)
             try:
                 self._connection[1].connect()
                 sock = self._connection[1].sock
@@ -288,8 +277,9 @@ class Transport(xmlrpc.client.SafeTransport):
                     raise
 
         fingerprint = ''
-        if self.__fingerprints is not None and host in self.__fingerprints:
-            if self.__fingerprints[host]:
+        if (self.__fingerprints is not None
+                and self.__fingerprints.exists(chost)):
+            if self.__fingerprints.get(chost):
                 fingerprint = https_connection()
             else:
                 http_connection()
@@ -297,7 +287,7 @@ class Transport(xmlrpc.client.SafeTransport):
             fingerprint = https_connection(allow_http=True)
 
         if self.__fingerprints is not None:
-            self.__fingerprints[host] = fingerprint
+            self.__fingerprints.set(chost, fingerprint)
         self._connection[1].timeout = DEFAULT_TIMEOUT
         self._connection[1].sock.settimeout(DEFAULT_TIMEOUT)
         return self._connection[1]

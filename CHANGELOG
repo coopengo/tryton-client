@@ -1,10 +1,43 @@
+Version 6.0.2 - 2021-06-17
+* Bug fixes (see mercurial logs for details)
+
+Version 6.0.1 - 2021-05-15
+* Bug fixes (see mercurial logs for details)
+
+Version 6.0.0 - 2021-05-03
+* Bug fixes (see mercurial logs for details)
+* Support printing zip archive
+* Add direct print to UNIX
+* Add attachment preview
+* Support document widget
+* Support icon of type URL
+* Allow sending email with existing attachments
+* Add paths and model context to action data
+* Add indentation in CSV export of tree
+* Manage which records to use for actions
 * Handle device cookie
+* Add breadcrumb as title of window form
+* Display revision on dialog
+* Execute report asynchronously
+* Add support for Python 3.9
+* Support empty value for timedelta converter
+* Add interactive search on tree view
+* Unify PYSON string format
 
-Version 5.6.2 - 2020-07-01
+Version 5.8.0 - 2020-11-02
 * Bug fixes (see mercurial logs for details)
-
-Version 5.6.1 - 2020-05-15
-* Bug fixes (see mercurial logs for details)
+* Remove support for Python 3.5
+* Format timedelta in CSV export
+* Manage symbol widget
+* Fallback to model name as title
+* Manage deletable and writable state
+* Support e-mail template
+* Send e-mail via the server
+* Support PYSON comparison of date and datetime
+* Position copied records based on order
+* Allow configuration of default colors for graph and calendar
+* Use existing context for get_preferences
+* Add context to export URL
 
 Version 5.6.0 - 2020-05-04
 * Bug fixes (see mercurial logs for details)

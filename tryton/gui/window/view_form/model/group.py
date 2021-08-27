@@ -144,9 +144,9 @@ class Group(SignalEvent, list):
         # has more chances to be on top of the list.
         length = self.__len__()
         for record in reversed(self[:]):
+            record.destroy()
             self.signal(
                 'group-list-changed', ('record-removed', record, length - 1))
-            record.destroy()
             self.pop()
             length -= 1
         self.__id2record = {}

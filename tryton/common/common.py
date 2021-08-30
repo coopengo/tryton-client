@@ -900,9 +900,6 @@ def check_version(box, version=__version__):
     else:
         if check_version(box, version):
             info_bar = Gtk.InfoBar()
-            info_bar.get_content_area().pack_start(
-                Gtk.Label(label=_("A new version is available!")),
-                expand=True, fill=True, padding=0)
             info_bar.set_show_close_button(True)
             info_bar.add_button(_("Download"), Gtk.ResponseType.ACCEPT)
             info_bar.connect('response', info_bar_response, box, url)

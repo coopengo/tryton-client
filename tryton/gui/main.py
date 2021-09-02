@@ -71,15 +71,16 @@ class Main(Gtk.Application):
         def on_change_action_boolean(action, value, key):
             action.set_state(value)
             CONFIG[key] = value.get_boolean()
-            if key == 'client.check_version' and CONFIG[key]:
-                common.check_version(self.info)
+            # Coog Specific: unplug check for new tryton version
+            # if key == 'client.check_version' and CONFIG[key]:
+            #     common.check_version(self.info)
 
         for name, key in [
                 ('mode-pda', 'client.modepda'),
                 ('save-tree-width', 'client.save_tree_width'),
                 ('save-tree-state', 'client.save_tree_state'),
                 ('spell-checking', 'client.spellcheck'),
-                ('check-version', 'client.check_version'),
+                # ('check-version', 'client.check_version'),
                 ]:
             variant = GLib.Variant.new_boolean(CONFIG[key])
             action = Gio.SimpleAction.new_stateful(name, None, variant)
@@ -212,11 +213,12 @@ class Main(Gtk.Application):
 
         self.info = Gtk.VBox()
         self.vbox.pack_start(self.info, expand=False, fill=True, padding=0)
-        if CONFIG['client.check_version']:
-            common.check_version(self.info)
-            GLib.timeout_add_seconds(
-                int(CONFIG['download.frequency']), common.check_version,
-                self.info)
+        # Coog Specific: unplug check for new tryton version
+        # if CONFIG['client.check_version']:
+        #     common.check_version(self.info)
+        #     GLib.timeout_add_seconds(
+        #         int(CONFIG['download.frequency']), common.check_version,
+        #         self.info)
 
         self.pane = Gtk.HPaned()
         self.vbox.pack_start(self.pane, expand=True, fill=True, padding=0)

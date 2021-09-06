@@ -1,3 +1,5 @@
+* Install evince dependency for Windows builds
+
 Version 6.0.2 - 2021-06-17
 * Bug fixes (see mercurial logs for details)
 

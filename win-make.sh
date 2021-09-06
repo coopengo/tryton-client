@@ -29,7 +29,8 @@ deps() {
         mingw-w64-i686-python3-cx_Freeze \
         mingw-w64-i686-gobject-introspection \
         mingw-w64-i686-goocanvas \
-        mingw-w64-i686-gtksourceview3
+        mingw-w64-i686-gtksourceview3 \
+        mingw-w64-i686-evince
 
 
     pip install \

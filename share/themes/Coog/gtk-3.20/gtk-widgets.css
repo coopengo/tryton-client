@@ -171,9 +171,9 @@ button.destructive-action:backdrop {
 button:not(flat):focus {
     color: @focus_color;
     background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@focus_bg_color, 1.2)),
+                                     from (shade (@focus_bg_color, 1.6)),
                                      color-stop (0.5, @focus_bg_color),
-                                     to (shade (@focus_bg_color, 0.8)));
+                                     to (shade (@focus_bg_color, 1.2)));
     border-width: 2px;
     margin: 0;
 }
@@ -189,9 +189,9 @@ button:hover {
 button:not(flat):hover:focus {
     color: @focus_color;
     background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@focus_bg_color, 1.2)),
+                                     from (shade (@focus_bg_color, 1.6)),
                                      color-stop (0.5, @focus_bg_color),
-                                     to (shade (@focus_bg_color, 0.8)));
+                                     to (shade (@focus_bg_color, 1.2)));
     border-width: 2px;
     margin: 0;
 }

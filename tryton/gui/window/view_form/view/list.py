@@ -717,6 +717,7 @@ class ViewTree(View):
             return False
 
     def test_expand_row(self, widget, iter_, path):
+        print('test_expand_row', path)
         model = widget.get_model()
         if model.iter_n_children(iter_) > CONFIG['client.limit']:
             self.record = model.get_value(iter_, 0)
@@ -1308,6 +1309,9 @@ class ViewTree(View):
                     except AttributeError:
                         return
                 if group is None:
+                    return
+                if len(group) > CONFIG['client.limit']:
+                    to_expand.pop(-1)
                     return
                 cur_expand_path.append(0)
                 for i in range(len(group)):

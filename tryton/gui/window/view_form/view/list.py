@@ -717,12 +717,7 @@ class ViewTree(View):
             return False
 
     def test_expand_row(self, widget, iter_, path):
-        print('test_expand_row', path)
         model = widget.get_model()
-        if model.iter_n_children(iter_) > CONFIG['client.limit']:
-            self.record = model.get_value(iter_, 0)
-            self.screen.switch_view('form')
-            return True
         iter_ = model.iter_children(iter_)
         if not iter_:
             return False

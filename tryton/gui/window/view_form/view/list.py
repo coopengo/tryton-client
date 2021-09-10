@@ -1305,9 +1305,6 @@ class ViewTree(View):
                         return
                 if group is None:
                     return
-                if len(group) > CONFIG['client.limit']:
-                    to_expand.pop(-1)
-                    return
                 cur_expand_path.append(0)
                 for i in range(len(group)):
                     cur_expand_path[-1] = i

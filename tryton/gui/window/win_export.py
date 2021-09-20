@@ -384,9 +384,11 @@ class WinExport(WinCSV):
         locale_format = self.csv_locale.get_active()
 
         try:
+            file_obj = open(fname, 'w', encoding=encoding, newline='')
+            if encoding in {'utf_8', 'UTF-8'}:
+                file_obj.write('\ufeff')
             writer = csv.writer(
-                open(fname, 'w', encoding=encoding, newline=''),
-                quotechar=self.get_quotechar(),
+                file_obj, quotechar=self.get_quotechar(),
                 delimiter=self.get_delimiter())
             if self.add_field_names.get_active():
                 writer.writerow(fields)

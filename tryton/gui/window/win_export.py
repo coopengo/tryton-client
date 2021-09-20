@@ -380,13 +380,11 @@ class WinExport(WinCSV):
         self.destroy()
 
     def export_csv(self, fname, fields, data, paths, popup=True):
-        encoding = self.csv_enc.get_active_text() or 'UTF-8'
+        encoding = self.csv_enc.get_active_text() or 'utf_8_sig'
         locale_format = self.csv_locale.get_active()
 
         try:
             file_obj = open(fname, 'w', encoding=encoding, newline='')
-            if encoding in {'utf_8', 'UTF-8'}:
-                file_obj.write('\ufeff')
             writer = csv.writer(
                 file_obj, quotechar=self.get_quotechar(),
                 delimiter=self.get_delimiter())

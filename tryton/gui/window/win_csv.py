@@ -161,7 +161,7 @@ class WinCSV(NoModal):
         self.csv_enc = Gtk.ComboBoxText()
         for i, encoding in enumerate(encodings):
             self.csv_enc.append_text(encoding)
-            if encoding == 'utf_8':
+            if encoding == 'utf_8_sig':
                 self.csv_enc.set_active(i)
         label_csv_enc.set_mnemonic_widget(self.csv_enc)
         box.pack_start(self.csv_enc, expand=False, fill=True, padding=0)
@@ -316,7 +316,7 @@ class WinCSV(NoModal):
         return self.csv_quotechar.get_text() or '"'
 
     def get_encoding(self):
-        return self.csv_enc.get_active_text() or 'utf_8'
+        return self.csv_enc.get_active_text() or 'utf_8_sig'
 
     def destroy(self):
         super(WinCSV, self).destroy()

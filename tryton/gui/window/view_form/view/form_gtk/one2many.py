@@ -339,6 +339,7 @@ class One2Many(Widget):
             self.wid_text.set_editable(self.but_add.get_sensitive())
 
     def _validate(self):
+        self.view.set_value()
         record = self.screen.current_record
         if record:
             fields = self.screen.current_view.get_fields() \

@@ -409,9 +409,7 @@ class FloatField(Field):
             # Keep the same type
             if isinstance(value, int):
                 value //= factor
-            elif factor == Decimal('1.0'):
-                value = value
-            else:
+            elif factor != 1:
                 value /= factor
         super(FloatField, self).set_client(record, value,
             force_change=force_change)

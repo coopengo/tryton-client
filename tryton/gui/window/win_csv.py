@@ -316,7 +316,7 @@ class WinCSV(NoModal):
         return self.csv_quotechar.get_text() or '"'
 
     def get_encoding(self):
-        return self.csv_enc.get_active_text() or 'utf_8'
+        return self.csv_enc.get_active_text() or 'utf_8_sig'
 
     def destroy(self):
         super(WinCSV, self).destroy()

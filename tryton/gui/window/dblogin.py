@@ -392,7 +392,7 @@ class DBLogin(object):
     def __init__(self):
         # Fake windows to avoid warning about Dialog without transient
         self._window = Gtk.Window()
-        self.dialog = Gtk.Dialog(title="Tryton - " + _('Login'), modal=True)
+        self.dialog = Gtk.Dialog(title="Coog - " + _('Login'), modal=True)
         self.dialog.set_transient_for(self._window)
         self.dialog.set_icon(TRYTON_ICON)
         self.dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
@@ -417,7 +417,7 @@ class DBLogin(object):
         self.dialog.vbox.pack_start(grid, expand=True, fill=True, padding=0)
 
         image = Gtk.Image()
-        image.set_from_file(os.path.join(PIXMAPS_DIR, 'tryton.png'))
+        image.set_from_file(os.path.join(PIXMAPS_DIR, 'coog_text.svg'))
         image.set_valign(Gtk.Align.START)
         overlay = Gtk.Overlay()
         overlay.add(image)

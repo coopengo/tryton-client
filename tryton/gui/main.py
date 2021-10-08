@@ -121,7 +121,7 @@ class Main(Gtk.Application):
             self.window.present()
             return
 
-        self.window = Gtk.ApplicationWindow(application=self, title="Tryton")
+        self.window = Gtk.ApplicationWindow(application=self, title="Coog")
         self.window.set_default_size(960, 720)
         self.window.maximize()
         self.window.set_position(Gtk.WindowPosition.CENTER)

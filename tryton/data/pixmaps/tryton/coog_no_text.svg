@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" id="Calque_1" data-name="Calque 1" viewBox="0 0 99.21 99.21" version="1.1" sodipodi:docname="Coog_picto_RVB2.svg" inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+  <metadata id="metadata3780">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+        <dc:title/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-width="1858" inkscape:window-height="1136" id="namedview3778" showgrid="false" inkscape:zoom="9.6562847" inkscape:cx="49.605" inkscape:cy="49.605" inkscape:window-x="62" inkscape:window-y="27" inkscape:window-maximized="1" inkscape:current-layer="Calque_1"/>
+  <defs id="defs3769">
+    <style id="style3767">.cls-1{fill:#46423d;}.cls-2{fill:#13b2e6;}</style>
+  </defs>
+  <ellipse style="fill:#ffffff;stroke-width:1.04716635" id="path3782" cx="48.569401" cy="51.469067" rx="43.287872" ry="41.32024"/>
+  <circle class="cls-1" cx="63.49" cy="66.57" r="7.9" id="circle3771"/>
+  <path class="cls-1" d="M63.49,84.67a20.12,20.12,0,0,1-20.1-20.1V41a2.5,2.5,0,0,1,5,0V64.57a15.1,15.1,0,0,0,30.2,0,2.5,2.5,0,0,1,5,0A20.12,20.12,0,0,1,63.49,84.67Z" id="path3773"/>
+  <path class="cls-2" d="M45.89,19.54A25.3,25.3,0,0,1,70.66,39.82,15.35,15.35,0,0,0,53.74,43a2.5,2.5,0,0,0,3.54,3.54,10.35,10.35,0,0,1,14.61,0,2.52,2.52,0,0,0,4.27-1.76,30.27,30.27,0,0,0-60.54,0,2.52,2.52,0,0,0,4.27,1.76,10.35,10.35,0,0,1,14.61,0A2.5,2.5,0,0,0,38,43a15.35,15.35,0,0,0-16.92-3.22A25.31,25.31,0,0,1,45.89,19.54Z" id="path3775"/>
+</svg>

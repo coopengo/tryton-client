@@ -185,4 +185,4 @@ if not os.path.isdir(PIXMAPS_DIR):
         'tryton', 'data/pixmaps/tryton')
 
 TRYTON_ICON = GdkPixbuf.Pixbuf.new_from_file(
-    os.path.join(PIXMAPS_DIR, 'tryton-icon.png'))
+    os.path.join(PIXMAPS_DIR, 'coog_no_text.svg'))

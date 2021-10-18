@@ -107,6 +107,8 @@ for ns in required_gi_namespaces:
 if sys.platform == 'win32':
     include_files.extend([
         ('share/themes/Coog', 'share/themes/Coog'),
+        ('share/language2.rng', 'share/language2.rng'),
+        ('share/def.lang', 'share/def.lang'),
         ('share/python.lang', 'share/python.lang'),
         ('share/python3.lang', 'share/python3.lang'),
         (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),

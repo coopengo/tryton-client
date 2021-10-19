@@ -57,11 +57,11 @@ for name, type_ in (
     if message is not None:
         ERROR2COLOR[message] = type_
 
-LANG_PATH = None
+SHARE_PATH = None
 if sys.platform == 'win32':
     if getattr(sys, 'frozen', False):
         datadir = os.path.dirname(sys.executable)
-        LANG_PATH = [os.path.join(datadir, 'share')]
+        SHARE_PATH = os.path.join(datadir, 'share')
 
 
 def check_code(code):
@@ -91,9 +91,11 @@ class SourceView(Widget):
 
         style_scheme_manager = GtkSource.StyleSchemeManager.get_default()
         language_manager = GtkSource.LanguageManager.get_default()
-        if LANG_PATH is not None:
-            style_scheme_manager.prepend_search_path(LANG_PATH[0])
-            language_manager.set_search_path(LANG_PATH)
+        if SHARE_PATH is not None:
+            style_scheme_manager.prepend_search_path(
+                os.path.join(SHARE_PATH, 'styles'))
+            language_manager.set_search_path(
+                [os.path.join(SHARE_PATH, 'languages')])
         python = language_manager.get_language('python3')
         self.sourcebuffer = GtkSource.Buffer(language=python)
         self.sourcebuffer.connect('changed', self._clear_marks)

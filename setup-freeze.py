@@ -107,10 +107,12 @@ for ns in required_gi_namespaces:
 if sys.platform == 'win32':
     include_files.extend([
         ('share/themes/Coog', 'share/themes/Coog'),
-        ('share/language2.rng', 'share/language2.rng'),
-        ('share/def.lang', 'share/def.lang'),
-        ('share/python.lang', 'share/python.lang'),
-        ('share/python3.lang', 'share/python3.lang'),
+        ('share/languages/language2.rng', 'share/languages/language2.rng'),
+        ('share/languages/def.lang', 'share/languages/def.lang'),
+        ('share/languages/python.lang', 'share/languages/python.lang'),
+        ('share/languages/python3.lang', 'share/languages/python3.lang'),
+        ('share/styles/classic.xml', 'share/styles/classix.xml'),
+        ('share/styles/styles.rng', 'share/styles/styles.rng'),
         (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)

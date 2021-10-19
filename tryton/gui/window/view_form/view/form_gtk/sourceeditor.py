@@ -89,8 +89,10 @@ class SourceView(Widget):
         sc_editor.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         sc_editor.set_size_request(-1, 80)
 
+        style_scheme_manager = GtkSource.StyleSchemeManager.get_default()
         language_manager = GtkSource.LanguageManager.get_default()
         if LANG_PATH is not None:
+            style_scheme_manager.prepend_search_path(LANG_PATH[0])
             language_manager.set_search_path(LANG_PATH)
         python = language_manager.get_language('python3')
         self.sourcebuffer = GtkSource.Buffer(language=python)

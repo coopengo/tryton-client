@@ -512,7 +512,7 @@ class DomainParser(object):
 
         def update_fields(fields, prefix='', string_prefix=''):
             for name, field in fields.items():
-                if not field.get('searchable', True) or name == 'rec_name':
+                if not field.get('searchable', True):
                     continue
                 field = field.copy()
                 fullname = '.'.join(filter(None, [prefix, name]))

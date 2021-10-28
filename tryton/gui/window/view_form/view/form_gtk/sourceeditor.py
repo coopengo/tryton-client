@@ -1,10 +1,12 @@
-import json
 import gettext
-import _ast
-from pyflakes.checker import Checker
-import pyflakes.messages
+import json
+import os.path
+import sys
 
-from gi.repository import Gtk, Gdk, GtkSource, Pango, GObject, GLib
+import _ast
+import pyflakes.messages
+from gi.repository import Gdk, GLib, GObject, Gtk, GtkSource, Pango
+from pyflakes.checker import Checker
 
 from .widget import Widget
 
@@ -55,6 +57,12 @@ for name, type_ in (
     if message is not None:
         ERROR2COLOR[message] = type_
 
+SHARE_PATH = None
+if sys.platform == 'win32':
+    if getattr(sys, 'frozen', False):
+        datadir = os.path.dirname(sys.executable)
+        SHARE_PATH = os.path.join(datadir, 'share')
+
 
 def check_code(code):
     try:
@@ -81,8 +89,14 @@ class SourceView(Widget):
         sc_editor.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         sc_editor.set_size_request(-1, 80)
 
+        style_scheme_manager = GtkSource.StyleSchemeManager.get_default()
         language_manager = GtkSource.LanguageManager.get_default()
-        python = language_manager.get_language('python')
+        if SHARE_PATH is not None:
+            style_scheme_manager.prepend_search_path(
+                os.path.join(SHARE_PATH, 'styles'))
+            language_manager.set_search_path(
+                [os.path.join(SHARE_PATH, 'languages')])
+        python = language_manager.get_language('python3')
         self.sourcebuffer = GtkSource.Buffer(language=python)
         self.sourcebuffer.connect('changed', self._clear_marks)
 

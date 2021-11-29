@@ -101,7 +101,10 @@ class ConfigManager(object):
         self.load()
 
         self.options['dev'] = opt.dev
-        logging.basicConfig()
+        # JCA #21504 : Add timestamps to client logs
+        logging.basicConfig(
+            format='%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
         loglevels = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,

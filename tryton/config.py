@@ -103,7 +103,7 @@ class ConfigManager(object):
         self.load()
 
         logging_config = {
-            'format': '%(asctime)s %(levelname)s:%(name)s:%(message)s',
+            'format': '%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S',
             }
         if opt.log_output:

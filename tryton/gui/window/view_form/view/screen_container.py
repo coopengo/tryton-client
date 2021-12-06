@@ -43,8 +43,9 @@ class Between(Gtk.HBox):
                 pass
 
     def get_value(self):
-        from_ = self._get_value(self.from_)
-        to = self._get_value(self.to)
+        from_ = self._get_formatted_value(self.from_)
+        to = self._get_formatted_value(self.to)
+        print(from_, to)
         if from_ and to:
             if from_ != to:
                 return '%s..%s' % (quote(from_), quote(to))
@@ -58,6 +59,9 @@ class Between(Gtk.HBox):
     def _get_value(self, entry):
         raise NotImplementedError
 
+    def _get_formatted_value(self, widget):
+        raise NotImplementedError
+
     def set_value(self, from_, to):
         self._set_value(self.from_, from_)
         self._set_value(self.to, to)
@@ -66,7 +70,10 @@ class Between(Gtk.HBox):
         raise NotImplementedError
 
     def _from_changed(self, widget):
-        self._set_value(self.to, self._get_value(self.from_))
+        from_value = self._get_value(self.from_)
+        to_value = self._get_value(self.to)
+        if from_value and (not to_value or to_value < from_value):
+            self._set_value(self.to, from_value)
 
 
 class WithOperators:
@@ -95,7 +102,10 @@ class Dates(BetweenDates):
     _changed_signal = 'date-changed'
 
     def _get_value(self, widget):
-        value = widget.props.value
+        return widget.props.value
+
+    def _get_formatted_value(self, widget):
+        value = self._get_value(widget)
         if value:
             return value.strftime(widget.props.format)
 
@@ -109,7 +119,10 @@ class Times(BetweenDates):
         return [self.from_.get_child(), self.to.get_child()]
 
     def _get_value(self, widget):
-        value = widget.props.value
+        return widget.props.value
+
+    def _get_formatted_value(self, widget):
+        value = self._get_value(widget)
         if value:
             return datetime.time.strftime(value, widget.props.format)
 
@@ -130,7 +143,10 @@ class DateTimes(BetweenDates):
         return self.from_.get_children() + self.to.get_children()
 
     def _get_value(self, widget):
-        value = widget.props.value
+        return widget.props.value
+
+    def _get_formatted_value(self, widget):
+        value = self._get_value(widget)
         if value:
             return value.strftime(
                 widget.props.date_format + ' ' + widget.props.time_format)
@@ -144,6 +160,8 @@ class Numbers(Between):
 
     def _get_value(self, widget):
         return widget.get_text()
+
+    _get_formatted_value = _get_value
 
     def _set_value(self, entry, value):
         entry.set_text(value or '')

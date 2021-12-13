@@ -430,7 +430,7 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'record-modified',
             self._record_modified)
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
-        self.__group.add_fields(fields)
+        self.__group.add_fields(fields, 'lazy')
         for name, views in fields_views.items():
             self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
@@ -619,13 +619,7 @@ class Screen(SignalEvent):
             loading = 'lazy'
         else:
             loading = 'eager'
-        for field in fields:
-            if field not in self.group.fields or loading == 'eager':
-                fields[field]['loading'] = loading
-            else:
-                fields[field]['loading'] = \
-                    self.group.fields[field].attrs['loading']
-        self.group.add_fields(fields)
+        self.group.add_fields(fields, loading)
         for field in fields:
             self.group.fields[field].views.add(view_id)
         view = View.parse(

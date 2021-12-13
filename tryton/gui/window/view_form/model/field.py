@@ -214,6 +214,9 @@ class Field(object):
     def get_timestamp(self, record):
         return {}
 
+    def update_definition(self, attrs):
+        pass
+
 
 class CharField(Field):
     _default = ''
@@ -695,7 +698,7 @@ class O2MField(Field):
                         'fields_get', list(field_names), context=context)
                 except RPCException:
                     return
-                group.load_fields(fields)
+                group.load_fields(fields, 'lazy')
 
         if mode == 'list ids':
             for old_record in group:

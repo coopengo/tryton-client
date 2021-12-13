@@ -26,6 +26,25 @@ DEFAULT_TIMEOUT = None
 logger = logging.getLogger(__name__)
 
 
+class ImmutableDict(dict):
+
+    __slots__ = ()
+
+    def _not_allowed(cls, *args, **kwargs):
+        raise TypeError("Operation not allowed on ImmutableDict")
+
+    __setitem__ = _not_allowed
+    __delitem__ = _not_allowed
+    __ior__ = _not_allowed
+    clear = _not_allowed
+    pop = _not_allowed
+    popitem = _not_allowed
+    setdefault = _not_allowed
+    update = _not_allowed
+
+    del _not_allowed
+
+
 class ResponseError(xmlrpc.client.ResponseError):
     pass
 
@@ -60,6 +79,8 @@ def object_hook(dct):
             return base64.decodebytes(dct['base64'].encode('utf-8'))
         elif dct['__class__'] == 'Decimal':
             return Decimal(dct['decimal'])
+    elif isinstance(dct, dict):
+        dct = ImmutableDict(dct)
     return dct
 
 
@@ -193,7 +214,8 @@ class Transport(xmlrpc.client.SafeTransport):
         response = super().parse_response(response)
         if cache:
             try:
-                response['cache'] = int(cache)
+                # Circumvent ImmutableDict _not_allowed implementation
+                super(ImmutableDict, response).__setitem__('cache', int(cache))
             except ValueError:
                 pass
         return response
@@ -438,23 +460,6 @@ class ServerPool(object):
             self._cache.clear(prefix)
 
 
-def _list_deepcopy(obj):
-    return [my_deepcopy(x) for x in obj]
-
-
-def _dict_deepcopy(obj):
-    return {k: my_deepcopy(v) for k, v in obj.items()}
-
-
-def my_deepcopy(obj):
-    if isinstance(obj, (list, tuple)):
-        return _list_deepcopy(obj)
-    elif isinstance(obj, dict):
-        return _dict_deepcopy(obj)
-    else:
-        return obj
-
-
 class _Cache:
 
     def __init__(self):
@@ -468,7 +473,7 @@ class _Cache:
             expire = datetime.timedelta(seconds=expire)
         if isinstance(expire, datetime.timedelta):
             expire = datetime.datetime.now() + expire
-        self.store[prefix][key] = (expire, my_deepcopy(value))
+        self.store[prefix][key] = (expire, value)
 
     def get(self, prefix, key):
         now = datetime.datetime.now()
@@ -480,7 +485,7 @@ class _Cache:
             self.store.pop(key)
             raise KeyError
         logger.info('(cached) %s %s', prefix, key)
-        return my_deepcopy(value)
+        return value
 
     def clear(self, prefix=None):
         if prefix:

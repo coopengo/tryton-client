@@ -142,7 +142,7 @@ class Record(SignalEvent):
                 for value in values:
                     value.update(default_values)
                 self.exception = exception = True
-            id2value = dict((value['id'], value) for value in values)
+            id2value = dict((value['id'], dict(value)) for value in values)
             for id, record in id2record.items():
                 if not record.exception:
                     record.exception = exception
@@ -222,10 +222,7 @@ class Record(SignalEvent):
             group._context.update(self.group._context)
         else:
             fields = children_definitions[group.model_name].copy()
-            # Force every field of the multi-model to be eager-loaded
-            for field_def in fields.values():
-                field_def['loading'] = 'eager'
-            group.load_fields(fields)
+            group.load_fields(fields, 'eager')
         return group
 
     def get_path(self, group):
@@ -465,7 +462,7 @@ class Record(SignalEvent):
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
                 related = fieldname + '.'
-                self.value[related] = val.get(related) or {}
+                self.value[related] = dict(val.get(related) or {})
             self.group.fields[fieldname].set_default(self, value)
             self._loaded.add(fieldname)
             fieldnames.append(fieldname)
@@ -498,7 +495,7 @@ class Record(SignalEvent):
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
                 related = fieldname + '.'
-                self.value[related] = val.get(related) or {}
+                self.value[related] = dict(val.get(related) or {})
             if isinstance(self.group.fields[fieldname], fields.SelectionField):
                 related = fieldname + ':string'
                 self.value[related] = val.get(related)
@@ -520,7 +517,7 @@ class Record(SignalEvent):
             if isinstance(self.group.fields[fieldname], (fields.M2OField,
                         fields.ReferenceField)):
                 related = fieldname + '.'
-                self.value[related] = values.get(related) or {}
+                self.value[related] = dict(values.get(related) or {})
             # Load fieldname before setting value
             self[fieldname].set_on_change(self, value)
 

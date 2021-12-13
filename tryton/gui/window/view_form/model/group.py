@@ -30,7 +30,7 @@ class Group(SignalEvent, list):
         self._context = context or {}
         self.model_name = model_name
         self.fields = {}
-        self.load_fields(fields)
+        self.load_fields(fields, 'lazy')
         self.current_idx = None
         self.load(ids)
         self.record_deleted, self.record_removed = [], []
@@ -171,11 +171,14 @@ class Group(SignalEvent, list):
     def __repr__(self):
         return '<Group %s at %s>' % (self.model_name, id(self))
 
-    def load_fields(self, fields):
+    def load_fields(self, fields, default_loading):
         for name, attr in fields.items():
-            field = Field.get_field(attr['type'])
-            attr['name'] = name
-            self.fields[name] = field(attr)
+            FieldConstructor = Field.get_field(attr['type'])
+            self.fields[name] = field = FieldConstructor(attr)
+            if name not in self.fields or default_loading == 'eager':
+                field.loading = default_loading
+            else:
+                field.loading = 'lazy'
 
     def save(self):
         saved = []
@@ -480,14 +483,18 @@ class Group(SignalEvent, list):
             return None
         return self[self.current_idx]
 
-    def add_fields(self, fields):
+    def add_fields(self, fields, default_loading):
         to_add = {}
         for name, attr in fields.items():
             if name not in self.fields:
                 to_add[name] = attr
             else:
-                self.fields[name].attrs.update(attr)
-        self.load_fields(to_add)
+                field = self.fields[name]
+                if default_loading == 'eager':
+                    field.loading = 'eager'
+                field.update_definition(attr)
+                # self.fields[name].attrs.update(attr)
+        self.load_fields(to_add, default_loading)
 
         if not len(self):
             return True

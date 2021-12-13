@@ -580,7 +580,7 @@ class One2Many(Widget):
                         == record.group.model_name):
                     fields = dict((name, field.attrs) for name, field in
                         widget.screen.group.fields.items())
-                    record.group.load_fields(fields)
+                    record.group.load_fields(fields, 'eager')
                     for field_name in fields.keys():
                         record[field_name].get(record)
                 widget.screen.current_record = record

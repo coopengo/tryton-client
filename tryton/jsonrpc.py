@@ -1,6 +1,5 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-import copy
 import xmlrpc.client
 import json
 import ssl
@@ -439,6 +438,23 @@ class ServerPool(object):
             self._cache.clear(prefix)
 
 
+def _list_deepcopy(obj):
+    return [my_deepcopy(x) for x in obj]
+
+
+def _dict_deepcopy(obj):
+    return {k: my_deepcopy(v) for k, v in obj.items()}
+
+
+def my_deepcopy(obj):
+    if isinstance(obj, (list, tuple)):
+        return _list_deepcopy(obj)
+    elif isinstance(obj, dict):
+        return _dict_deepcopy(obj)
+    else:
+        return obj
+
+
 class _Cache:
 
     def __init__(self):
@@ -452,7 +468,7 @@ class _Cache:
             expire = datetime.timedelta(seconds=expire)
         if isinstance(expire, datetime.timedelta):
             expire = datetime.datetime.now() + expire
-        self.store[prefix][key] = (expire, copy.deepcopy(value))
+        self.store[prefix][key] = (expire, my_deepcopy(value))
 
     def get(self, prefix, key):
         now = datetime.datetime.now()
@@ -464,7 +480,7 @@ class _Cache:
             self.store.pop(key)
             raise KeyError
         logger.info('(cached) %s %s', prefix, key)
-        return copy.deepcopy(value)
+        return my_deepcopy(value)
 
     def clear(self, prefix=None):
         if prefix:

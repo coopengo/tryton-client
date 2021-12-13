@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 "Screen"
-import copy
 import functools
 import datetime
 import calendar
@@ -23,7 +22,7 @@ from tryton.config import CONFIG
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
-    node_attributes, sur, RPCContextReload, warning
+    node_attributes, sur, RPCContextReload, warning, my_deepcopy
 from tryton.action import Action
 from tryton.pyson import PYSONDecoder
 from tryton.rpc import clear_cache
@@ -185,7 +184,7 @@ class Screen(SignalEvent):
         else:
             view_tree = self.fields_view_tree[view_id]
 
-        fields = copy.deepcopy(view_tree['fields'])
+        fields = my_deepcopy(view_tree['fields'])
         for name, props in fields.items():
             if props['type'] not in ('selection', 'reference'):
                 continue

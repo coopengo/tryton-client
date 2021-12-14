@@ -22,7 +22,7 @@ from tryton.config import CONFIG
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
 from tryton.common import RPCExecute, RPCException, MODELACCESS, \
-    node_attributes, sur, RPCContextReload, warning, my_deepcopy
+    node_attributes, sur, RPCContextReload, warning
 from tryton.action import Action
 from tryton.pyson import PYSONDecoder
 from tryton.rpc import clear_cache
@@ -184,7 +184,9 @@ class Screen(SignalEvent):
         else:
             view_tree = self.fields_view_tree[view_id]
 
-        fields = my_deepcopy(view_tree['fields'])
+        fields = {
+            k: dict(v) if isinstance(v, dict) else v
+            for k, v in view_tree['fields'].items()}
         for name, props in fields.items():
             if props['type'] not in ('selection', 'reference'):
                 continue

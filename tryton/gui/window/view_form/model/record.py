@@ -51,22 +51,22 @@ class Record(SignalEvent):
                 loading = 'eager'
                 views = set()
                 for field in self.group.fields.values():
-                    if field.attrs.get('loading', 'eager') == 'lazy':
+                    if getattr(field, 'loading', 'eager') == 'lazy':
                         loading = 'lazy'
                     views |= field.views
                 # Set a valid name for next loaded check
                 for fname, field in self.group.fields.items():
-                    if field.attrs.get('loading', 'eager') == loading:
+                    if getattr(field, 'loading', 'eager') == loading:
                         name = fname
                         break
             else:
-                loading = self.group.fields[name].attrs.get('loading', 'eager')
+                loading = getattr(self.group.fields[name], 'loading', 'eager')
                 views = self.group.fields[name].views
 
             if loading == 'eager':
                 fields = ((fname, field)
                     for fname, field in self.group.fields.items()
-                    if field.attrs.get('loading', 'eager') == 'eager')
+                    if getattr(field, 'loading', 'eager') == 'eager')
             else:
                 fields = self.group.fields.items()
 
@@ -74,11 +74,12 @@ class Record(SignalEvent):
                 if fname not in self._loaded
                 and (not views or (views & field.views))]
             for fname in fnames[:]:
-                f_attrs = self.group.fields[fname].attrs
+                field = self.group.fields[fname]
+                f_attrs = field.attrs
                 if f_attrs['type'] in {'many2one', 'one2one', 'reference'}:
                     fnames.append('%s.rec_name' % fname)
                 elif (f_attrs['type'] == 'selection'
-                        and f_attrs.get('loading', 'eager') == 'eager'):
+                        and getattr(field, 'loading', 'eager') == 'eager'):
                     fnames.append('%s:string' % fname)
             if 'rec_name' not in fnames:
                 fnames.append('rec_name')

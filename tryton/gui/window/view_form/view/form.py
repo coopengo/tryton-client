@@ -532,7 +532,7 @@ class ViewForm(View):
             for name in field_names:
                 field = record.group.fields[name]
                 fields.append(
-                    (name, field.attrs.get('loading', 'eager') == 'eager',
+                    (name, getattr(field, 'loading', 'eager') == 'eager',
                         len(field.views)))
             fields = sorted(fields, key=operator.itemgetter(1, 2))
             for field, _, _ in fields:

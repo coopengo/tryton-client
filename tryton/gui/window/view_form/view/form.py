@@ -525,9 +525,11 @@ class ViewForm(View):
             for name in self.widgets:
                 field = record.group.fields[name]
                 field_names.add(name)
-                field_names.update(f for f in field.attrs.get('depends', [])
-                    if (not f.startswith('_parent')
-                        and f in record.group.fields))
+                if self.screen.current_view.editable:
+                    field_names.update(
+                        f for f in field.attrs.get('depends', [])
+                        if (not f.startswith('_parent')
+                            and f in record.group.fields))
             fields = []
             for name in field_names:
                 field = record.group.fields[name]

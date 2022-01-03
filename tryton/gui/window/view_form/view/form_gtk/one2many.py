@@ -537,6 +537,8 @@ class One2Many(Widget):
     def group_sync(self, screen, current_record):
         if not self.view or not self.view.widgets:
             return
+        if self.view.screen.current_view is not self.view:
+            return
         if self.attrs.get('mode') == 'form':
             return
         if screen.current_record != current_record:

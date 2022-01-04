@@ -26,23 +26,14 @@ DEFAULT_TIMEOUT = None
 logger = logging.getLogger(__name__)
 
 
-class ImmutableDict(dict):
-
-    __slots__ = ()
-
-    def _not_allowed(cls, *args, **kwargs):
-        raise TypeError("Operation not allowed on ImmutableDict")
-
-    __setitem__ = _not_allowed
-    __delitem__ = _not_allowed
-    __ior__ = _not_allowed
-    clear = _not_allowed
-    pop = _not_allowed
-    popitem = _not_allowed
-    setdefault = _not_allowed
-    update = _not_allowed
-
-    del _not_allowed
+def deepcopy(obj):
+    """Recursively copy python mutable datastructures"""
+    if isinstance(obj, (list, tuple)):
+        return [deepcopy(o) for o in obj]
+    elif isinstance(obj, dict):
+        return {k: deepcopy(v) for k, v in obj.items()}
+    else:
+        return obj
 
 
 class ResponseError(xmlrpc.client.ResponseError):
@@ -79,8 +70,6 @@ def object_hook(dct):
             return base64.decodebytes(dct['base64'].encode('utf-8'))
         elif dct['__class__'] == 'Decimal':
             return Decimal(dct['decimal'])
-    elif isinstance(dct, dict):
-        dct = ImmutableDict(dct)
     return dct
 
 
@@ -214,8 +203,7 @@ class Transport(xmlrpc.client.SafeTransport):
         response = super().parse_response(response)
         if cache:
             try:
-                # Circumvent ImmutableDict _not_allowed implementation
-                super(ImmutableDict, response).__setitem__('cache', int(cache))
+                response['cache'] = int(cache)
             except ValueError:
                 pass
         return response
@@ -473,7 +461,7 @@ class _Cache:
             expire = datetime.timedelta(seconds=expire)
         if isinstance(expire, datetime.timedelta):
             expire = datetime.datetime.now() + expire
-        self.store[prefix][key] = (expire, value)
+        self.store[prefix][key] = (expire, deepcopy(value))
 
     def get(self, prefix, key):
         now = datetime.datetime.now()
@@ -485,7 +473,7 @@ class _Cache:
             self.store.pop(key)
             raise KeyError
         logger.info('(cached) %s %s', prefix, key)
-        return value
+        return deepcopy(value)
 
     def clear(self, prefix=None):
         if prefix:

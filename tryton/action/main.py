@@ -47,7 +47,6 @@ class Action(object):
             action = RPCExecute(
                 'model', 'ir.action', 'get_action_value', action,
                 context=context)
-        action = dict(action)
         if keyword:
             keywords = {
                 'ir.action.report': 'form_report',

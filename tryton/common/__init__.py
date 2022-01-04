@@ -10,7 +10,7 @@ from .common import (
     filter_domain, timezoned_date, untimezoned_date, humanize, get_hostname,
     get_port, resize_pixbuf, data2pixbuf, apply_label_attributes, ellipsize,
     get_align, date_format, idle_add, check_version, TRYTON_ICON, setup_window,
-    FORMAT_ERROR, COLOR_RGB, my_deepcopy)
+    FORMAT_ERROR, COLOR_RGB)
 from .domain_inversion import (
     domain_inversion, eval_domain, localize_domain, merge, inverse_leaf,
     filter_leaf, prepare_reference_domain, extract_reference_models, concat,
@@ -31,4 +31,4 @@ __all__ = [
     localize_domain, merge, inverse_leaf, filter_leaf,
     prepare_reference_domain, extract_reference_models, concat, simplify,
     unique_value, EvalEnvironment, timedelta, check_version, TRYTON_ICON,
-    setup_window, my_deepcopy]
+    setup_window]

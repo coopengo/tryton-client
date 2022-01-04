@@ -184,14 +184,13 @@ class Screen(SignalEvent):
         else:
             view_tree = self.fields_view_tree[view_id]
 
-        fields = {
-            k: dict(v) if isinstance(v, dict) else v
-            for k, v in view_tree['fields'].items()}
-        for name, props in fields.items():
-            if props['type'] not in ('selection', 'reference'):
+        fields = view_tree['fields'].copy()
+        for name in fields:
+            if fields[name]['type'] not in ('selection', 'reference'):
                 continue
-            if isinstance(props['selection'], (tuple, list)):
+            if isinstance(fields[name]['selection'], (tuple, list)):
                 continue
+            props = fields[name] = fields[name].copy()
             props['selection'] = self.get_selection(props)
 
         if 'arch' in view_tree:
@@ -432,7 +431,7 @@ class Screen(SignalEvent):
         self.__group.signal_connect(self, 'record-modified',
             self._record_modified)
         self.__group.signal_connect(self, 'group-changed', self._group_changed)
-        self.__group.add_fields(fields, 'lazy')
+        self.__group.add_fields(fields)
         for name, views in fields_views.items():
             self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
@@ -621,7 +620,13 @@ class Screen(SignalEvent):
             loading = 'lazy'
         else:
             loading = 'eager'
-        self.group.add_fields(fields, loading)
+        for field in fields:
+            if field not in self.group.fields or loading == 'eager':
+                fields[field]['loading'] = loading
+            else:
+                fields[field]['loading'] = \
+                    self.group.fields[field].attrs['loading']
+        self.group.add_fields(fields)
         for field in fields:
             self.group.fields[field].views.add(view_id)
         view = View.parse(

@@ -1378,20 +1378,3 @@ def idle_add(func):
 def setup_window(window):
     if sys.platform == 'darwin':
         window.set_mnemonic_modifier(Gdk.ModifierType.CONTROL_MASK)
-
-
-def _list_deepcopy(obj):
-    return [my_deepcopy(x) for x in obj]
-
-
-def _dict_deepcopy(obj):
-    return {k: my_deepcopy(v) for k, v in obj.items()}
-
-
-def my_deepcopy(obj):
-    if isinstance(obj, (list, tuple)):
-        return _list_deepcopy(obj)
-    elif isinstance(obj, dict):
-        return _dict_deepcopy(obj)
-    else:
-        return obj

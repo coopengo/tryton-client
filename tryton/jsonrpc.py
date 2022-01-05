@@ -1,6 +1,5 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-import copy
 import xmlrpc.client
 import json
 import ssl
@@ -25,6 +24,16 @@ __all__ = ["ResponseError", "Fault", "ProtocolError", "Transport",
 CONNECT_TIMEOUT = 5
 DEFAULT_TIMEOUT = None
 logger = logging.getLogger(__name__)
+
+
+def deepcopy(obj):
+    """Recursively copy python mutable datastructures"""
+    if isinstance(obj, (list, tuple)):
+        return [deepcopy(o) for o in obj]
+    elif isinstance(obj, dict):
+        return {k: deepcopy(v) for k, v in obj.items()}
+    else:
+        return obj
 
 
 class ResponseError(xmlrpc.client.ResponseError):
@@ -452,7 +461,7 @@ class _Cache:
             expire = datetime.timedelta(seconds=expire)
         if isinstance(expire, datetime.timedelta):
             expire = datetime.datetime.now() + expire
-        self.store[prefix][key] = (expire, copy.deepcopy(value))
+        self.store[prefix][key] = (expire, deepcopy(value))
 
     def get(self, prefix, key):
         now = datetime.datetime.now()
@@ -464,7 +473,7 @@ class _Cache:
             self.store.pop(key)
             raise KeyError
         logger.info('(cached) %s %s', prefix, key)
-        return copy.deepcopy(value)
+        return deepcopy(value)
 
     def clear(self, prefix=None):
         if prefix:

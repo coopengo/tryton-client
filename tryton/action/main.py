@@ -131,6 +131,7 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
+            print('=' * 80)
             action_ctx = context.copy()
             action_ctx.update(
                 decoder.decode(action.get('pyson_context') or '{}'))
@@ -151,8 +152,7 @@ class Action(object):
                     'active_id': data.get('id'),
                     'active_ids': data.get('ids', []),
                     })
-            tab_domain = [(n, (action_ctx, d), c)
-                for n, d, c in action['domains']]
+            tab_domain = [(n, (ctx, d), c) for n, d, c in action['domains']]
 
             name = action.get('name', '')
             if action.get('keyword', ''):
@@ -164,6 +164,7 @@ class Action(object):
             if limit is None:
                 limit = CONFIG['client.limit']
 
+            print(f'{action_ctx=}')
             Window.create(res_model,
                 view_ids=view_ids,
                 res_id=res_id,

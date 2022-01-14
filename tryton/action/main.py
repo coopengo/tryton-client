@@ -131,7 +131,6 @@ class Action(object):
             ctx.update(rpc.CONTEXT)
             ctx['_user'] = rpc._USER
             decoder = PYSONDecoder(ctx)
-            print('=' * 80)
             action_ctx = context.copy()
             action_ctx.update(
                 decoder.decode(action.get('pyson_context') or '{}'))
@@ -164,7 +163,6 @@ class Action(object):
             if limit is None:
                 limit = CONFIG['client.limit']
 
-            print(f'{action_ctx=}')
             Window.create(res_model,
                 view_ids=view_ids,
                 res_id=res_id,

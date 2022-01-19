@@ -43,9 +43,9 @@ class Between(Gtk.HBox):
                 pass
 
     def get_value(self):
+        # Coog Specific: see #21005
         from_ = self._get_formatted_value(self.from_)
         to = self._get_formatted_value(self.to)
-        print(from_, to)
         if from_ and to:
             if from_ != to:
                 return '%s..%s' % (quote(from_), quote(to))
@@ -60,6 +60,7 @@ class Between(Gtk.HBox):
         raise NotImplementedError
 
     def _get_formatted_value(self, widget):
+        # Coog Specific: see #21005
         raise NotImplementedError
 
     def set_value(self, from_, to):
@@ -70,6 +71,7 @@ class Between(Gtk.HBox):
         raise NotImplementedError
 
     def _from_changed(self, widget):
+        # Coog Specific: see #21005
         from_value = self._get_value(self.from_)
         to_value = self._get_value(self.to)
         if from_value and (not to_value or to_value < from_value):
@@ -102,9 +104,11 @@ class Dates(BetweenDates):
     _changed_signal = 'date-changed'
 
     def _get_value(self, widget):
+        # Coog Specific: see #21005
         return widget.props.value
 
     def _get_formatted_value(self, widget):
+        # Coog Specific: see #21005
         value = self._get_value(widget)
         if value:
             return value.strftime(widget.props.format)
@@ -122,6 +126,7 @@ class Times(BetweenDates):
         return widget.props.value
 
     def _get_formatted_value(self, widget):
+        # Coog Specific: see #21005
         value = self._get_value(widget)
         if value:
             return datetime.time.strftime(value, widget.props.format)
@@ -146,6 +151,7 @@ class DateTimes(BetweenDates):
         return widget.props.value
 
     def _get_formatted_value(self, widget):
+        # Coog Specific: see #21005
         value = self._get_value(widget)
         if value:
             return value.strftime(
@@ -161,6 +167,7 @@ class Numbers(Between):
     def _get_value(self, widget):
         return widget.get_text()
 
+    # Coog Specific: see #21005
     _get_formatted_value = _get_value
 
     def _set_value(self, entry, value):

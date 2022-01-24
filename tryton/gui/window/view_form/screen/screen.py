@@ -928,8 +928,6 @@ class Screen(SignalEvent):
         return json_domain
 
     def load(self, ids, set_cursor=True, modified=False):
-        self.tree_states.clear()
-        self.tree_states_done.clear()
         self.group.load(ids, modified=modified)
         self.current_view.reset()
         if ids and self.current_view.view_type != 'calendar':
@@ -1152,6 +1150,9 @@ class Screen(SignalEvent):
     def clear(self):
         self.current_record = None
         self.group.clear()
+        self.tree_states_done.clear()
+        for view in self.views:
+            view.reset()
 
     def on_change(self, fieldname, attr):
         self.current_record.on_change(fieldname, attr)

@@ -138,7 +138,6 @@ class Screen(SignalEvent):
         self.view_to_load = mode[:]
         if self.view_ids or self.view_to_load:
             self.switch_view()
-        self.count_tab_domain()
 
     def __repr__(self):
         return '<Screen %s at %s>' % (self.model_name, id(self))

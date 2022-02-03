@@ -50,6 +50,9 @@ class Form(SignalEvent, TabContent):
             name = common.MODELNAME.get(model)
         self.name = name
 
+        loading_ids = res_id not in (None, False)
+        if loading_ids:
+            attributes.pop('tab_domain', None)
         self.screen = Screen(self.model, breadcrumb=[self.name], **attributes)
         self.screen.widget.show()
 
@@ -69,7 +72,7 @@ class Form(SignalEvent, TabContent):
 
         self.attachment_screen = None
 
-        if res_id not in (None, False):
+        if loading_ids:
             if isinstance(res_id, int):
                 res_id = [res_id]
             self.screen.load(res_id)

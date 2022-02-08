@@ -171,7 +171,6 @@ class Affix(Cell):
             self.renderer = Gtk.CellRendererText()
         self.view = view
 
-    @realized
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
         record, field = self._get_record_field_from_iter(iter_, store)

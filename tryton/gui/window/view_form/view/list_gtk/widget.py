@@ -6,7 +6,7 @@ import gettext
 import webbrowser
 from functools import wraps, partial
 
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, GLib, Gtk, GdkPixbuf
 
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
@@ -28,7 +28,7 @@ from tryton.common.selection import (
     SelectionMixin, PopdownMixin, selection_shortcuts)
 from tryton.common.datetime_ import CellRendererDate, CellRendererTime
 from tryton.common.domain_parser import quote
-from tryton.config import CONFIG
+from tryton.config import CONFIG, PIXMAPS_DIR
 
 _ = gettext.gettext
 
@@ -50,12 +50,27 @@ def send_keys(renderer, editable, position, treeview):
         editable.connect('changed', changed)
 
 
+EMPTY_IMG = GdkPixbuf.Pixbuf.new_from_file(
+    os.path.join(PIXMAPS_DIR, 'empty.png'))
+
+
 def realized(func):
     "Decorator for treeview realized"
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if (hasattr(self.view.treeview, 'get_realized')
                 and not self.view.treeview.get_realized()):
+            cell = args[1]
+            if isinstance(cell, Gtk.CellRendererText):
+                cell.set_property('text', '')
+            elif isinstance(cell, Gtk.CellRendererPixbuf):
+                if isinstance(self, (Affix, _BinaryIcon)):
+                    _, width, height = Gtk.IconSize.lookup(Gtk.IconSize.MENU)
+                else:
+                    width = getattr(self, 'width', 300)
+                    height = getattr(self, 'height', 100)
+                pixbuf = common.resize_pixbuf(EMPTY_IMG, height, width)
+                cell.set_property('pixbuf', pixbuf)
             return
         return func(self, *args, **kwargs)
     return wrapper
@@ -171,6 +186,7 @@ class Affix(Cell):
             self.renderer = Gtk.CellRendererText()
         self.view = view
 
+    @realized
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
         record, field = self._get_record_field_from_iter(iter_, store)

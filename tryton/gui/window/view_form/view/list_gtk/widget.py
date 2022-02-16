@@ -51,11 +51,13 @@ def send_keys(renderer, editable, position, treeview):
 
 
 EMPTY_IMG = GdkPixbuf.Pixbuf.new_from_file(
-    os.path.join(PIXMAPS_DIR, 'empty.png'))
+    os.path.join(PIXMAPS_DIR, 'empty.svg'))
 
 
 def realized(func):
     "Decorator for treeview realized"
+    PIXBUF_CACHE = {}
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if (hasattr(self.view.treeview, 'get_realized')
@@ -69,10 +71,13 @@ def realized(func):
                 else:
                     width = getattr(self, 'width', 300)
                     height = getattr(self, 'height', 100)
-                pixbuf = common.resize_pixbuf(EMPTY_IMG, height, width)
-                cell.set_property('pixbuf', pixbuf)
+                key = (id(self), width, height)
+                if key not in PIXBUF_CACHE:
+                    PIXBUF_CACHE[key] = common.resize_pixbuf(EMPTY_IMG, height, width)
+                cell.set_property('pixbuf', PIXBUF_CACHE[key])
             return
         return func(self, *args, **kwargs)
+
     return wrapper
 
 

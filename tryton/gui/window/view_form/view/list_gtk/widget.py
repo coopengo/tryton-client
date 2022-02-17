@@ -50,14 +50,39 @@ def send_keys(renderer, editable, position, treeview):
         editable.connect('changed', changed)
 
 
+EMPTY_SVG = b"""<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="24" height="24"/>
+"""
+EMPTY_IMG = data2pixbuf(EMPTY_SVG)
+
+
 def realized(func):
     "Decorator for treeview realized"
+    PIXBUF_CACHE = {}
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if (hasattr(self.view.treeview, 'get_realized')
                 and not self.view.treeview.get_realized()):
+            cell = args[1]
+            if isinstance(cell, Gtk.CellRendererText):
+                cell.set_property('text', ' ' * 3)
+            elif isinstance(cell, Gtk.CellRendererPixbuf):
+                if isinstance(self, (Affix, _BinaryIcon)):
+                    _, width, height = Gtk.IconSize.lookup(Gtk.IconSize.MENU)
+                else:
+                    width = getattr(self, 'width', 300)
+                    height = getattr(self, 'height', 100)
+                key = (id(self), width, height)
+                if key not in PIXBUF_CACHE:
+                    PIXBUF_CACHE[key] = common.resize_pixbuf(
+                        EMPTY_IMG, height, width)
+                cell.set_property('pixbuf', PIXBUF_CACHE[key])
             return
         return func(self, *args, **kwargs)
+
     return wrapper
 
 

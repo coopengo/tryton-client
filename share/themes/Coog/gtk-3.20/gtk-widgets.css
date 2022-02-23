@@ -70,19 +70,6 @@ assistant .sidebar {
 }
 
 
-.readonly .multiselection *:selected{
-    background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@selected_bg_color, 0.98)),
-                                     to (shade (@selected_bg_color, 1)));
-}
-
-.readonly .multiselection > * > *:not(:selected) {
-    background-image: -gtk-gradient (linear, left top, left bottom,
-                                     from (shade (@readonly_bg_color, 1)),
-                                     to (shade (@readonly_bg_color, 1)));
-    color: mix (@text_color, @base_color, 0.4);
-}
-
 .multiselection:focus {
     border-width:2px;
     border-color: @focus_bg_color;

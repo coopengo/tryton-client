@@ -150,7 +150,7 @@ class Many2Many(Widget):
             return
         domain = self.field.domain_get(self.record)
         add_remove = self.record.expr_eval(self.attrs.get('add_remove'))
-        if add_remove:
+        if add_remove and domain != add_remove:
             domain = [domain, add_remove]
         context = self.field.get_search_context(self.record)
         order = self.field.get_search_order(self.record)

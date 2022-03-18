@@ -287,6 +287,8 @@ def localize_domain(domain, field_name=None, strip_target=False):
 def _simplify_in_domain(domain):
     if is_leaf(domain):
         return domain
+    elif domain in ['OR', 'AND']:
+        return domain
     elif isinstance(domain, list) and len(domain) == 1:
         return _simplify_in_domain(domain[0])
     else:

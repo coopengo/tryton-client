@@ -621,13 +621,9 @@ class Form(TabContent):
         set_sensitive('previous', self.screen.has_prev())
         set_sensitive('next', self.screen.has_next())
 
+        msg = name + ' / ' + common.humanize(size)
         if size < max_size:
-            msg = "%s@%s/%s" % (
-                name, common.humanize(size), common.humanize(max_size))
-            if max_size >= self.screen.count_limit:
-                msg += "+"
-        else:
-            msg = "%s/%s" % (name, common.humanize(size))
+            msg += _(' of ') + common.humanize(max_size)
         self.status_label.set_text(msg)
         self.info_bar_clear()
         self.activate_save()

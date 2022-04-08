@@ -15,7 +15,6 @@ from tryton.common.domain_parser import quote
 from tryton.common.underline import set_underline
 
 _ = gettext.gettext
-IncompatibleGroup = object()
 
 
 class One2Many(Widget):
@@ -33,7 +32,6 @@ class One2Many(Widget):
         self._required = False
         self._position = 0
         self._length = 0
-        self._incompatible_group = False
 
         self.title_box = hbox = Gtk.HBox(homogeneous=False, spacing=0)
         hbox.set_border_width(2)
@@ -546,11 +544,6 @@ class One2Many(Widget):
         if not screen.views:
             return
 
-        def is_compatible(screen, record):
-            return (screen
-                and screen.current_view.view_type != 'form'
-                or record and screen.model_name == record.model_name)
-
         current_record = self.screen.current_record
         to_sync = []
         for widget in self.view.widgets[self.field_name]:
@@ -559,33 +552,26 @@ class One2Many(Widget):
                     or not hasattr(widget, 'screen')):
                 continue
             record = current_record
-            if (record is not None
-                    and not is_compatible(widget.screen, record)):
-                record = IncompatibleGroup
             if not widget._validate():
                 def go_previous():
                     record = widget.screen.current_record
-                    if not is_compatible(screen, record):
-                        record = None
                     screen.current_record = record
                     screen.display()
                 GLib.idle_add(go_previous)
                 return
             to_sync.append((widget, record))
         for widget, record in to_sync:
-            widget._incompatible_group = record is IncompatibleGroup
-            if not widget._incompatible_group:
-                if (widget.screen.current_view
-                        and widget.screen.current_view.view_type == 'form'
-                        and record is not None
-                        and widget.screen.group.model_name
-                        == record.group.model_name):
-                    fields = dict((name, field.attrs) for name, field in
-                        widget.screen.group.fields.items())
-                    record.group.load_fields(fields)
-                    for field_name in fields.keys():
-                        record[field_name].get(record)
-                widget.screen.current_record = record
+            if (widget.screen.current_view
+                    and widget.screen.current_view.view_type == 'form'
+                    and record is not None
+                    and widget.screen.group.model_name
+                    == record.group.model_name):
+                fields = dict((name, field.attrs) for name, field in
+                    widget.screen.group.fields.items())
+                record.group.load_fields(fields)
+                for field_name in fields.keys():
+                    record[field_name].get(record)
+            widget.screen.current_record = record
             widget.display()
 
     def display(self):
@@ -602,7 +588,7 @@ class One2Many(Widget):
         new_group = self.field.get_client(self.record)
 
         if self.attrs.get('group') and self.attrs.get('mode') == 'form':
-            self.invisible_set(not self.visible or self._incompatible_group)
+            self.invisible_set(not self.visible)
         if (id(self.screen.group) != id(new_group)
                 and self.screen.model_name == new_group.model_name):
             self.screen.group = new_group

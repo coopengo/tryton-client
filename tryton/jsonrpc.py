@@ -359,8 +359,6 @@ class ServerProxy(xmlrpc.client.ServerProxy):
                     )
         except xmlrpc.client.ProtocolError as e:
             if e.errcode == HTTPStatus.UNAUTHORIZED:
-                print('=' * 80)
-                import traceback; traceback.print_stack()
                 raise ProtocolError(self.__host, e.errcode, e.errmsg, {})
             raise Fault(str(e.errcode), e.errmsg)
         except Exception:

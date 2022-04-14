@@ -31,9 +31,11 @@ class SelectionMixin(object):
             try:
                 if self.attrs.get('selection_change_with'):
                     selection = RPCExecute('model', self.model_name, selection,
-                        value)
+                        value, process_exception=False)
                 else:
-                    selection = RPCExecute('model', self.model_name, selection)
+                    selection = RPCExecute(
+                        'model', self.model_name, selection,
+                        process_exception=False)
             except RPCException:
                 selection = []
             self._values2selection[key] = selection
@@ -67,7 +69,7 @@ class SelectionMixin(object):
             try:
                 result = RPCExecute('model', self.attrs['relation'],
                     'search_read', domain, 0, None, None, ['rec_name'],
-                    context=context)
+                    context=context, process_exception=False)
             except RPCException:
                 result = False
             if isinstance(result, list):

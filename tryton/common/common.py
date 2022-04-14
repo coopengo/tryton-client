@@ -40,7 +40,8 @@ from threading import Lock
 from gi.repository import Gdk, GdkPixbuf, GLib, GObject, Gtk
 
 from tryton import __version__
-from tryton.exceptions import TrytonServerError, TrytonError
+from tryton.exceptions import (
+    TrytonAuthenticationError, TrytonServerError, TrytonError)
 from tryton.pyson import PYSONEncoder
 from .underline import set_underline
 from .widget_style import widget_class
@@ -640,7 +641,7 @@ class Sur3BDialog(ConfirmationDialog):
         Gtk.ResponseType.YES: 'ok',
         Gtk.ResponseType.NO: 'ko',
         Gtk.ResponseType.CANCEL: 'cancel'
-    }
+        }
 
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
@@ -882,19 +883,11 @@ def process_exception(exception, *args, **kwargs):
             else:
                 message(
                     _('Concurrency Exception'), msg_type=Gtk.MessageType.ERROR)
-        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
-            from tryton.gui.main import Main
-            if PLOCK.acquire(False):
-                try:
-                    Login()
-                except TrytonError as exception:
-                    if exception.faultCode == 'QueryCanceled':
-                        Main().on_quit()
-                    raise
-                finally:
-                    PLOCK.release()
-                if args:
-                    return rpc_execute(*args)
+        elif exception.faultCode == 'TimeoutException':
+            message(
+                _("The server took too much time to answer.\n"
+                    "You may try again later."),
+                msg_type=Gtk.MessageType.ERROR)
         elif exception.faultCode == str(int(HTTPStatus.TOO_MANY_REQUESTS)):
             message(
                 _('Too many requests. Try again later.'),
@@ -1018,6 +1011,20 @@ class RPCProgress(object):
     def start(self):
         try:
             self.res = getattr(rpc, self.method)(*self.args)
+        except TrytonAuthenticationError:
+            from tryton.gui.main import Main
+            if PLOCK.acquire(False):
+                try:
+                    Login()
+                except TrytonError as exception:
+                    if exception.faultCode == 'QueryCanceled':
+                        Main().on_quit()
+                        sys.exit()
+                    raise
+                finally:
+                    PLOCK.release()
+                if self.args:
+                    self.start()
         except Exception as exception:
             self.error = True
             self.res = False
@@ -1158,7 +1165,7 @@ COLOR_SCHEMES = {
     'grey': '#444444',
     'black': '#000000',
     'darkcyan': '#305755',
-}
+    }
 
 COLORS = {
     'invalid': '#ff6969',

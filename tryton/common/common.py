@@ -46,7 +46,8 @@ from threading import Lock
 from gi.repository import Gdk, GdkPixbuf, GLib, GObject, Gtk
 
 from tryton import __version__
-from tryton.exceptions import TrytonError, TrytonServerError
+from tryton.exceptions import (
+    TrytonAuthenticationError, TrytonError, TrytonServerError)
 from tryton.pyson import PYSONEncoder
 
 from .underline import set_underline
@@ -756,7 +757,7 @@ class Sur3BDialog(ConfirmationDialog):
         Gtk.ResponseType.YES: 'ok',
         Gtk.ResponseType.NO: 'ko',
         Gtk.ResponseType.CANCEL: 'cancel'
-    }
+        }
 
     def build_dialog(self, *args, **kwargs):
         dialog = super().build_dialog(*args, **kwargs)
@@ -998,6 +999,11 @@ def process_exception(exception, *args, **kwargs):
             else:
                 message(
                     _('Concurrency Exception'), msg_type=Gtk.MessageType.ERROR)
+        elif exception.faultCode == 'TimeoutException':
+            message(
+                _("The server took too much time to answer.\n"
+                    "You may try again later."),
+                msg_type=Gtk.MessageType.ERROR)
         elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
             from tryton.gui.main import Main
             if PLOCK.acquire(False):
@@ -1272,7 +1278,7 @@ COLOR_SCHEMES = {
     'grey': '#444444',
     'black': '#000000',
     'darkcyan': '#305755',
-}
+    }
 
 COLORS = {
     'invalid': '#ff6969',

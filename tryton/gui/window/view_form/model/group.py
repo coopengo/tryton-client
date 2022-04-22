@@ -5,13 +5,12 @@ import operator
 from .record import Record
 from .field import Field, M2OField, ReferenceField
 from tryton import rpc
-from tryton.signal_event import SignalEvent
 from tryton.common.domain_inversion import is_leaf
 from tryton.common import RPCExecute, RPCException, MODELACCESS
 from tryton.pyson import PYSONDecoder
 
 
-class Group(SignalEvent, list):
+class Group(list):
 
     def __init__(self, model_name, fields, ids=None, parent=None,
             parent_name='', child_name='', context=None, domain=None,
@@ -22,6 +21,7 @@ class Group(SignalEvent, list):
         self.__domain = domain
         self.__domain4inversion = None
         self.lock_signal = False
+        self.screens = []
         self.parent = parent
         self.parent_name = parent_name or ''
         self.children = []
@@ -114,7 +114,7 @@ class Group(SignalEvent, list):
         super(Group, self).insert(pos, record)
         self.__id2record[record.id] = record
         if not self.lock_signal:
-            self.signal('group-list-changed', ('record-added', record, pos))
+            self._group_list_changed('record-added', record, pos)
 
     def append(self, record):
         assert record.group is self
@@ -124,8 +124,8 @@ class Group(SignalEvent, list):
         super(Group, self).append(record)
         self.__id2record[record.id] = record
         if not self.lock_signal:
-            self.signal('group-list-changed', (
-                    'record-added', record, self.__len__() - 1))
+            self._group_list_changed(
+                'record-added', record, self.__len__() - 1)
 
     def _remove(self, record):
         idx = self.index(record)
@@ -135,7 +135,7 @@ class Group(SignalEvent, list):
                     self.__getitem__(idx + 1)
             else:
                 self.__getitem__(idx - 1).next[id(self)] = None
-        self.signal('group-list-changed', ('record-removed', record, idx))
+        self._group_list_changed('record-removed', record, idx)
         super(Group, self).remove(record)
         del self.__id2record[record.id]
 
@@ -145,8 +145,7 @@ class Group(SignalEvent, list):
         length = self.__len__()
         for record in reversed(self[:]):
             record.destroy()
-            self.signal(
-                'group-list-changed', ('record-removed', record, length - 1))
+            self._group_list_changed('record-removed', record, length - 1)
             self.pop()
             length -= 1
         self.__id2record = {}
@@ -162,11 +161,6 @@ class Group(SignalEvent, list):
         else:
             self._remove(record)
             self.append(record)
-
-    def __setitem__(self, i, value):
-        super(Group, self).__setitem__(i, value)
-        if not self.lock_signal:
-            self.signal('group-list-changed', ('record-changed', i))
 
     def __repr__(self):
         return '<Group %s at %s>' % (self.model_name, id(self))
@@ -271,10 +265,6 @@ class Group(SignalEvent, list):
                 else:
                     self.insert(position, new_record)
                     position += 1
-                new_record.signal_connect(self, 'record-changed',
-                    self._record_changed)
-                new_record.signal_connect(self, 'record-modified',
-                    self._record_modified)
             new_records.append(new_record)
 
         # Remove previously removed or deleted records
@@ -287,13 +277,12 @@ class Group(SignalEvent, list):
 
         if self.lock_signal:
             self.lock_signal = False
-            self.signal('group-cleared')
+            self._group_list_changed('group-cleared')
 
         if new_records and modified:
             for record in new_records:
                 record.modified_fields.setdefault('id')
-            new_records[0].signal('record-modified')
-            new_records[0].signal('record-changed')
+            self.record_modified()
 
         self.current_idx = 0
         return True
@@ -330,11 +319,7 @@ class Group(SignalEvent, list):
 
     def add(self, record, position=-1, signal=True):
         if record.group is not self:
-            record.signal_unconnect(record.group)
             record.group = self
-            record.signal_connect(self, 'record-changed', self._record_changed)
-            record.signal_connect(self, 'record-modified',
-                self._record_modified)
         if record not in self:
             if position == -1:
                 self.append(record)
@@ -347,10 +332,8 @@ class Group(SignalEvent, list):
             if record_del.id == record.id:
                 self.record_deleted.remove(record_del)
         self.current_idx = position
-        record.modified_fields.setdefault('id')
-        record.signal('record-modified')
+        record.set_modified('id')
         if signal:
-            self.signal('group-changed', record)
             # Set parent field to trigger on_change
             if self.parent and self.parent_name in self.fields:
                 field = self.fields[self.parent_name]
@@ -398,23 +381,16 @@ class Group(SignalEvent, list):
                     if index is None:
                         index = 0
                     index += 1
-                    record.signal_unconnect(self, 'record-changed')
-                    try:
-                        record[field].set_client(record, index)
-                    finally:
-                        record.signal_connect(self, 'record-changed',
-                            self._record_changed)
+                    record[field].set_client(record, index)
                     changed = record
             prev = record
         if changed:
-            self.signal('group-changed', changed)
+            self.record_modified()
 
     def new(self, default=True, obj_id=None, rec_name=None):
         record = Record(self.model_name, obj_id, group=self)
         if default:
             record.default_get(rec_name=rec_name)
-        record.signal_connect(self, 'record-changed', self._record_changed)
-        record.signal_connect(self, 'record-modified', self._record_modified)
         return record
 
     def unremove(self, record, signal=True):
@@ -423,7 +399,7 @@ class Group(SignalEvent, list):
         if record in self.record_deleted:
             self.record_deleted.remove(record)
         if signal:
-            record.signal('record-changed', record.parent)
+            self.record_modified()
 
     def remove(self, record, remove=False, modified=True, signal=True,
             force_remove=False):
@@ -440,11 +416,9 @@ class Group(SignalEvent, list):
                 if record not in self.record_deleted:
                     self.record_deleted.append(record)
         if record.parent:
-            record.parent.modified_fields.setdefault('id')
-            record.parent.signal('record-modified')
+            record.parent.set_modified('id')
         if modified:
-            record.modified_fields.setdefault('id')
-            record.signal('record-modified')
+            record.set_modified('id')
         if record.id < 0 or force_remove:
             self._remove(record)
 
@@ -454,13 +428,7 @@ class Group(SignalEvent, list):
             self.current_idx = None
 
         if signal:
-            record.signal('record-changed', record.parent)
-
-    def _record_changed(self, record, signal_data):
-        self.signal('group-changed', record)
-
-    def _record_modified(self, record, signal_data):
-        self.signal('record-modified', record)
+            self.record_modified()
 
     def prev(self):
         if len(self) and self.current_idx is not None:
@@ -506,7 +474,7 @@ class Group(SignalEvent, list):
             for record in new:
                 record.set_default(values, signal=False)
             # Trigger signal only once with the last record
-            record.signal('record-changed')
+            self.record_modified()
 
     def get(self, id):
         'Return record with the id'
@@ -527,9 +495,8 @@ class Group(SignalEvent, list):
         # One2Many connect the group to itself to send signals to the parent
         # but as we are destroying the group, we do not need to notify the
         # parent otherwise it will trigger unnecessary display.
-        self.signal_unconnect(self)
-        self.clear()
-        super(Group, self).destroy()
+        self.screens.clear()
+        self.parent = None
 
     def get_by_path(self, path):
         'return record by path'
@@ -546,3 +513,23 @@ class Group(SignalEvent, list):
             if not isinstance(group, Group):
                 return None
         return record
+
+    def _group_list_changed(self, action, *args):
+        group = self
+        while group.parent:
+            if group.model_name != group.parent.model_name:
+                break
+            else:
+                group = group.parent.group
+        for screen in group.screens:
+            screen.group_list_changed(group, action, *args)
+
+    def record_modified(self):
+        if not self.parent:
+            for screen in self.screens:
+                screen.record_modified()
+        else:
+            self.parent.modified_fields.setdefault(self.child_name)
+            self.parent.group.fields[self.child_name].sig_changed(self.parent)
+            self.parent.validate(softvalidation=True)
+            self.parent.group.record_modified()

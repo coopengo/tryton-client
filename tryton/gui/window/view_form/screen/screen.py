@@ -17,7 +17,6 @@ from gi.repository import GLib, Gtk
 from tryton.gui.window.view_form.model.group import Group
 from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
-from tryton.signal_event import SignalEvent
 from tryton.config import CONFIG
 from tryton.jsonrpc import JSONEncoder
 from tryton.common.domain_parser import DomainParser
@@ -31,7 +30,7 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
-class Screen(SignalEvent):
+class Screen:
     "Screen"
 
     # Width of tree columns per model
@@ -42,7 +41,7 @@ class Screen(SignalEvent):
         context = attributes.get('context', {})
         self.limit = attributes.get('limit', CONFIG['client.limit'])
         self.offset = 0
-        super(Screen, self).__init__()
+        self.windows = []
 
         self.readonly = attributes.get('readonly', False)
         if not (MODELACCESS[model_name]['write']
@@ -415,12 +414,15 @@ class Screen(SignalEvent):
         fields = {}
         fields_views = {}
         if self.group is not None:
-            self.group.signal_unconnect(self)
             for name, field in self.group.fields.items():
                 fields[name] = field.attrs
                 fields_views[name] = field.views
+            if self in self.group.screens:
+                self.group.screens.remove(self)
+            group.on_write.update(self.group.on_write)
         self.tree_states_done.clear()
         self.__group = group
+        self.group.screens.append(self)
         self.parent = group.parent
         self.parent_name = group.parent_name
         if self.parent:
@@ -430,21 +432,10 @@ class Screen(SignalEvent):
             self.current_record = group[0]
         else:
             self.current_record = None
-        self.__group.signal_connect(self, 'group-cleared', self._group_cleared)
-        self.__group.signal_connect(self, 'group-list-changed',
-                self._group_list_changed)
-        self.__group.signal_connect(self, 'record-modified',
-            self._record_modified)
-        self.__group.signal_connect(self, 'group-changed', self._group_changed)
         self.__group.add_fields(fields)
         for name, views in fields_views.items():
             self.__group.fields[name].views.update(views)
         self.__group.exclude_field = self.exclude_field
-        if len(group):
-            self.current_record = group[0]
-            self._group_list_changed(self.__group, 'record-changed')
-        else:
-            self.current_record = None
 
     group = property(__get_group, __set_group)
 
@@ -453,23 +444,35 @@ class Screen(SignalEvent):
         self.group = Group(self.model_name, {}, domain=self.domain,
             context=context, readonly=self.__readonly)
 
-    def _group_cleared(self, group, signal):
-        for view in self.views:
-            if view.view_type == 'tree':
-                view.display(force=True)
-
-    def _group_list_changed(self, group, signal):
+    def group_list_changed(self, group, action, *args):
         for view in self.views:
             if hasattr(view, 'group_list_changed'):
-                view.group_list_changed(group, signal)
+                view.group_list_changed(group, action, *args)
 
-    def _record_modified(self, group, signal):
-        self.signal('record-modified', signal)
-
-    def _group_changed(self, group, record):
-        if not self.parent:
+    def record_modified(self, display=True):
+        for window in self.windows:
+            if hasattr(window, 'record_modified'):
+                window.record_modified()
+        if display:
             self.display()
-        self.signal('group-changed', record)
+
+    def record_message(self, position, size, max_size, record_id):
+        for window in self.windows:
+            if hasattr(window, 'record_message'):
+                window.record_message(position, size, max_size, record_id)
+
+    def record_saved(self):
+        for window in self.windows:
+            if hasattr(window, 'record_saved'):
+                window.record_saved()
+
+    def update_resources(self, resources):
+        for window in self.windows:
+            if hasattr(window, 'update_resources'):
+                window.update_resources(resources)
+
+    def has_update_resources(self):
+        return any(hasattr(w, 'update_resources') for w in self.windows)
 
     def __get_current_record(self):
         if (self.__current_record is not None
@@ -493,31 +496,36 @@ class Screen(SignalEvent):
                 pos = -1
         else:
             pos = 0
-        self.signal('record-message', (pos, len(self.group) + self.offset,
-            self.search_count, record and record.id))
+        self.record_message(
+            pos, len(self.group) + self.offset, self.search_count,
+            record and record.id)
         # Coog Specific for multimixed view
         if changed:
-            self.signal('current-record-changed')
-        self.signal('resources', record.resources if record else None)
+            self.current_record_changed()
+        self.update_resources(record.resources if record else None)
         # update resources after 1 second
         GLib.timeout_add(1000, self._update_resources, record)
         return True
 
     current_record = property(__get_current_record, __set_current_record)
 
+    def current_record_changed(self):
+        for window in self.windows:
+            if hasattr(window, 'current_record_changed'):
+                window.current_record_changed(self)
+
     def _update_resources(self, record):
         if (record
                 and record == self.current_record
-                and self.signal_connected('resources')):
-            self.signal('resources', record.get_resources())
+                and self.has_update_resources()):
+            self.update_resources(record.get_resources())
         return False
 
     def destroy(self):
+        self.windows.clear()
         for view in self.views:
             view.destroy()
         del self.views[:]
-        super(Screen, self).destroy()
-        self.group.signal_unconnect(self)
         self.group.destroy()
 
     def default_row_activate(self):
@@ -731,7 +739,7 @@ class Screen(SignalEvent):
             path = path[:-1] + ((path[-1][0], record_id),)
         self.current_record = self.group.get_by_path(path)
         self.display()
-        self.signal('record-saved')
+        self.record_saved()
         return saved
 
     def __get_current_view(self):
@@ -816,8 +824,8 @@ class Screen(SignalEvent):
             self.current_record = None
             record.group.remove(record, remove=remove, signal=False,
                 force_remove=force_remove)
-        # send record-changed only once
-        record.signal('record-changed')
+        # call only once
+        record.set_modified()
 
         if delete:
             for record in records:
@@ -928,6 +936,7 @@ class Screen(SignalEvent):
                     self.tree_states[parent][view.children_field] = (
                         [], [[path]])
             elif view.view_type == 'tree':
+                view.save_width()
                 paths = view.get_expanded_paths()
                 selected_paths = view.get_selected_paths()
                 self.tree_states[parent][view.children_field] = (
@@ -999,7 +1008,7 @@ class Screen(SignalEvent):
             if set_cursor:
                 self.set_cursor(reset_view=False)
         self.set_tree_state()
-        # Force record-message signal
+        # Force record_message signal
         self.current_record = self.current_record
 
     def display_next(self):
@@ -1261,7 +1270,7 @@ class Screen(SignalEvent):
         except RPCException:
             return
         record.set_on_change(changes)
-        record.signal('record-changed')
+        record.set_modified()
 
     def _button_class(self, button):
         ids = [r.id for r in self.selected_records]

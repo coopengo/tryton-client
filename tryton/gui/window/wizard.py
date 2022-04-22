@@ -5,7 +5,6 @@ import gettext
 
 from gi.repository import Gdk, Gtk, Pango
 
-from tryton.signal_event import SignalEvent
 import tryton.common as common
 from tryton.gui.window.view_form.screen import Screen
 from tryton.gui import Main
@@ -110,7 +109,7 @@ class Wizard(InfoBar):
 
                 self.screen.new(default=False)
                 self.screen.current_record.set_default(view['defaults'])
-                self.update_buttons(self.screen.current_record)
+                self.update_buttons()
                 self.screen.set_cursor()
 
                 self.screen_state = view['state']
@@ -188,10 +187,11 @@ class Wizard(InfoBar):
         button.show()
         return button
 
-    def _record_changed(self, screen, record):
-        self.update_buttons(record)
+    def record_modified(self):
+        self.update_buttons()
 
-    def update_buttons(self, record):
+    def update_buttons(self):
+        record = self.screen.current_record
         for button in self.states.values():
             button.state_set(record)
 
@@ -200,12 +200,14 @@ class Wizard(InfoBar):
         for button in buttons:
             self._get_button(button)
 
+        if self.screen:
+            self.screen.windows.remove(self)
+
         self.screen = Screen(view['model'], mode=[], context=self.context)
         self.screen.add_view(view)
         self.screen.switch_view()
         self.screen.widget.show()
-        self.screen.signal_connect(self, 'group-changed',
-            self._record_changed)
+        self.screen.windows.append(self)
 
         title = Gtk.Label(
             label=common.ellipsize(self.name, 80),
@@ -246,7 +248,7 @@ class Wizard(InfoBar):
             self.info_bar, expand=False, fill=True, padding=0)
 
 
-class WizardForm(Wizard, TabContent, SignalEvent):
+class WizardForm(Wizard, TabContent):
     "Wizard"
 
     def __init__(self, name=''):

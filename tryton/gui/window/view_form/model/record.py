@@ -1,7 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import logging
-from tryton.signal_event import SignalEvent
 from tryton.pyson import PYSONDecoder
 import tryton.common as common
 from . import field as fields
@@ -9,7 +8,7 @@ from tryton.common import RPCExecute, RPCException
 from tryton.config import CONFIG
 
 
-class Record(SignalEvent):
+class Record:
 
     # JCA : Make sure we cannot have id conflicts in case of bugs on temporary
     # ids being inverted
@@ -200,10 +199,6 @@ class Record(SignalEvent):
             i += 1
             parent = parent.parent
         return i
-
-    def set_modified(self, value):
-        if value:
-            self.signal('record-modified')
 
     def children_group(self, field_name, children_definitions):
         if field_name not in self.group.fields:
@@ -474,7 +469,7 @@ class Record(SignalEvent):
         if validate:
             self.validate(softvalidation=True)
         if signal:
-            self.signal('record-changed')
+            self.set_modified()
 
     def set(self, val, signal=True, validate=True):
         later = {}
@@ -511,7 +506,7 @@ class Record(SignalEvent):
         if validate:
             self.validate(fieldnames, softvalidation=True)
         if signal:
-            self.signal('record-changed')
+            self.set_modified()
 
     def set_on_change(self, values):
         for fieldname, value in list(values.items()):
@@ -542,7 +537,7 @@ class Record(SignalEvent):
             self.parent.on_change([self.group.child_name])
             self.parent.on_change_with([self.group.child_name])
 
-        self.signal('record-changed')
+        self.set_modified()
 
     def expr_eval(self, expr):
         if not isinstance(expr, str):
@@ -602,6 +597,8 @@ class Record(SignalEvent):
                 self.set_on_change(change)
 
     def on_change_with(self, field_names):
+        print(f"{self}.on_change_with({field_names})")
+        import traceback; traceback.print_stack()
         field_names = set(field_names)
         fieldnames = set()
         values = {}
@@ -704,9 +701,13 @@ class Record(SignalEvent):
             return
         return clicks
 
+    def set_modified(self, field=None):
+        if field:
+            self.modified_fields.setdefault(field)
+        self.group.record_modified()
+
     def destroy(self):
         for v in self.value.values():
             if hasattr(v, 'destroy'):
                 v.destroy()
-        super(Record, self).destroy()
         self.destroyed = True

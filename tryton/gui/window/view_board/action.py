@@ -10,20 +10,18 @@ import tryton.rpc as rpc
 import tryton.common as common
 from tryton.config import CONFIG
 from tryton.pyson import PYSONDecoder
-from tryton.signal_event import SignalEvent
 from tryton.gui.window.win_form import WinForm
 from tryton.common import RPCExecute, RPCException
 from tryton.action import Action as GenericAction
 _ = gettext.gettext
 
 
-class Action(SignalEvent):
+class Action:
 
-    def __init__(self, attrs=None, context=None):
-        if context is None:
-            context = {}
+    def __init__(self, view, attrs=None):
         super(Action, self).__init__()
         self.name = attrs['name']
+        self.view = view
 
         try:
             self.action = RPCExecute('model', 'ir.action.act_window', 'get',
@@ -44,7 +42,7 @@ class Action(SignalEvent):
         ctx.update(rpc.CONTEXT)
         ctx['_user'] = rpc._USER
         decoder = PYSONDecoder(ctx)
-        action_ctx = context.copy()
+        action_ctx = self.view.context.copy()
         action_ctx.update(
             decoder.decode(self.action.get('pyson_context') or '{}'))
         ctx.update(action_ctx)
@@ -89,10 +87,9 @@ class Action(SignalEvent):
             context_model=self.action['context_model'],
             context_domain=self.action['context_domain'],
             row_activate=self.row_activate)
+        self.screen.windows.append(self)
         vbox.pack_start(
             self.screen.widget, expand=True, fill=True, padding=0)
-        self.screen.signal_connect(self, 'record-message',
-            self._active_changed)
 
         if attrs.get('string'):
             self.title.set_text(attrs['string'])
@@ -133,8 +130,8 @@ class Action(SignalEvent):
     def display(self):
         self.screen.search_filter(self.screen.screen_container.get_text())
 
-    def _active_changed(self, *args):
-        self.signal('active-changed')
+    def record_message(self, *args):
+        self.view.active_changed(self)
 
     def _get_active(self):
         if self.screen and self.screen.current_record:

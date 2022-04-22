@@ -112,8 +112,8 @@ class ViewListForm(View):
         selected_rows = self.listbox.get_selected_rows()
         return [self.group[r.get_index()] for r in selected_rows]
 
-    def group_list_changed(self, group, signal):
-        action, record, position, *_ = signal
+    def group_list_changed(self, group, action, *args):
+        record, position = args
         # Only those actions have a record in the signal data
         if (action not in {'record-added', 'record-removed'}
                 or self.group != record.group):

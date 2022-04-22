@@ -4,7 +4,6 @@
 import gettext
 import xml.dom.minidom
 
-from tryton.signal_event import SignalEvent
 from tryton.gui import Main
 from tryton.gui.window.view_board import ViewBoard
 from tryton.common import RPCExecute, RPCException, MODELNAME
@@ -14,7 +13,7 @@ from .tabcontent import TabContent
 _ = gettext.gettext
 
 
-class Board(SignalEvent, TabContent):
+class Board(TabContent):
     'Board'
 
     def __init__(self, model, name='', **attributes):

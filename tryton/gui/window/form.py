@@ -642,7 +642,7 @@ class Form(TabContent):
                 self.activate_save()
         GLib.idle_add(_record_modified)
 
-    def record_saved(self, screen, signal_data):
+    def record_saved(self):
         self.activate_save()
         self.refresh_resources()
 

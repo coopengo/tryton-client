@@ -178,6 +178,15 @@ class One2Many(Widget):
         self.screen.windows.append(self)
         if self.attrs.get('group'):
             self.screen._multiview_form = view
+            self.screen._multiview_group = self.attrs['group']
+            wgroup = view.widget_groups.setdefault(self.attrs['group'], [])
+            if self.screen.current_view.view_type == 'tree':
+                if (wgroup
+                        and wgroup[0].screen.current_view.view_type == 'tree'):
+                    raise ValueError("Wrong multiview definition")
+                wgroup.insert(0, self)
+            else:
+                wgroup.append(self)
 
         vbox.pack_start(self.screen.widget, expand=True, fill=True, padding=0)
 
@@ -529,64 +538,12 @@ class One2Many(Widget):
         self.label.set_text(line)
         self._set_button_sensitive()
 
-    def current_record_changed(self, screen):
-        if self.attrs.get('group'):
-            self.group_sync(screen, screen.current_record)
-
-    def group_sync(self, screen, current_record):
-        if not self.view or not self.view.widgets:
-            return
-        if self.view.screen.current_view is not self.view:
-            return
-        if self.attrs.get('mode') == 'form':
-            return
-        if screen.current_record != current_record:
-            return
-        if not screen.views:
-            return
-
-        current_record = self.screen.current_record
-        to_sync = []
-        for widget in self.view.widgets[self.field_name]:
-            if (widget == self
-                    or widget.attrs.get('group') != self.attrs['group']
-                    or not hasattr(widget, 'screen')):
-                continue
-            record = current_record
-            if record:
-                r_parent = record.group.parent
-                record.group.parent = None
-                is_valid = widget._validate()
-                record.group.parent = r_parent
-            else:
-                is_valid = widget._validate()
-            if not is_valid:
-                def go_previous():
-                    record = widget.screen.current_record
-                    screen.current_record = record
-                    screen.display()
-                GLib.idle_add(go_previous)
-                return
-            to_sync.append((widget, record))
-        for widget, record in to_sync:
-            if (widget.screen.current_view
-                    and widget.screen.current_view.view_type == 'form'
-                    and record is not None
-                    and widget.screen.group.model_name
-                    == record.group.model_name):
-                fields = dict((name, field.attrs) for name, field in
-                    widget.screen.group.fields.items())
-                record.group.load_fields(fields)
-                for field_name in fields.keys():
-                    record[field_name].get(record)
-            widget.screen.current_record = record
-            widget.display()
-
     def display(self):
         super(One2Many, self).display()
 
         self._set_button_sensitive()
 
+        print(self.attrs['name'], self.attrs['relation'], self.view.children_field)
         if not self.field:
             self.screen.new_group()
             self.screen.current_record = None

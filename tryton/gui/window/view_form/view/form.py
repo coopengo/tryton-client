@@ -449,6 +449,7 @@ class ViewForm(View):
     def __init__(self, view_id, screen, xml):
         self.notebooks = []
         self.expandables = []
+        self.widget_groups = {}
 
         vbox = Gtk.VBox()
         vp = Gtk.Viewport()
@@ -522,6 +523,7 @@ class ViewForm(View):
             # Force to set fields in record
             # Get first the lazy one from the view to reduce number of requests
             field_names = set()
+            print(record)
             for name in self.widgets:
                 field = record.group.fields[name]
                 field_names.add(name)

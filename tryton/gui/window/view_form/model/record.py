@@ -597,8 +597,6 @@ class Record:
                 self.set_on_change(change)
 
     def on_change_with(self, field_names):
-        print(f"{self}.on_change_with({field_names})")
-        import traceback; traceback.print_stack()
         field_names = set(field_names)
         fieldnames = set()
         values = {}

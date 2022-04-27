@@ -15,6 +15,7 @@ from operator import itemgetter
 from gi.repository import GLib, Gtk
 
 from tryton.gui.window.view_form.model.group import Group
+from tryton.gui.window.view_form.model.record import Record
 from tryton.gui.window.view_form.view.screen_container import ScreenContainer
 from tryton.gui.window.view_form.view import View
 from tryton.config import CONFIG
@@ -75,6 +76,7 @@ class Screen:
             'alternate_view', False)
         self.widget = self.screen_container.widget_get()
         self._multiview_form = None
+        self._multiview_group = None
         self.breadcrumb = attributes.get('breadcrumb') or []
 
         self.context_screen = None
@@ -500,8 +502,11 @@ class Screen:
             pos, len(self.group) + self.offset, self.search_count,
             record and record.id)
         # Coog Specific for multimixed view
-        if changed:
-            self.current_record_changed()
+        if (changed and self._multiview_form
+                and self.current_view.view_type == 'tree'):
+            view = self._multiview_form
+            wgroup = view.widget_groups[self._multiview_group]
+            self._sync_group(view, wgroup, self.current_record)
         self.update_resources(record.resources if record else None)
         # update resources after 1 second
         GLib.timeout_add(1000, self._update_resources, record)
@@ -509,10 +514,29 @@ class Screen:
 
     current_record = property(__get_current_record, __set_current_record)
 
-    def current_record_changed(self):
-        for window in self.windows:
-            if hasattr(window, 'current_record_changed'):
-                window.current_record_changed(self)
+    def _sync_group(self, view, widgets_group, record):
+        if record is None:
+            return
+
+        to_sync = []
+        tree, *forms = widgets_group
+        for widget in forms:
+            if not widget._validate():
+                def go_previous():
+                    self.current_record = widget.screen.current_record
+                    self.display()
+                GLib.idle_add(go_previous)
+                return
+            if widget.screen.current_view.view_type != 'form':
+                continue
+            # TODO Useless now
+            if widget.screen.group.model_name != record.group.model_name:
+                continue
+            to_sync.append(widget)
+
+        for widget in to_sync:
+            widget.screen.current_record = record
+            widget.display()
 
     def _update_resources(self, record):
         if (record

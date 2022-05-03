@@ -543,7 +543,6 @@ class One2Many(Widget):
 
         self._set_button_sensitive()
 
-        print(self.attrs['name'], self.attrs['relation'], self.view.children_field)
         if not self.field:
             self.screen.new_group()
             self.screen.current_record = None

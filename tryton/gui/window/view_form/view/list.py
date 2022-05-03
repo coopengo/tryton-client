@@ -514,7 +514,6 @@ class ViewTree(View):
 
     def __init__(self, view_id, screen, xml, children_field,
             children_definitions):
-        print(f"ViewTree({view_id}, {screen.model_name}, {children_field})")
         self.children_field = children_field
         self.children_definitions = children_definitions
         self.sum_widgets = []

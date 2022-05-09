@@ -45,7 +45,7 @@ synchronize:pipeline:
     - git fetch --all
   script:
     - |-
-      for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
+      for BRANCH in $(git ls-remote --refs -h origin -l "coog-2*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
       do
         git checkout "${BRANCH}"
         git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml
@@ -111,7 +111,7 @@ create:windows:
       - tryton.env
     expire_in: 2 hours
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
       when: never
@@ -148,7 +148,7 @@ build:tryton_client:
   needs:
     - create:windows
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
       when: never
@@ -168,7 +168,7 @@ destroy:windows:
     - job: create:windows
       artifacts: false
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
       when: never

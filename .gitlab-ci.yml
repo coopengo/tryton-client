@@ -13,7 +13,7 @@ stages:
     - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
     - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     - apt update && apt install -y --no-install-recommends --no-install-suggests terraform
-    - cd "${CI_PROJECT_DIR}/terraform"
+    - cd "${CI_PROJECT_DIR}/build/terraform"
     - |-
       terraform init \
         -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}" \
@@ -105,7 +105,7 @@ create:windows:
         echo "Couldn't get INSTANCE_IP"
         exit 1
       fi
-    - envsubst < "${CI_PROJECT_DIR}/env/tryton.env" > tryton.env
+    - envsubst < "${CI_PROJECT_DIR}/build/env/tryton.env" > tryton.env
   artifacts:
     paths:
       - tryton.env
@@ -144,7 +144,7 @@ build:tryton_client:
         (( ++SSH_CONNECTION ))
       done
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git pull -p --tags && source build/env.windows && git checkout ${CI_COMMIT_REF_NAME} && ./win-make.sh build && ./win-make.sh upload"
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git pull -p --tags && source build/env/windows.env && git checkout ${CI_COMMIT_REF_NAME} && ./win-make.sh build && ./win-make.sh upload"
   needs:
     - create:windows
   rules:

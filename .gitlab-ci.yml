@@ -42,7 +42,7 @@ synchronize:pipeline:
     - git config --global user.email "${GITLAB_USER_EMAIL}"
     - git config --global user.name "🤖 GitLab CI/CD 🤖"
     - git remote set-url origin git@${CI_SERVER_HOST}:${CI_PROJECT_PATH}.git
-    - git pull --all -f -p --tags
+    - git fetch --all
   script:
     - |-
       for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )

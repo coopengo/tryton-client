@@ -111,11 +111,11 @@ create:windows:
       - tryton.env
     expire_in: 2 hours
   rules:
-    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       changes:
         - ".gitlab-ci.yml"
       when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
 
 build:tryton_client:
   stage: build
@@ -148,11 +148,11 @@ build:tryton_client:
   needs:
     - create:windows
   rules:
-    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       changes:
         - ".gitlab-ci.yml"
       when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
     
 
 destroy:windows:
@@ -168,9 +168,9 @@ destroy:windows:
     - job: create:windows
       artifacts: false
   rules:
-    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
-      when: always
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       changes:
         - ".gitlab-ci.yml"
       when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
+      when: always

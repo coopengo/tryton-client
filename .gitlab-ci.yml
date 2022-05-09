@@ -45,7 +45,7 @@ synchronize:pipeline:
     - git fetch --all
   script:
     - |-
-      for BRANCH in $(git ls-remote --refs -h origin -l "coog-2*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
+      for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
       do
         git checkout "${BRANCH}"
         git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml

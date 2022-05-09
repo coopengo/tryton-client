@@ -49,7 +49,7 @@ synchronize:pipeline:
       do
         git checkout "${BRANCH}"
         git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml
-        git commit -m "Merge .gitlab-ci.yml from \"${CI_COMMIT_SHORT_SHA}\""
+        git commit -m "Merge .gitlab-ci.yml from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
       done
       git push --all
   rules:

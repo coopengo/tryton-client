@@ -15,6 +15,12 @@ else:
             '-l' in sys.argv or '--log-level' in sys.argv):
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
+    elif sys.platform == 'win32':
+        from tryton.config import get_config_dir
+
+        sys.stdout = sys.stderr = open(
+            os.path.join(get_config_dir(), 'tryton.log'), 'a')
+
     prefix = os.path.dirname(sys.executable)
     os.environ['GTK_EXE_PREFIX'] = prefix
     os.environ['GTK_DATA_PREFIX'] = prefix

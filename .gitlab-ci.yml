@@ -48,14 +48,15 @@ synchronize:pipeline:
       for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
       do
         git checkout "${BRANCH}"
-        git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml
-        git commit -m "Merge .gitlab-ci.yml from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
+        git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml build/
+        git commit -m "Merge .gitlab-ci.yml and build directory from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
       done
       git push --all
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       changes:
         - ".gitlab-ci.yml"
+        - "build/**/*"
 
 create:windows:
   stage: create

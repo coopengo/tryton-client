@@ -145,7 +145,7 @@ build:tryton_client:
         (( ++SSH_CONNECTION ))
       done
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git pull -p --tags && source build/env/windows.env && git checkout ${CI_COMMIT_REF_NAME} && ./win-make.sh build && ./win-make.sh upload"
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git pull --all -f -p --tags && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source build/env/windows.env && ./win-make.sh build && ./win-make.sh upload"
   needs:
     - create:windows
   rules:

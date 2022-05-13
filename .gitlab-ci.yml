@@ -19,8 +19,8 @@ stages:
         -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}" \
         -backend-config="lock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}/lock" \
         -backend-config="unlock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}/lock" \
-        -backend-config="username=gitlab-ci-token" \
-        -backend-config="password=${CI_JOB_TOKEN}" \
+        -backend-config="username=project_${CI_PROJECT_ID}_bot" \
+        -backend-config="password=${PROJECT_API_TOKEN}" \
         -backend-config="lock_method=POST" \
         -backend-config="unlock_method=DELETE" \
         -backend-config="retry_wait_min=5"

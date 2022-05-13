@@ -64,11 +64,11 @@ create:windows:
     - .terraform
   script:
     - |-
-      if [[ $(git tag --points-at HEAD | wc -l) -ne 1 ]]
+      if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
       then
         echo "Last commit doesn't have 1 tag, that mean there is no change"
         echo "Pipeline stop here"
-        curl --header "PRIVATE-TOKEN: ${PROJECT_API_TOKEN}" --request "DELETE" "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/pipelines/${CI_PIPELINE_ID}"
+        exit 1
       fi
     - terraform apply --auto-approve
     - cd "${CI_PROJECT_DIR}"

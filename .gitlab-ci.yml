@@ -16,9 +16,9 @@ stages:
     - cd "${CI_PROJECT_DIR}/build/terraform"
     - |-
       terraform init \
-        -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}" \
-        -backend-config="lock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}/lock" \
-        -backend-config="unlock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}/lock" \
+        -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}" \
+        -backend-config="lock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}/lock" \
+        -backend-config="unlock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}/lock" \
         -backend-config="username=project_${CI_PROJECT_ID}_bot" \
         -backend-config="password=${PROJECT_API_TOKEN}" \
         -backend-config="lock_method=POST" \
@@ -162,7 +162,7 @@ destroy:windows:
     - .terraform
   script:
     - terraform destroy --auto-approve
-    - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/coog-${CI_COMMIT_REF_NAME}_${CI_PIPELINE_ID}"
+    - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}"
   needs:
     - job: build:tryton_client
       artifacts: false

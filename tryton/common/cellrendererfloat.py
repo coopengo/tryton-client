@@ -17,29 +17,45 @@ class CellRendererFloat(CellRendererInteger):
         super().on_editing_started(editable, path)
         editable.connect('key-press-event', self.key_press_event)
 
+    @property
+    def __decimal_point(self):
+        return locale.localeconv()['decimal_point']
+
+    @property
+    def __thousands_sep(self):
+        return locale.localeconv()['thousands_sep']
+
     def key_press_event(self, widget, event):
         for name in ('KP_Decimal', 'KP_Separator'):
             if event.keyval == Gdk.keyval_from_name(name):
-                event.keyval = int(Gdk.unicode_to_keyval(
-                    ord(locale.localeconv()['decimal_point'])))
+                text = self.__decimal_point
+                try:
+                    start_pos, end_pos = widget.get_selection_bounds()
+                except ValueError:
+                    start_pos = widget.get_position()
+                    end_pos = None
+                if self._can_insert_text(widget, text, start_pos, end_pos):
+                    buffer_ = widget.get_buffer()
+                    if end_pos:
+                        buffer_.delete_text(start_pos, end_pos - start_pos)
+                    buffer_.insert_text(start_pos, text, len(text))
+                    widget.set_position(widget.get_position() + len(text))
+                return True
 
-    def sig_insert_text(self, entry, new_text, new_text_length, position):
+    def _can_insert_text(self, entry, new_text, start_pos, end_pos=None):
         value = entry.get_text()
-        position = entry.get_position()
-        new_value = value[:position] + new_text + value[position:]
-        decimal_point = locale.localeconv()['decimal_point']
-
-        if new_value in ('-', decimal_point):
-            return
-
-        try:
-            value = locale.atof(new_value)
-        except ValueError:
-            entry.stop_emission_by_name('insert-text')
-            return
-
-        if self.digits and not (round(value, self.digits[1]) == float(value)):
-            entry.stop_emission_by_name('insert-text')
+        if end_pos is None:
+            end_pos = start_pos
+        new_value = value[:start_pos] + new_text + value[end_pos:]
+        if new_value not in {'-', self.__decimal_point, self.__thousands_sep}:
+            try:
+                value = locale.atof(new_value)
+            except ValueError:
+                return False
+            if (self.digits
+                    and not (round(value, self.digits[1]) == float(value))):
+                return False
+        return True
 
 
 GObject.type_register(CellRendererFloat)

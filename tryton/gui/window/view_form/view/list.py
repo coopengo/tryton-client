@@ -467,19 +467,13 @@ class TreeXMLViewParser(XMLViewParser):
 
     def _set_column_width(self, column, attributes):
         default_width = {
-            'integer': 60,
-            'biginteger': 60,
-            'float': 80,
-            'numeric': 80,
-            'timedelta': 100,
-            'date': 100,
-            'datetime': 100,
-            'time': 100,
+            'integer': 80,
+            'biginteger': 80,
             'selection': 90,
-            'char': 100,
+            'reference': 200,
             'one2many': 50,
             'many2many': 50,
-            'boolean': 20,
+            'boolean': 30,
             'binary': 200,
             }
 
@@ -555,10 +549,7 @@ class ViewTree(View):
         self.treeview.connect('key-press-event', self.on_keypress)
         self.treeview.connect_after('row-activated', self.__sig_switch)
         if self.children_field:
-            child_col = 1 if self.draggable else 0
             self.treeview.connect('test-expand-row', self.test_expand_row)
-            self.treeview.set_expander_column(
-                self.treeview.get_column(child_col))
         self.treeview.set_rubber_banding(True)
 
         selection = self.treeview.get_selection()
@@ -1162,6 +1153,13 @@ class ViewTree(View):
                     inv_domain = simplify(inv_domain)
                 unique, _, _ = unique_value(inv_domain)
                 column.set_visible(not unique or bool(self.children_field))
+        if self.children_field:
+            for i, column in enumerate(self.treeview.get_columns()):
+                if self.draggable and not i:
+                    continue
+                if column.get_visible():
+                    self.treeview.set_expander_column(column)
+                    break
 
     def set_state(self):
         record = self.record

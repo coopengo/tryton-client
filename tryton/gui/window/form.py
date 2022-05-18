@@ -119,7 +119,9 @@ class Form(SignalEvent, TabContent):
                     attributes.get('mode') or ['tree', 'form']))
             and self.screen.local_context == attributes.get('context')
             and self.attributes.get('search_value') == (
-                attributes.get('search_value')))
+                attributes.get('search_value'))
+            and self.attributes.get('tab_domain') == (
+                attributes.get('tab_domain')))
 
     def __hash__(self):
         return id(self)
@@ -640,7 +642,9 @@ class Form(SignalEvent, TabContent):
         menu_save.props.sensitive = not self.screen.readonly
 
         msg = name + ' / ' + common.humanize(signal_data[1])
-        if signal_data[1] < signal_data[2]:
+        if (signal_data[1] < signal_data[2]
+                and self.screen.limit is not None
+                and signal_data[2] > self.screen.limit):
             msg += _(' of ') + common.humanize(signal_data[2])
         self.status_label.set_text(msg)
         self.message_info()
@@ -669,17 +673,18 @@ class Form(SignalEvent, TabContent):
             if value == 'ko':
                 record_id = self.screen.current_record.id
                 if self.sig_reload(test_modified=False):
-                    if self.screen.current_record:
+                    if record_id < 0:
+                        return None
+                    elif self.screen.current_record:
                         return record_id == self.screen.current_record.id
-                    elif record_id < 0:
-                        return True
             return False
         return True
 
     def sig_close(self, widget=None):
         for dialog in reversed(self.dialogs[:]):
             dialog.destroy()
-        return self.modified_save()
+        modified_save = self.modified_save()
+        return True if modified_save is None else modified_save
 
     def _action(self, action, atype):
         if not self.modified_save():

@@ -26,6 +26,13 @@ stages:
         -backend-config="retry_wait_min=5"
     - envsubst < "terraform.tfvars.template" > "terraform.tfvars"
 
+################## Includes ##################
+
+include:
+  - project: 'coopengo/devops/gitlab-ci-template'
+    ref: master
+    file: '/Jobs/reference.debian.gitlab-ci.yml'
+
 ################## Jobs ##################
 
 synchronize:pipeline:
@@ -126,14 +133,9 @@ build:tryton_client:
   before_script:
     - ansible --version
     - apt update && apt install --no-install-recommends --no-install-suggests -y git sudo openssh-client nmap
-    - git clone -b dev-coog_build https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/coopengo/devops/coog-ansible.git
     - source tryton.env
+    - !reference [.git_with_ssh:debian, before_script]
   script:
-    - |-
-      cd coog-ansible
-      ansible-playbook gitlab_ssh_key.yml --diff
-      ansible-playbook coog_clone.yml --diff --tags git_configuration
-      cd ..
     - |-
       export SSH_CONNECTION="1"
       while [[ "$(nmap ${INSTANCE_IP} -Pn -p 22 | egrep -io 'open|closed|filtered')" != "open" ]] && [[ "${SSH_CONNECTION}" -le "20" ]]

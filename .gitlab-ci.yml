@@ -1,0 +1,179 @@
+stages:
+  - synchronize
+  - create
+  - build
+  - destroy
+
+################## extends ##################
+
+.terraform:
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  before_script:
+    - apt update && apt install -y --no-install-recommends --no-install-suggests git gnupg software-properties-common curl openssh-client gettext
+    - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+    - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    - apt update && apt install -y --no-install-recommends --no-install-suggests terraform
+    - cd "${CI_PROJECT_DIR}/build/terraform"
+    - |-
+      terraform init \
+        -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}" \
+        -backend-config="lock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}/lock" \
+        -backend-config="unlock_address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}/lock" \
+        -backend-config="username=project_${CI_PROJECT_ID}_bot" \
+        -backend-config="password=${PROJECT_API_TOKEN}" \
+        -backend-config="lock_method=POST" \
+        -backend-config="unlock_method=DELETE" \
+        -backend-config="retry_wait_min=5"
+    - envsubst < "terraform.tfvars.template" > "terraform.tfvars"
+
+################## Includes ##################
+
+include:
+  - project: 'coopengo/devops/gitlab-ci-template'
+    ref: master
+    file: '/Jobs/reference.debian.gitlab-ci.yml'
+
+################## Jobs ##################
+
+synchronize:pipeline:
+  stage: synchronize
+  image: bitnami/git:latest
+  variables:
+    REPOSITORY_SSH_KEY: "${SSH_KEY}"
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${CI_SERVER_HOST}" >>~/.ssh/known_hosts
+    - echo "${REPOSITORY_SSH_KEY}" >~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git config --global user.name "🤖 GitLab CI/CD 🤖"
+    - git remote set-url origin git@${CI_SERVER_HOST}:${CI_PROJECT_PATH}.git
+    - git fetch --all
+  script:
+    - |-
+      for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
+      do
+        git checkout "${BRANCH}"
+        git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml build/
+        git commit -m "Merge .gitlab-ci.yml and build directory from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
+      done
+      git push --all
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      changes:
+        - ".gitlab-ci.yml"
+        - "build/**/*"
+
+create:windows:
+  stage: create
+  extends:
+    - .terraform
+  script:
+    - |-
+      if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
+      then
+        echo "Last commit doesn't have 1 tag, that mean there is no change"
+        echo "Pipeline stop here"
+        exit 1
+      fi
+    - terraform apply --auto-approve
+    - cd "${CI_PROJECT_DIR}"
+    - |-
+      export EC2_STATE_TRY="1"
+      while [[ $(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].State.Name' --output text) != "running" ]] &&
+            [[ "$EC2_STATE_TRY" -le "10" ]]
+      do
+        echo "Warning : Must wait 60 second minimum else ssh refuse connection"
+        echo "Instance not ready... Retry in 60 sec - ${EC2_STATE_TRY}"
+        sleep 60
+        let ++EC2_STATE_TRY
+      done
+      if [[ "$EC2_STATE_TRY" -ge "10" ]]
+      then
+        echo "Instance still not running"
+        exit 1
+      fi
+    - |-
+      export INSTANCE_IP_TRY="1"
+      while [[ "${INSTANCE_IP}" == "" ]] && [[ "${INSTANCE_IP_TRY}" -le "20" ]]
+      do
+        export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].PrivateIpAddress' --output text)
+        if [[ "${INSTANCE_IP}" == "" ]]
+        then
+          echo "INSTANCE_IP variable is empty."
+          echo "Wait 10 seconds before retry"
+          echo "Try ${INSTANCE_IP_TRY}/20"
+          sleep 10
+          (( ++INSTANCE_IP_TRY ))
+        fi
+      done
+      if [[ "$INSTANCE_IP" == "" ]]
+      then
+        echo "Couldn't get INSTANCE_IP"
+        exit 1
+      fi
+    - envsubst < "${CI_PROJECT_DIR}/build/env/tryton.env" > tryton.env
+  artifacts:
+    paths:
+      - tryton.env
+    expire_in: 2 hours
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - ".gitlab-ci.yml"
+      when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
+
+build:tryton_client:
+  stage: build
+  image: darkwizard242/ansible:ubuntu-20.04
+  variables:
+    ANSIBLE_FORCE_COLOR: "true"
+  before_script:
+    - ansible --version
+    - apt update && apt install --no-install-recommends --no-install-suggests -y git sudo openssh-client nmap
+    - source tryton.env
+    - !reference [.git_with_ssh:debian, before_script]
+  script:
+    - |-
+      export SSH_CONNECTION="1"
+      while [[ "$(nmap ${INSTANCE_IP} -Pn -p 22 | egrep -io 'open|closed|filtered')" != "open" ]] && [[ "${SSH_CONNECTION}" -le "20" ]]
+      do
+        echo "Windows server (${INSTANCE_IP}) is not available."
+        echo "Retry in 60 seconds"
+        echo "Try ${SSH_CONNECTION}/20"
+        sleep 60
+        (( ++SSH_CONNECTION ))
+      done
+    - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && /usr/bin/git pull -f -p && source build/env/windows.env && ./win-make.sh build && ./win-make.sh upload"
+  needs:
+    - create:windows
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - ".gitlab-ci.yml"
+      when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
+    
+
+destroy:windows:
+  stage: destroy
+  extends:
+    - .terraform
+  script:
+    - terraform destroy --auto-approve
+    - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}"
+  needs:
+    - job: build:tryton_client
+      artifacts: false
+    - job: create:windows
+      artifacts: false
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - ".gitlab-ci.yml"
+      when: never
+    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
+      when: always

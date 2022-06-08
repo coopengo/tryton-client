@@ -1,0 +1,4 @@
+coog_main_version = "${CI_COMMIT_REF_NAME}"
+ci_pipeline_id    = "${CI_PIPELINE_ID}"
+vpc_id            = "${AWS_GITLAB_EC2_VPCID}"
+availability_zone = "${AWS_GITLAB_EC2_AZ}"

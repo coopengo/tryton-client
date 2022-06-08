@@ -901,6 +901,9 @@ class Screen:
             self.tree_states_done.add(id(view))
         parent = self.parent.id if self.parent else None
         if parent is not None and parent < 0:
+            # Allow expanding tree views in pure ModelViews
+            if view.view_type == 'tree' and view.always_expand:
+                view.expand_nodes(None)
             return
         expanded_nodes, selected_nodes = [], []
         state = self.tree_states[parent][view.children_field]

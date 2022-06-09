@@ -484,6 +484,7 @@ class Screen:
 
     def __set_current_record(self, record):
         # Coog Specific for multimixed view
+        validate = self.__current_record is not None
         changed = self.__current_record != record
         self.__current_record = record
         if record:
@@ -506,7 +507,7 @@ class Screen:
                 and self.current_view.view_type == 'tree'):
             view = self._multiview_form
             wgroup = view.widget_groups[self._multiview_group]
-            self._sync_group(view, wgroup, self.current_record)
+            self._sync_group(view, wgroup, self.current_record, validate)
         self.update_resources(record.resources if record else None)
         # update resources after 1 second
         GLib.timeout_add(1000, self._update_resources, record)
@@ -514,14 +515,14 @@ class Screen:
 
     current_record = property(__get_current_record, __set_current_record)
 
-    def _sync_group(self, view, widgets_group, record):
+    def _sync_group(self, view, widgets_group, record, validate):
         if record is None:
             return
 
         to_sync = []
         tree, *forms = widgets_group
         for widget in forms:
-            if not widget._validate():
+            if validate and not widget._validate():
                 def go_previous():
                     self.current_record = widget.screen.current_record
                     self.display()

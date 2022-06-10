@@ -332,7 +332,7 @@ class Group(list):
             if record_del.id == record.id:
                 self.record_deleted.remove(record_del)
         self.current_idx = position
-        record.set_modified('id')
+        record.modified_fields.setdefault('id')
         if signal:
             # Set parent field to trigger on_change
             if self.parent and self.parent_name in self.fields:

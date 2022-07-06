@@ -1386,8 +1386,7 @@ class Button(Cell):
         store = self.view.treeview.get_model()
         record = store.get_value(store.get_iter(path), 0)
 
-        if (self.view.record != record
-                and not self.view.record.validate(self.view.get_fields())):
+        if self.view.record and self.view.record != record:
             widget.stop_emission_by_name('clicked')
             return True
 

@@ -154,6 +154,7 @@ class Date(Gtk.Entry):
         self.__date = datetime.date(year, month + 1, day)
 
     def cal_popup_double_click(self, calendar):
+        self.cal_popup_changed(calendar)
         self.cal_popup_hide()
 
     def cal_popup_key_pressed(self, calendar, event):
@@ -182,6 +183,7 @@ class Date(Gtk.Entry):
     def cal_popup_hide(self):
         popup_hide(self.__cal_popup)
         self.grab_focus()
+        self.update_label()
         self.emit('date-changed')
 
     def cal_popup_is_visible(self):

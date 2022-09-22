@@ -998,6 +998,9 @@ class Login(object):
                     raise TrytonError('QueryCanceled')
                 parameters[name] = value
                 continue
+            except TrytonAuthenticationError as exception:
+                parameters.clear()
+                continue
             else:
                 return
 

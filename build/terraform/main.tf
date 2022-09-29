@@ -83,7 +83,7 @@ module "asg_gitlab_runner_manager" {
       description                 = "eth0"
       associate_public_ip_address = true
       device_index                = 0
-      security_groups             = [aws_security_group.postgres_sql.id]
+      security_groups             = [aws_security_group.this.id]
     }
   ]
 

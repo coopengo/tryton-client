@@ -1,4 +1,4 @@
-resource "aws_security_group" "postgres_sql" {
+resource "aws_security_group" "this" {
   name        = "tryton-${var.coog_main_version}-${var.ci_pipeline_id}"
   description = "Build tryton-${var.coog_main_version} for the Gitlab pipeline ${var.ci_pipeline_id}"
   vpc_id      = var.vpc_id

@@ -154,7 +154,7 @@ class Wizard(InfoBar):
                 callback()
         try:
             RPCExecute('wizard', self.action, 'delete', self.session_id,
-                process_exception=False, callback=end_callback)
+                callback=end_callback)
         except Exception:
             logger.warn(
                 _("Unable to delete wizard %s") % self.session_id,

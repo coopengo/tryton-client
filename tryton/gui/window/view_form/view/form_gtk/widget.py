@@ -172,7 +172,8 @@ class Widget(object):
             self._required_widget, 'required',
             not readonly and states.get('required', False))
         invalid = states.get('invalid', False)
-        widget_class(self._invalid_widget, 'invalid', not readonly and invalid)
+        if self._invalid_widget:
+            widget_class(self._invalid_widget, 'invalid', not readonly and invalid)
         self.invisible_set(self.attrs.get(
                 'invisible', states.get('invisible', False)))
 

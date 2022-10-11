@@ -416,7 +416,9 @@ class DictWidget(Widget):
         self.grid = Gtk.Grid(column_spacing=3, row_spacing=3)
         vbox.pack_start(self.grid, expand=True, fill=True, padding=0)
 
-        if not attrs.get('no_command', 0.0):
+        # JCA: specific
+        self.no_command = no_command = attrs.get('no_command', 0.0)
+        if not no_command:
             hbox = Gtk.HBox()
             hbox.set_border_width(2)
             self.wid_text = Gtk.Entry()
@@ -444,7 +446,13 @@ class DictWidget(Widget):
             vbox.pack_start(hbox, expand=True, fill=True, padding=0)
 
             hbox.set_focus_chain([self.wid_text])
-            vbox.pack_start(hbox, expand=True, fill=True)
+        else:
+            self.wid_text = None
+
+        if not no_command:
+            self.tooltips = Tooltips()
+            self.tooltips.set_tip(self.but_add, _('Add value'))
+            self.tooltips.enable()
 
         self._readonly = False
         self._record_id = None

@@ -450,6 +450,7 @@ class ViewForm(View):
     def __init__(self, view_id, screen, xml):
         self.notebooks = []
         self.expandables = []
+        self.widget_groups = {}
 
         vbox = Gtk.VBox()
         vp = Gtk.Viewport()

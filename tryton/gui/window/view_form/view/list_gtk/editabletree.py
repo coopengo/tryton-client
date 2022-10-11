@@ -81,9 +81,8 @@ class EditableTreeView(TreeView):
     leaving_events = leaving_record_events + (
         Gdk.KEY_Tab, Gdk.KEY_ISO_Left_Tab, Gdk.KEY_KP_Enter)
 
-    def __init__(self, position, editable_open=False):
-        super(EditableTreeView, self).__init__()
-        self.editable = position
+    def __init__(self, view, editable_open=False):
+        super().__init__(view)
         self.editable_open = editable_open
 
     def on_quit_cell(

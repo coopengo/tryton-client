@@ -25,6 +25,8 @@ class Date(Widget):
         self.real_entry.connect('activate', self.sig_activate)
         self.real_entry.connect('changed', lambda _: self.send_modified())
         self.entry.connect('date-changed', self.changed)
+        self.real_entry.connect('focus-out-event',
+            lambda x, y: self._focus_out())
         self.widget.pack_start(self.entry, expand=False, fill=False, padding=0)
 
     @property
@@ -135,6 +137,7 @@ class DateTime(Date):
             child.connect('key_press_event', self.sig_key_press)
             child.connect('activate', self.sig_activate)
             child.connect('changed', lambda _: self.send_modified())
+            child.connect('focus-out-event', lambda x, y: self._focus_out())
         self.entry.connect('datetime-changed', self.changed)
         self.widget.pack_start(self.entry, expand=False, fill=False, padding=0)
 

@@ -295,8 +295,6 @@ class Many2Many(Widget):
         new_group = self.field.get_client(self.record)
         if id(self.screen.group) != id(new_group):
             self.screen.group = new_group
-            if not new_group and self.expander:
-                self.expander.set_expanded(True)
         self.screen.display()
         return True
 

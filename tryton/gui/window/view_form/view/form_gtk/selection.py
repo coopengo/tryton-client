@@ -53,7 +53,7 @@ class Selection(Widget, SelectionMixin, PopdownMixin):
             Gtk.SensitivityType.OFF if value else Gtk.SensitivityType.AUTO)
 
     def _color_widget(self):
-        return self.entry.child
+        return self.entry.get_child()
 
     def get_value(self):
         if not self.entry.get_child():  # entry is destroyed

@@ -190,11 +190,9 @@ class Date(Gtk.Entry):
         return self.__cal_popup.is_visible()
 
     def focus_out(self, entry, event):
-        previous_date = self.__date
         self.parse()
         self.update_label()
-        if self.__date != previous_date:
-            self.emit('date-changed')
+        self.emit('date-changed')
         return False
 
     def activate(self, entry=None):

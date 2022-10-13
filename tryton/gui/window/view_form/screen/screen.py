@@ -494,7 +494,6 @@ class Screen:
         return self.__current_record
 
     def __set_current_record(self, record):
-        validate = self.__current_record is not None
         changed = self.__current_record != record
         self.__current_record = record
         if record:
@@ -508,12 +507,11 @@ class Screen:
         self.record_message(
             pos, len(self.group) + self.offset,
             self.search_count, record and record.id)
-        # Coog Specific for multimixed view
-        if (changed and self._multiview_form
-                and self.current_view.view_type == 'tree'):
-            view = self._multiview_form
-            wgroup = view.widget_groups[self._multiview_group]
-            self._sync_group(view, wgroup, self.current_record, validate)
+        if changed:
+            # Coog Specific for multimixed view
+            # Somehow _validate_synced_group should be called, but it does not
+            # work as intended yet.
+            self._sync_group()
         self.update_resources(record.resources if record else None)
         # update resources after 1 second
         GLib.timeout_add(1000, self._update_resources, record)
@@ -521,28 +519,45 @@ class Screen:
 
     current_record = property(__get_current_record, __set_current_record)
 
-    def _sync_group(self, view, widgets_group, record, validate):
-        if record is None:
-            return
+    def _validate_synced_group(self):
+        if not self._multiview_form or self.current_view.view_type != 'tree':
+            return True
+        if self.current_record is None:
+            return True
 
-        to_sync = []
-        tree, *forms = widgets_group
+        tree, *forms = self._multiview_form.widget_groups[
+            self._multiview_group]
         for widget in forms:
-            if validate and not widget._validate():
+            if not widget.screen.current_record:
+                continue
+            if not widget._validate(set_value=False):
                 def go_previous():
                     self.current_record = widget.screen.current_record
                     self.display()
                 GLib.idle_add(go_previous)
-                return
+                return False
+        return True
+
+    def _sync_group(self):
+        if not self._multiview_form or self.current_view.view_type != 'tree':
+            return
+        if self.current_record is None:
+            return
+
+        to_sync = []
+        tree, *forms = self._multiview_form.widget_groups[
+            self._multiview_group]
+        for widget in forms:
             if widget.screen.current_view.view_type != 'form':
                 continue
             # TODO Useless now
-            if widget.screen.group.model_name != record.group.model_name:
+            if (widget.screen.group.model_name !=
+                    self.current_record.group.model_name):
                 continue
             to_sync.append(widget)
 
         for widget in to_sync:
-            widget.screen.current_record = record
+            widget.screen.current_record = self.current_record
             widget.display()
 
     def _update_resources(self, record):

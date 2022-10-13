@@ -544,60 +544,6 @@ class One2Many(Widget):
         self.label.set_text(line)
         self._set_button_sensitive()
 
-    def group_sync(self, screen, current_record):
-        if not self.view or not self.view.widgets:
-            return
-        if self.view.screen.current_view is not self.view:
-            return
-        if self.attrs.get('mode') == 'form':
-            return
-        if screen.current_record != current_record:
-            return
-        if not screen.views:
-            return
-
-        def is_compatible(screen, record):
-            return (screen
-                and screen.current_view.view_type != 'form'
-                or record and screen.model_name == record.model_name)
-
-        current_record = self.screen.current_record
-        to_sync = []
-        for widget in self.view.widgets[self.field_name]:
-            if (widget == self
-                    or widget.attrs.get('group') != self.attrs['group']
-                    or not hasattr(widget, 'screen')):
-                continue
-            record = current_record
-            if (record is not None
-                    and not is_compatible(widget.screen, record)):
-                record = IncompatibleGroup
-            if not widget._validate():
-                def go_previous():
-                    record = widget.screen.current_record
-                    if not is_compatible(screen, record):
-                        record = None
-                    screen.current_record = record
-                    screen.display()
-                GLib.idle_add(go_previous)
-                return
-            to_sync.append((widget, record))
-        for widget, record in to_sync:
-            widget._incompatible_group = record is IncompatibleGroup
-            if not widget._incompatible_group:
-                if (widget.screen.current_view
-                        and widget.screen.current_view.view_type == 'form'
-                        and record is not None
-                        and widget.screen.group.model_name
-                        == record.group.model_name):
-                    fields = dict((name, field.attrs) for name, field in
-                        widget.screen.group.fields.items())
-                    record.group.load_fields(fields)
-                    for field_name in fields.keys():
-                        record[field_name].get(record)
-                widget.screen.current_record = record
-            widget.display()
-
     def display(self):
         super(One2Many, self).display()
 

@@ -122,7 +122,6 @@ create:windows:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
-        - "build/**/*"
       when: never
     - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
 
@@ -155,7 +154,6 @@ build:tryton_client:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
-        - "build/**/*"
       when: never
     - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
     
@@ -176,7 +174,6 @@ destroy:windows:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - ".gitlab-ci.yml"
-        - "build/**/*"
       when: never
     - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
       when: always

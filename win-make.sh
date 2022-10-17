@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GDRIVE_FOLDER_ID=1yQaeqEMAaD6chcF4YMpmUZe9L3YoGa89
+GDRIVE_FOLDER_ID=1sJTQA7c8j5j4FzEz0bB3-Y3XLlhw-OOH
 
 version() {
     local t

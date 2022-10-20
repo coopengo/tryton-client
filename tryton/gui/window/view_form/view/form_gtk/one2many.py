@@ -85,7 +85,7 @@ class One2Many(Widget):
             self.wid_text.set_placeholder_text(_('Search'))
             self.wid_text.set_property('width_chars', 13)
             self.pid_focus = self.wid_text.connect('focus-out-event',
-                self._focus_out)
+                lambda *a: self._focus_out())
             hbox.pack_start(self.wid_text, expand=True, fill=True, padding=0)
 
             if int(self.attrs.get('completion', 1)):

@@ -47,8 +47,8 @@ class Many2Many(Widget):
         self.wid_text = Gtk.Entry()
         self.wid_text.set_placeholder_text(_('Search'))
         self.wid_text.set_property('width_chars', 13)
-        self.focus_out_id = self.wid_text.connect(
-            'focus-out-event', self._focus_out)
+        self.focus_out_id = self.wid_text.connect('focus-out-event',
+            lambda *a: self._focus_out())
         self.focus_out = True
         hbox.pack_start(self.wid_text, expand=True, fill=True, padding=0)
 

@@ -5,6 +5,7 @@ import gettext
 import os
 import webbrowser
 from functools import partial, wraps
+from weakref import WeakKeyDictionary
 
 from gi.repository import Gdk, GLib, Gtk
 
@@ -49,18 +50,41 @@ def send_keys(renderer, editable, position, treeview):
         editable.connect('changed', changed)
 
 
-def realized(func):
-    has_been_realized = False
+# This decorator catch any exception while rendering a cell because poping-up a
+# dialog while rendering can result in an infinite loop
+def catch_errors(error_value=_('#ERROR')):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, record):
+            if record.exception:
+                return error_value
+            try:
+                return func(self, record)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                return error_value
+        return wrapper
+    return decorator
 
+
+def realized(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        nonlocal has_been_realized
+        return func(self, *args, **kwargs)
+        has_been_realized = _REALIZED.get(self.view.treeview, False)
         if not has_been_realized:
             has_been_realized = self.view.treeview.get_realized()
             if has_been_realized:
                 self.view.treeview.queue_resize()
+                _REALIZED[self.view.treeview] = True
+            else:
+                return
         return func(self, *args, **kwargs)
     return wrapper
+
+
+_REALIZED = WeakKeyDictionary()
 
 
 class CellCache(list):
@@ -139,7 +163,7 @@ class Cell(object):
         if not store:
             store = self.view.treeview.get_model()
         record = store.get_value(iter_, 0)
-        field = record[self.attrs['name']]
+        field = record.group.fields[self.attrs['name']]
         return record, field
 
     def _set_visual(self, cell, record):
@@ -382,10 +406,10 @@ class GenericText(Cell):
             callback=None):
         raise NotImplementedError
 
+    @catch_errors()
     def get_textual_value(self, record):
-        if not record:
-            return ''
-        return record[self.attrs['name']].get_client(record)
+        return record.fetch(
+            self.attrs['name'], process_exception=False).get_client(record)
 
     def value_from_text(self, record, text, callback=None):
         field = record[self.attrs['name']]
@@ -448,11 +472,11 @@ class Int(GenericText):
             return [self.renderer_suffix]
         return []
 
+    @catch_errors()
     def get_textual_value(self, record):
-        if not record:
-            return ''
-        return record[self.attrs['name']].get_client(
-            record, factor=self.factor, grouping=self.grouping)
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        return field.get_client(
+             record, factor=self.factor, grouping=self.grouping)
 
     def value_from_text(self, record, text, callback=None):
         field = record[self.attrs['name']]
@@ -519,10 +543,10 @@ class Date(GenericText):
         else:
             return '%x'
 
+    @catch_errors()
     def get_textual_value(self, record):
-        if not record:
-            return ''
-        value = record[self.attrs['name']].get_client(record)
+        value = record.fetch(
+            self.attrs['name'], process_exception=False).get_client(record)
         if value:
             return value.strftime(self.renderer.props.format)
         else:
@@ -542,10 +566,10 @@ class Time(Date):
         else:
             return '%X'
 
+    @catch_errors()
     def get_textual_value(self, record):
-        if not record:
-            return ''
-        value = record[self.attrs['name']].get_client(record)
+        value = record.fetch(
+            self.attrs['name'], process_exception=False).get_client(record)
         if value is not None:
             if isinstance(value, datetime.datetime):
                 value = value.time()
@@ -604,8 +628,9 @@ class Binary(GenericText):
     def suffixes(self):
         return [self.renderer_save, self.renderer_select]
 
+    @catch_errors()
     def get_textual_value(self, record):
-        field = record[self.attrs['name']]
+        field = record.fetch(self.attrs['name'], process_exception=False)
         if hasattr(field, 'get_size'):
             size = field.get_size(record)
         else:
@@ -659,6 +684,11 @@ class _BinaryIcon(Cell):
     def view(self):
         return self.binary.view
 
+    @catch_errors(False)
+    def _fetch_data(self, record):
+        record.fetch(self.attrs['name'], process_exception=False)
+        return True
+
 
 class _BinarySave(_BinaryIcon):
     icon_name = 'tryton-save'
@@ -686,6 +716,9 @@ class _BinarySave(_BinaryIcon):
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
         record, field = self._get_record_field_from_iter(iter_, store)
+        if not self._fetch_data(record):
+            cell.set_property('visible', False)
+            return
         if hasattr(field, 'get_size'):
             size = field.get_size(record)
         else:
@@ -726,6 +759,9 @@ class _BinarySelect(_BinaryIcon):
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
         record, field = self._get_record_field_from_iter(iter_, store)
+        if not self._fetch_data(record):
+            cell.set_property('visible', False)
+            return
         if hasattr(field, 'get_size'):
             size = field.get_size(record)
         else:
@@ -765,6 +801,9 @@ class _BinaryOpen(_BinarySave):
     def setter(self, column, cell, store, iter_, user_data=None):
         super().setter(column, cell, store, iter_)
         record, field = self._get_record_field_from_iter(iter_, store)
+        if not self._fetch_data(record):
+            cell.set_property('visible', False)
+            return
         filename_field = record.group.fields.get(self.attrs.get('filename'))
         filename = filename_field.get(record)
         if not filename:
@@ -786,22 +825,28 @@ class Image(GenericText):
     @CellCache.cache
     def setter(self, column, cell, store, iter_, user_data=None):
         record, field = self._get_record_field_from_iter(iter_, store)
-        value = field.get_client(record)
-        if isinstance(value, int):
-            if value > CONFIG['image.max_size']:
-                value = None
-            else:
-                value = field.get_data(record)
+        value = self._get_data(record)
         pixbuf = data2pixbuf(value)
         if pixbuf:
             pixbuf = common.resize_pixbuf(pixbuf, self.width, self.height)
         cell.set_property('pixbuf', pixbuf)
         self._set_visual(cell, record)
 
+    @catch_errors()
+    def _get_data(self, record):
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        value = field.get_client(record)
+        if isinstance(value, int):
+            if value > CONFIG['image.max_size']:
+                value = None
+            else:
+                value = field.get_data(record)
+        return value
+
+    @catch_errors()
     def get_textual_value(self, record):
-        if not record:
-            return ''
-        return str(record[self.attrs['name']].get_size(record))
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        return str(field.get_size(record))
 
 
 class M2O(GenericText):
@@ -1028,9 +1073,10 @@ class O2O(M2O):
 class O2M(GenericText):
     align = 0.5
 
+    @catch_errors()
     def get_textual_value(self, record):
-        return '( ' + str(len(record[self.attrs['name']]
-                .get_eval(record))) + ' )'
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        return '( ' + str(len(field.get_eval(record))) + ' )'
 
     def value_from_text(self, record, text, callback=None):
         if callback:
@@ -1106,13 +1152,14 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
     def get_value(self, record, field):
         return field.get(record)
 
+    @catch_errors()
     def get_textual_value(self, record):
         related = self.attrs['name'] + ':string'
         if not self.view.editable and record.value.get(related):
             return record.value[related]
 
-        field = record[self.attrs['name']]
-        self.update_selection(record, field)
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        self.update_selection(record, field, process_exception=False)
         value = self.get_value(record, field)
         text = dict(self.selection).get(value, '')
         if value and not text:
@@ -1187,9 +1234,10 @@ class MultiSelection(GenericText, SelectionMixin):
         if callback:
             callback()
 
+    @catch_errors()
     def get_textual_value(self, record):
-        field = record[self.attrs['name']]
-        self.update_selection(record, field)
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        self.update_selection(record, field, process_exception=False)
         selection = dict(self.selection)
         values = []
         for value in field.get_eval(record):
@@ -1236,6 +1284,7 @@ class Reference(M2O):
         _, value = value.split(',')
         return int(value)
 
+    @catch_errors()
     def get_textual_value(self, record):
         value = super().get_textual_value(record)
         if value:
@@ -1277,8 +1326,10 @@ class Dict(GenericText):
         super().setter(column, cell, store, iter_, user_data=None)
         cell.props.editable = False
 
+    @catch_errors()
     def get_textual_value(self, record):
-        return '(%s)' % len(record[self.attrs['name']].get_client(record))
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        return '(%s)' % len(field.get_client(record))
 
 
 class ProgressBar(Cell):
@@ -1320,8 +1371,10 @@ class ProgressBar(Cell):
             callback=None):
         raise NotImplementedError
 
+    @catch_errors()
     def get_textual_value(self, record):
-        return record[self.attrs['name']].get_client(record, factor=100) or ''
+        field = record.fetch(self.attrs['name'], process_exception=False)
+        return field.get_client(record, factor=100) or ''
 
     def value_from_text(self, record, text, callback=None):
         field = record[self.attrs['name']]

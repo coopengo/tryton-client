@@ -51,7 +51,7 @@ class TreeView(Gtk.TreeView):
             if not column.name:
                 continue
             widget = self.view.get_column_widget(column)
-            field = record[column.name]
+            field = record.group.fields[column.name]
             field.state_set(record, states=('readonly', 'invisible'))
             invisible = field.get_state_attrs(record).get('invisible', False)
             if not column.get_visible():
@@ -87,7 +87,7 @@ class EditableTreeView(TreeView):
 
     def on_quit_cell(
             self, current_record, column, renderer, value, callback=None):
-        field = current_record[column.name]
+        field = current_record.group.fields[column.name]
         widget = self.view.get_column_widget(column)
 
         # The value has not changed and is valid ... do nothing.
@@ -278,7 +278,7 @@ class EditableTreeView(TreeView):
                 create=(event.keyval == Gdk.KEY_F3), value=value,
                 callback=callback)
         else:
-            field = record[column.name]
+            field = record.group.fields[column.name]
             if isinstance(entry, Gtk.Entry):
                 entry.set_max_length(int(field.attrs.get('size', 0)))
             record.modified_fields.setdefault(column.name)

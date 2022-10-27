@@ -41,6 +41,9 @@ class Record(SignalEvent):
         self.destroyed = False
 
     def __getitem__(self, name):
+        return self.fetch(name)
+
+    def fetch(self, name, process_exception=True):
         if name not in self._loaded and self.id >= 0:
             id2record = {
                 self.id: self,
@@ -127,7 +130,8 @@ class Record(SignalEvent):
             exception = False
             try:
                 values = RPCExecute('model', self.model_name, 'read',
-                    list(id2record.keys()), fnames, context=ctx)
+                    list(id2record.keys()), fnames, context=ctx,
+                    process_exception=process_exception)
             except RPCException:
                 values = [{'id': x} for x in id2record]
                 default_values = dict((f, None) for f in fnames)

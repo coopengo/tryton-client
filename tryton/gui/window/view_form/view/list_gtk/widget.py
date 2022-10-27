@@ -50,6 +50,8 @@ def send_keys(renderer, editable, position, treeview):
         editable.connect('changed', changed)
 
 
+# This decorator catch any exception while rendering a cell because poping-up a
+# dialog while rendering can result in an infinite loop
 def catch_errors(func):
     @wraps(func)
     def wrapper(self, record):

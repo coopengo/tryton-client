@@ -23,6 +23,13 @@ class ListBoxViewForm(ViewForm):
     def record(self, value):
         self._record = value
 
+    def button_clicked(self, widget):
+        if (self.record != self.screen.current_record
+                or len(self.listform.selected_records) != 1):
+            self.listform.select_form(self)
+            return
+        super().button_clicked(widget)
+
 
 class ListBoxItem(GObject.Object):
 
@@ -83,6 +90,7 @@ class ViewListForm(View):
     def _create_form(self, item):
         view_form = ListBoxViewForm(self.view_id, self.screen, self.form_xml)
         view_form.record = item.record
+        view_form.listform = self
         view_form.widget.props.margin = 3
         self._view_forms.append(view_form)
         frame = Gtk.Frame.new()
@@ -114,6 +122,14 @@ class ViewListForm(View):
         selected_rows = self.listbox.get_selected_rows()
         return [
             self._model.get_item(r.get_index()).record for r in selected_rows]
+
+    def select_form(self, listbox_form):
+        index = self._view_forms.index(listbox_form)
+        self.listbox.unselect_all()
+        row = self.listbox.get_row_at_index(index)
+        if not row or not row.get_realized():
+            return
+        self.listbox.select_row(row)
 
     def group_list_changed(self, group, action, *args):
         # Only those actions have a record in the signal data

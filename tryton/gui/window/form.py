@@ -600,8 +600,7 @@ class Form(TabContent):
         selected = len(self.screen.selected_records)
         if selected > 1:
             name += '#%i' % selected
-        for button_id in ('print', 'relate', 'email', 'open', 'save',
-                'attach'):
+        for button_id in ('relate', 'email', 'open', 'save', 'attach'):
             button = self.buttons[button_id]
             can_be_sensitive = getattr(button, '_can_be_sensitive', True)
             if button_id in {'print', 'relate', 'email', 'open'}:
@@ -719,7 +718,6 @@ class Form(TabContent):
                 ('relate', 'relate', _('Relate'), _('Open related records')),
                 (None,) * 4,
                 ('print', 'open', _('Report'), _('Open report')),
-                ('print', 'print', _('Print'), _('Print report')),
                 ):
             if action_type is not None:
                 tbutton = Gtk.ToggleToolButton()

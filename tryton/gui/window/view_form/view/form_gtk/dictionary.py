@@ -36,6 +36,7 @@ class DictEntry(object):
         self.name = name
         self.definition = parent_widget.field.keys[name]
         self.parent_widget = parent_widget
+        self.signals = []
         self.widget = self.create_widget()
         if self.definition.get('help'):
             parent_widget.tooltips.set_tip(
@@ -43,11 +44,16 @@ class DictEntry(object):
 
     def create_widget(self):
         widget = Gtk.Entry()
-        widget.connect('key-press-event', self.parent_widget.send_modified)
-        widget.connect('focus-out-event',
-            lambda w, e: self.parent_widget._focus_out())
+        self.signals.append(
+            widget.connect('key-press-event',
+                self.parent_widget.send_modified))
+        self.signals.append(
+            widget.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         widget.props.activates_default = True
-        widget.connect('activate', self.parent_widget.sig_activate)
+        self.signals.append(
+            widget.connect('activate',
+                self.parent_widget.sig_activate))
         return widget
 
     def modified(self, value):
@@ -63,6 +69,10 @@ class DictEntry(object):
     def set_readonly(self, readonly):
         self.widget.set_editable(not readonly)
 
+    def disconnect_signals(self):
+        for handler_id in self.signals:
+            self.widget.disconnect(handler_id)
+
 
 class DictCharEntry(DictEntry):
 
@@ -74,9 +84,11 @@ class DictBooleanEntry(DictEntry):
 
     def create_widget(self):
         widget = Gtk.CheckButton()
-        widget.connect('toggled', self.parent_widget.sig_activate)
-        widget.connect('focus-out-event', lambda w, e:
-            self.parent_widget._focus_out())
+        self.signals.append(
+            widget.connect('toggled', self.parent_widget.sig_activate))
+        self.signals.append(
+            widget.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         return widget
 
     def get_value(self):
@@ -104,11 +116,11 @@ class DictSelectionEntry(DictEntry):
         # customizing entry
         child = widget.get_child()
         child.props.activates_default = True
-        child.connect('changed', self._changed)
-        child.connect('focus-out-event',
-            lambda w, e: self.parent_widget._focus_out())
-        child.connect('activate',
-            lambda w: self.parent_widget._focus_out())
+        self.signals.append(child.connect('changed', self._changed))
+        self.signals.append(child.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
+        self.signals.append(child.connect('activate',
+                lambda w: self.parent_widget._focus_out()))
         widget.connect(
             'scroll-event',
             lambda c, e: c.stop_emission_by_name('scroll-event'))
@@ -143,6 +155,11 @@ class DictSelectionEntry(DictEntry):
             if selection[1] == value:
                 GLib.idle_add(self.widget.set_active, i)
                 break
+
+    def disconnect_signals(self):
+        child = self.widget.get_child()
+        for handler_id in self.signals:
+            child.disconnect(handler_id)
 
     def get_value(self):
         active = self.widget.get_active()
@@ -189,12 +206,13 @@ class DictMultiSelectionEntry(DictEntry):
         self.tree = Gtk.TreeView()
         self.tree.set_model(model)
         self.tree.set_search_column(1)
-        self.tree.connect(
-            'focus-out-event', lambda w, e: self.parent_widget._focus_out())
+        self.signals.append(
+            self.tree.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         self.tree.set_headers_visible(False)
         selection = self.tree.get_selection()
         selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        selection.connect('changed', self._changed)
+        self.signals.append(selection.connect('changed', self._changed))
         widget.add(self.tree)
         widget_class(widget, 'multiselection', True)
 
@@ -216,6 +234,12 @@ class DictMultiSelectionEntry(DictEntry):
         self.tree.append_column(name_column)
 
         return widget
+
+    def disconnect_signals(self):
+        tree_handler, selection_handler = self.signals
+        self.tree.disconnect(tree_handler)
+        selection = self.tree.get_selection()
+        selection.disconnect(selection_handler)
 
     def get_value(self):
         model, paths = self.tree.get_selection().get_selected_rows()
@@ -247,11 +271,15 @@ class DictIntegerEntry(DictEntry):
 
     def create_widget(self):
         widget = NumberEntry()
-        widget.connect('key-press-event', self.parent_widget.send_modified)
-        widget.connect('focus-out-event',
-            lambda w, e: self.parent_widget._focus_out())
+        self.signals.append(
+            widget.connect('key-press-event',
+                self.parent_widget.send_modified))
+        self.signals.append(
+            widget.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         widget.props.activates_default = True
-        widget.connect('activate', self.parent_widget.sig_activate)
+        self.signals.append(
+            widget.connect('activate', self.parent_widget.sig_activate))
         return widget
 
     def get_value(self):
@@ -331,9 +359,12 @@ class DictDateTimeEntry(DictEntry):
             time_format = field.time_format(record)
             widget.props.date_format = date_format
             widget.props.time_format = time_format
-        widget.connect('key_press_event', self.parent_widget.send_modified)
-        widget.connect('focus-out-event', lambda w, e:
-            self.parent_widget._focus_out())
+        self.signals.append(
+            widget.connect('key_press_event',
+                self.parent_widget.send_modified))
+        self.signals.append(
+            widget.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         return widget
 
     def get_value(self):
@@ -363,9 +394,12 @@ class DictDateEntry(DictEntry):
         if record and field:
             format_ = field.date_format(record)
             widget.props.format = format_
-        widget.connect('key_press_event', self.parent_widget.send_modified)
-        widget.connect('focus-out-event', lambda w, e:
-            self.parent_widget._focus_out())
+        self.signals.append(
+            widget.connect('key_press_event',
+                self.parent_widget.send_modified))
+        self.signals.append(
+            widget.connect('focus-out-event',
+                lambda w, e: self.parent_widget._focus_out()))
         return widget
 
     def get_value(self):
@@ -501,6 +535,7 @@ class DictWidget(Widget):
                     focus = True
 
     def _sig_remove(self, button, key, modified=True):
+        self.fields[key].disconnect_signals()
         del self.fields[key]
         if not self.attrs.get('no_command', 0.0):
             del self.buttons[key]

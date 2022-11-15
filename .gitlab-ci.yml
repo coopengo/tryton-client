@@ -147,7 +147,7 @@ build:tryton_client:
         (( ++SSH_CONNECTION ))
       done
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && /usr/bin/git pull -f -p && source build/env/windows.env && ./win-make.sh build && ./win-make.sh upload"
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/${CI_COMMIT_REF_NAME} && source build/env/windows.env && ./win-make.sh build && ./win-make.sh upload"
   needs:
     - create:windows
   rules:
@@ -163,6 +163,7 @@ destroy:windows:
   extends:
     - .terraform
   script:
+    - terraform plan --refresh-only
     - terraform destroy --auto-approve
     - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_NAME/./}_${CI_PIPELINE_ID}"
   needs:

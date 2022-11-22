@@ -483,10 +483,10 @@ class DictWidget(Widget):
         else:
             self.wid_text = None
 
+        self.tooltips = Tooltips()
         if not no_command:
-            self.tooltips = Tooltips()
             self.tooltips.set_tip(self.but_add, _('Add value'))
-            self.tooltips.enable()
+        self.tooltips.enable()
 
         self._readonly = False
         self._record_id = None

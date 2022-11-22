@@ -1107,52 +1107,60 @@ class ViewTree(View):
                     treeview.expand_row(path, False)
 
     def __select_changed(self, tree_sel):
-        previous_record = self.record
-        if previous_record and previous_record not in previous_record.group:
-            previous_record = None
+        def do_selection_changed():
+            previous_record = self.record
+            if (previous_record
+                    and previous_record not in previous_record.group):
+                previous_record = None
 
-        if tree_sel.get_mode() == Gtk.SelectionMode.SINGLE:
-            model, iter_ = tree_sel.get_selected()
-            if model and iter_:
-                record = model.get_value(iter_, 0)
-                self.record = record
-            else:
-                self.record = None
+            if tree_sel.get_mode() == Gtk.SelectionMode.SINGLE:
+                model, iter_ = tree_sel.get_selected()
+                if model and iter_:
+                    record = model.get_value(iter_, 0)
+                    self.record = record
+                else:
+                    self.record = None
 
-        elif tree_sel.get_mode() == Gtk.SelectionMode.MULTIPLE:
-            model, paths = tree_sel.get_selected_rows()
-            if model and paths:
-                iter_ = model.get_iter(paths[0])
-                record = model.get_value(iter_, 0)
-                self.record = record
-            else:
-                self.record = None
+            elif tree_sel.get_mode() == Gtk.SelectionMode.MULTIPLE:
+                model, paths = tree_sel.get_selected_rows()
+                if model and paths:
+                    iter_ = model.get_iter(paths[0])
+                    record = model.get_value(iter_, 0)
+                    self.record = record
+                else:
+                    self.record = None
 
-        if self.editable and previous_record:
-            def go_previous():
-                self.record = previous_record
-                self.set_cursor()
-            if not self.screen.parent and previous_record != self.record:
+            if self.editable and previous_record:
+                def go_previous():
+                    self.record = previous_record
+                    self.set_cursor()
+                if not self.screen.parent and previous_record != self.record:
 
-                def save():
-                    if not previous_record.destroyed:
-                        if not previous_record.save():
-                            go_previous()
+                    def save():
+                        if not previous_record.destroyed:
+                            if not previous_record.save():
+                                go_previous()
 
-                if not previous_record.validate(self.get_fields()):
-                    go_previous()
-                    return True
-                # Delay the save to let GTK process the current event
-                GLib.idle_add(save)
-            elif previous_record != self.record and self.screen.pre_validate:
+                    if not previous_record.validate(self.get_fields()):
+                        go_previous()
+                        return True
+                    # Delay the save to let GTK process the current event
+                    GLib.idle_add(save)
+                elif (previous_record != self.record
+                        and self.screen.pre_validate):
 
-                def pre_validate():
-                    if not previous_record.destroyed:
-                        if not previous_record.pre_validate():
-                            go_previous()
-                # Delay the pre_validate to let GTK process the current event
-                GLib.idle_add(pre_validate)
-        self.update_sum()
+                    def pre_validate():
+                        if not previous_record.destroyed:
+                            if not previous_record.pre_validate():
+                                go_previous()
+                    # Delay the pre_validate to let GTK process the current
+                    # event
+                    GLib.idle_add(pre_validate)
+            self.update_sum()
+
+        # Delay the switch to the record so that focus-out event of the mixed
+        # widget can be triggered
+        GLib.idle_add(do_selection_changed)
 
     def set_value(self):
         if self.editable:

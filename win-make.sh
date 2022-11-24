@@ -49,6 +49,7 @@ clean() {
 build() {
     clean
     local v; v=$(version)
+    python setup.py compile_catalog
     python setup-freeze.py install_exe -d dist
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
     makensis -DVERSION="$v" -DBITS=32 setup-single.nsi

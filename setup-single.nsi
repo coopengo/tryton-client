@@ -12,6 +12,7 @@ OutFile "coog-${VERSION}.exe"
 SetCompressor lzma
 SetCompress auto
 SilentInstall silent
+RequestExecutionLevel user
 Icon "tryton\data\pixmaps\tryton\tryton.ico"
 
 Section

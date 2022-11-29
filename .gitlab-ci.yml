@@ -179,7 +179,6 @@ build:tryton_client:
         - ".gitlab-ci.yml"
       when: never
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
     
 
 destroy:windows:
@@ -201,5 +200,4 @@ destroy:windows:
         - ".gitlab-ci.yml"
       when: never
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-    - if: '$CI_PIPELINE_SOURCE =~ /^(push|web)$/ && $CI_COMMIT_REF_NAME =~ /^(master|coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2})))$/'
       when: always

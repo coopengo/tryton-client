@@ -7,7 +7,6 @@ stages:
 ################## extends ##################
 
 .terraform:
-  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
   before_script:
     - apt update && apt install -y --no-install-recommends --no-install-suggests git gnupg software-properties-common curl openssh-client gettext
     - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
@@ -67,7 +66,8 @@ synchronize:pipeline:
 
 create:windows:
   stage: create
-  extends:
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  before_script:
     - |-
       if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
       then
@@ -75,7 +75,7 @@ create:windows:
         echo "Pipeline stop here"
         exit 1
       fi
-    - .terraform
+    - !reference [.terraform, before_script]
   script:
     - terraform plan
     - terraform apply --auto-approve
@@ -153,8 +153,9 @@ build:tryton_client:
 
 destroy:windows:
   stage: destroy
-  extends:
-    - .terraform
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  before_script:
+    - !reference [.terraform, before_script]
   script:
     - terraform plan --refresh-only
     - terraform destroy --auto-approve

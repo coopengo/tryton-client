@@ -35,14 +35,6 @@ include:
 
 ################## Jobs ##################
 
-test:
-  image: alpine
-  stage: create
-  script:
-    - env
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-
 synchronize:pipeline:
   stage: synchronize
   image: bitnami/git:latest
@@ -128,9 +120,6 @@ create:windows:
     expire_in: 2 hours
   rules:
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-    - changes:
-        - ".gitlab-ci.yml"
-      when: never
 
 build:tryton_client:
   stage: build
@@ -159,9 +148,6 @@ build:tryton_client:
     - create:windows
   rules:
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-    - changes:
-        - ".gitlab-ci.yml"
-      when: never
     
 
 destroy:windows:
@@ -180,6 +166,3 @@ destroy:windows:
   rules:
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
       when: always
-    - changes:
-        - ".gitlab-ci.yml"
-      when: never

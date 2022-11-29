@@ -929,3 +929,7 @@ class Form(TabContent):
                     win_attach.add_uri(uri)
             else:
                 win_attach.add_uri(selection.get_text())
+
+    def _force_count(self, eventbox, event):
+        domain = self.screen.screen_container.get_text()
+        self.screen._force_count(domain)

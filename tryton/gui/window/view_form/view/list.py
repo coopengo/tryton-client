@@ -1091,6 +1091,14 @@ class ViewTree(View):
         self.save_width()
         self.treeview.destroy()
 
+    def _switch(self):
+        with Window(allow_similar=True):
+            if not self.screen.row_activate() and self.children_field:
+                if self.treeview.row_expanded((0,)):
+                    self.treeview.collapse_row((0,))
+                else:
+                    self.treeview.expand_row((0,), False)
+
     def __sig_switch(self, treeview, path, column):
         if column._type == 'button':
             return

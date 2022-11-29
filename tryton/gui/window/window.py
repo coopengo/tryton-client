@@ -35,6 +35,7 @@ class Window(object):
             win = Board(model, **attributes)
         win.icon = attributes.get('icon')
         main.win_add(win, hide_current=Window.hide_current)
+        return win
 
     @staticmethod
     def create_wizard(action, data, direct_print=False, email_print=False,

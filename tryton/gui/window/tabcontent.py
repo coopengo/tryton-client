@@ -225,14 +225,19 @@ class TabContent(InfoBar):
             menu.set_popup(self.set_menu_form())
         menu.show()
 
+        click_catcher = Gtk.EventBox.new()
+        click_catcher.set_above_child(True)
+        click_catcher.connect('button-press-event', self._force_count)
         self.status_label = Gtk.Label(
             margin=5, halign=Gtk.Align.END)
         widget_class(self.status_label, 'status', True)
         self.status_label.show()
+        click_catcher.add(self.status_label)
+        click_catcher.show()
 
         hbox = Gtk.HBox()
         hbox.pack_start(title, expand=True, fill=True, padding=0)
-        hbox.pack_start(self.status_label, expand=False, fill=True, padding=0)
+        hbox.pack_start(click_catcher, expand=False, fill=True, padding=0)
         hbox.show()
 
         frame = Gtk.Frame()
@@ -322,3 +327,6 @@ class TabContent(InfoBar):
 
     def compare(self, model, attributes):
         return False
+
+    def _force_count(self, eventbox, event):
+        pass

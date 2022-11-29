@@ -35,28 +35,13 @@ include:
 
 ################## Jobs ##################
 
-
 test:
-  image: alpine
-  stage: create
-  script:
-    - env
-
-test2:
   image: alpine
   stage: create
   script:
     - env
   rules:
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-
-test3:
-  image: alpine
-  stage: create
-  script:
-    - env
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))(.*)$/
 
 synchronize:pipeline:
   stage: synchronize
@@ -142,11 +127,10 @@ create:windows:
       - tryton.env
     expire_in: 2 hours
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      changes:
+    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
+    - changes:
         - ".gitlab-ci.yml"
       when: never
-    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
 
 build:tryton_client:
   stage: build
@@ -174,11 +158,10 @@ build:tryton_client:
   needs:
     - create:windows
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      changes:
+    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
+    - changes:
         - ".gitlab-ci.yml"
       when: never
-    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
     
 
 destroy:windows:
@@ -195,9 +178,8 @@ destroy:windows:
     - job: create:windows
       artifacts: false
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      changes:
-        - ".gitlab-ci.yml"
-      when: never
     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
       when: always
+    - changes:
+        - ".gitlab-ci.yml"
+      when: never

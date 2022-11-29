@@ -35,6 +35,13 @@ include:
 
 ################## Jobs ##################
 
+
+test:
+  image: alpine
+  stage: create
+  script:
+    - env
+
 synchronize:pipeline:
   stage: synchronize
   image: bitnami/git:latest

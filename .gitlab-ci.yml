@@ -68,6 +68,7 @@ create:windows:
   stage: create
   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
   before_script:
+    - apt update && apt install -y --no-install-recommends git
     - |-
       if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
       then

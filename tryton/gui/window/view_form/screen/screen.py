@@ -535,7 +535,8 @@ class Screen:
         return True
 
     def _sync_group(self):
-        if not self._multiview_form or self.current_view.view_type != 'tree':
+        if (not self._multiview_form
+                or self.current_view.view_type not in {'tree', 'list-form'}):
             return
         if self.current_record is None:
             return

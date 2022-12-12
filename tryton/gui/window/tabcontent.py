@@ -39,6 +39,7 @@ class TabContent(InfoBar):
     def __init__(self, **attributes):
         super(TabContent, self).__init__()
         self.attributes = attributes.copy()
+        self.forced_count = False
 
     @property
     def menu_def(self):
@@ -329,4 +330,4 @@ class TabContent(InfoBar):
         return False
 
     def _force_count(self, eventbox, event):
-        pass
+        self.forced_count = True

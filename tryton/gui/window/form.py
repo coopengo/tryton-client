@@ -624,7 +624,8 @@ class Form(TabContent):
             size_display_func = common.humanize
         msg = name + ' / ' + size_display_func(size)
         if size < max_size:
-            msg += _(' of ') + size_display_func(max_size)
+            extra = '+' if self.screen.count_limit <= max_size else ''
+            msg += _(' of ') + size_display_func(max_size) + extra
         self.status_label.set_text(msg)
         self.info_bar_clear()
         self.activate_save()

@@ -619,7 +619,7 @@ class Form(TabContent):
         set_sensitive('next', self.screen.has_next())
 
         if self.forced_count:
-            size_display_func = lambda x: x
+            size_display_func = lambda x: str(x)
         else:
             size_display_func = common.humanize
         msg = name + ' / ' + size_display_func(size)

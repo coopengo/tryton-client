@@ -632,6 +632,9 @@ class Form(TabContent):
         self.info_bar_clear()
         self.activate_save()
         self.refresh_attachment_preview()
+        # reset forced_count to transmit the info that we're not doing accurate
+        # length computation anymore
+        self.forced_count = False
 
     def record_modified(self):
         def _record_modified():

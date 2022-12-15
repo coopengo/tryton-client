@@ -963,6 +963,20 @@ def process_exception(exception, *args, **kwargs):
                 _("The server took too much time to answer.\n"
                     "You may try again later."),
                 msg_type=Gtk.MessageType.ERROR)
+        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
+            from tryton.gui.main import Main
+            if PLOCK.acquire(False):
+                try:
+                    Login()
+                except TrytonError as exception:
+                    if exception.faultCode == 'QueryCanceled':
+                        Main().on_quit()
+                        sys.exit()
+                    raise
+                finally:
+                    PLOCK.release()
+                if args:
+                    return rpc_execute(*args)
         elif exception.faultCode == str(int(HTTPStatus.TOO_MANY_REQUESTS)):
             message(
                 _('Too many requests. Try again later.'),
@@ -1089,20 +1103,6 @@ class RPCProgress(object):
     def start(self):
         try:
             self.res = getattr(rpc, self.method)(*self.args)
-        except TrytonAuthenticationError:
-            from tryton.gui.main import Main
-            if PLOCK.acquire(False):
-                try:
-                    Login()
-                except TrytonError as exception:
-                    if exception.faultCode == 'QueryCanceled':
-                        Main().on_quit()
-                        sys.exit()
-                    raise
-                finally:
-                    PLOCK.release()
-                if self.args:
-                    self.start()
         except Exception as exception:
             self.error = True
             self.res = False

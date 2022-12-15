@@ -618,13 +618,23 @@ class Form(TabContent):
         set_sensitive('previous', self.screen.has_prev())
         set_sensitive('next', self.screen.has_next())
 
-        msg = name + ' / ' + common.humanize(size)
+        if self.forced_count:
+            size_display_func = lambda x: str(x)
+        else:
+            size_display_func = common.humanize
+        msg = name + ' / ' + size_display_func(size)
         if size < max_size:
-            msg += _(' of ') + common.humanize(max_size)
+            extra = ''
+            if not self.forced_count and self.screen.count_limit <= max_size:
+                extra = '+'
+            msg += _(' of ') + size_display_func(max_size) + extra
         self.status_label.set_text(msg)
         self.info_bar_clear()
         self.activate_save()
         self.refresh_attachment_preview()
+        # reset forced_count to transmit the info that we're not doing accurate
+        # length computation anymore
+        self.forced_count = False
 
     def record_modified(self):
         def _record_modified():
@@ -929,3 +939,8 @@ class Form(TabContent):
                     win_attach.add_uri(uri)
             else:
                 win_attach.add_uri(selection.get_text())
+
+    def _force_count(self, eventbox, event):
+        super()._force_count(eventbox, event)
+        domain = self.screen.screen_container.get_text()
+        self.screen._force_count(domain)

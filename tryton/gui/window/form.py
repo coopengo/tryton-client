@@ -641,15 +641,24 @@ class Form(SignalEvent, TabContent):
         menu_save = self.menu_buttons['save']
         menu_save.props.sensitive = not self.screen.readonly
 
-        msg = name + ' / ' + common.humanize(signal_data[1])
-        if (signal_data[1] < signal_data[2]
-                and self.screen.limit is not None
-                and signal_data[2] > self.screen.limit):
-            msg += _(' of ') + common.humanize(signal_data[2])
+        size, max_size = signal_data[1], signal_data[2]
+        if self.forced_count:
+            size_display_func = lambda x: str(x)
+        else:
+            size_display_func = common.humanize
+        msg = name + ' / ' + size_display_func(size)
+        if size < max_size:
+            extra = ''
+            if not self.forced_count and self.screen.count_limit <= max_size:
+                extra = '+'
+            msg += _(' of ') + size_display_func(max_size) + extra
         self.status_label.set_text(msg)
         self.message_info()
         self.activate_save()
         self.refresh_attachment_preview()
+        # reset forced_count to transmit the info that we're not doing accurate
+        # length computation anymore
+        self.forced_count = False
 
     def _record_modified(self, screen, signal_data):
         # As it is called via idle_add, the form could have been destroyed in
@@ -953,3 +962,8 @@ class Form(SignalEvent, TabContent):
                     win_attach.add_uri(uri)
             else:
                 win_attach.add_uri(selection.get_text())
+
+    def _force_count(self, eventbox, event):
+        super()._force_count(eventbox, event)
+        domain = self.screen.screen_container.get_text()
+        self.screen._force_count(domain)

@@ -676,7 +676,11 @@ class O2MField(Field):
         if not value or isinstance(value[0], int):
             mode = 'list ids'
         else:
-            mode = 'list values'
+            if all(v.keys() == {'id'} for v in value):
+                mode = 'list ids'
+                value = [v['id'] for v in value]
+            else:
+                mode = 'list values'
 
         if mode == 'list values':
             context = self.get_context(record)

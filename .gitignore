@@ -1,2 +1,3 @@
-.hg*
-*.pyc
+tryton/plugins/*
+!tryton/plugins/__init__.py
+!tryton/plugins/translation/*

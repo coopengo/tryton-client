@@ -676,11 +676,7 @@ class O2MField(Field):
         if not value or isinstance(value[0], int):
             mode = 'list ids'
         else:
-            if all(v.keys() == {'id'} for v in value):
-                mode = 'list ids'
-                value = [v['id'] for v in value]
-            else:
-                mode = 'list values'
+            mode = 'list values'
 
         if mode == 'list values':
             context = self.get_context(record)
@@ -701,7 +697,13 @@ class O2MField(Field):
             group.load(value, modified=modified or default)
         else:
             for vals in value:
-                new_record = record.value[self.name].new(default=False)
+                if vals.get('id', -1) > 0:
+                    new_record = group.get(vals['id'])
+                    if not new_record:
+                        new_record = group.new(
+                            default=False, obj_id=vals['id'])
+                else:
+                    new_record = record.value[self.name].new(default=False)
                 if default:
                     # Don't validate as parent will validate
                     new_record.set_default(

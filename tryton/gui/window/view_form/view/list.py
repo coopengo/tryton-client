@@ -1255,6 +1255,8 @@ class ViewTree(View):
         def _func_sel_get(model, path, iter_, records):
             records.append(model.get_value(iter_, 0))
         records = []
+        if not self.treeview.get_realized():
+            return records
         sel = self.treeview.get_selection()
         sel.selected_foreach(_func_sel_get, records)
         return records

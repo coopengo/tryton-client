@@ -61,9 +61,11 @@ def get_version():
     return re.search('__version_coog__ = "([0-9.]*)"', init).group(1)
 
 
-name = 'Coog'
-
 version = get_version()
+major_version, minor_version, *_ = version.split('.', 2)
+major_version = int(major_version)
+minor_version = int(minor_version)
+name = 'Coog'
 
 dist = setup(name=name,
     version=version,

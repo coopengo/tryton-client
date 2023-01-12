@@ -7,6 +7,7 @@ import platform
 import subprocess
 import tempfile
 import re
+import locale
 import logging
 import unicodedata
 import colorsys
@@ -1212,11 +1213,30 @@ def untimezoned_date(date):
     return timezoned_date(date, reverse=True)
 
 
-def humanize(size):
-    for x in ('bytes', 'KB', 'MB', 'GB', 'TB', 'PB'):
-        if size < 1000:
-            return '%3.1f%s' % (size, x)
-        size /= 1000.0
+def humanize(size, suffix=''):
+    if 0 < abs(size) < 1:
+        for u in ['', 'm', 'µ', 'n', 'p', 'f', 'a', 'z', 'y', 'r', 'q']:
+            if abs(size) >= 0.01:
+                break
+            size *= 1000.0
+        else:
+            size /= 1000.0
+    else:
+        for u in ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q']:
+            if abs(size) <= 1000:
+                break
+            size /= 1000.0
+        else:
+            size *= 1000.0
+    if isinstance(size, int) or size.is_integer():
+        size = locale.localize(str(int(size)))
+    elif abs(size) < 0.01:
+        size = locale.localize(
+            '{0:f}'.format(size).rstrip('0').rstrip('.'))
+    else:
+        size = locale.localize(
+            '{0:.{1}f}'.format(size, 2).rstrip('0').rstrip('.'))
+    return ''.join([size, u, suffix])
 
 
 def get_hostname(netloc):

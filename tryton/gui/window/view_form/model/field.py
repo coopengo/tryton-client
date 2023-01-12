@@ -697,7 +697,7 @@ class O2MField(Field):
             group.load(value, modified=modified or default)
         else:
             for vals in value:
-                if vals.get('id', -1) > 0:
+                if vals.get('id', -1) or -1 > 0:
                     new_record = group.get(vals['id'])
                     if not new_record:
                         new_record = group.new(

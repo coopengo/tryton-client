@@ -368,8 +368,6 @@ class ServerProxy(xmlrpc.client.ServerProxy):
                     verbose=self.__verbose
                     )
         except xmlrpc.client.ProtocolError as e:
-            if e.errcode == HTTPStatus.UNAUTHORIZED:
-                raise ProtocolError(self.__host, e.errcode, e.errmsg, {})
             raise Fault(str(e.errcode), e.errmsg)
         except Exception:
             self.__transport.close()

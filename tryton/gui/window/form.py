@@ -636,7 +636,7 @@ class Form(SignalEvent, TabContent):
 
         size, max_size = signal_data[1], signal_data[2]
         if self.forced_count:
-            size_display_func = lambda x: str(x)
+            size_display_func = str
         else:
             size_display_func = common.humanize
         msg = name + ' / ' + size_display_func(size)

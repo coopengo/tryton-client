@@ -1386,6 +1386,6 @@ class Screen(SignalEvent):
             context['active_test'] = False
         self.search_count = RPCExecute(
             'model', self.model_name, 'search_count', domain, context=context)
-        self.record_message(
-            self.position, len(self.group) + self.offset,
-            self.search_count, self.current_record and self.current_record.id)
+        self.signal('record-message',
+            (self.position, len(self.group) + self.offset,
+            self.search_count, self.current_record and self.current_record.id))

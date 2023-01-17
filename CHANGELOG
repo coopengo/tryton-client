@@ -1,3 +1,6 @@
+* Manage domain on id in single value list as unique
+* Do not validate domain and enforce uniqueness for empty fields unless they're required
+
 Version 6.4.1 - 2022-07-01
 * Bug fixes (see mercurial logs for details)
 

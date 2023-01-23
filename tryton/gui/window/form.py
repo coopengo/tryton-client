@@ -110,6 +110,7 @@ class Form(SignalEvent, TabContent):
     def compare(self, model, attributes):
         if not attributes:
             return False
+        print(self.attributes.get('tab_domain'), attributes.get('tab_domain'))
         return (self.model == model
             and self.res_id == attributes.get('res_id')
             and self.attributes.get('domain') == attributes.get('domain')
@@ -119,9 +120,7 @@ class Form(SignalEvent, TabContent):
                     attributes.get('mode') or ['tree', 'form']))
             and self.screen.local_context == attributes.get('context')
             and self.attributes.get('search_value') == (
-                attributes.get('search_value'))
-            and self.attributes.get('tab_domain') == (
-                attributes.get('tab_domain')))
+                attributes.get('search_value')))
 
     def __hash__(self):
         return id(self)

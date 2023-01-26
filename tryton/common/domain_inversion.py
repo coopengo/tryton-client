@@ -382,6 +382,7 @@ def unique_value(domain):
     if (isinstance(domain, list)
             and len(domain) == 1):
         name, operator, value, *model = domain[0]
+        # Handle the case where the value is constrained by the domain
         if operator == '=' or (operator == 'in' and len(value) == 1):
             value = value if operator == '=' else value[0]
             count = 0

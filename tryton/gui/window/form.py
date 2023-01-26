@@ -110,7 +110,6 @@ class Form(SignalEvent, TabContent):
     def compare(self, model, attributes):
         if not attributes:
             return False
-        print(self.attributes.get('tab_domain'), attributes.get('tab_domain'))
         return (self.model == model
             and self.res_id == attributes.get('res_id')
             and self.attributes.get('domain') == attributes.get('domain')

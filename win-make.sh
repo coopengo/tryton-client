@@ -53,6 +53,8 @@ build() {
     python setup-freeze.py install_exe -d dist
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
     makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
+    mv dist "$v"
+    zip -r "$v".zip "$v"
 }
 
 upload() {

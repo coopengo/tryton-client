@@ -1,7 +1,7 @@
 @echo off
-set password=%1
+set password="%1"
 set cert_path="C:\Users\Administrator\Desktop\certificat\coopengo-software-cert.pfx"
-set "current_directory=%cd%"
+set current_directory="%cd%"
 
 dir %current_directory%
 

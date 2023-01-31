@@ -55,7 +55,7 @@ synchronize:pipeline:
       do
         git checkout "${BRANCH}"
         git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml build/
-        git commit -m "Merge .gitlab-ci.yml and build directory from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
+        git commit -m "Merge .gitlab-ci.yml, sign-client.bat and build directory from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
       done
       git push --all
   rules:
@@ -63,6 +63,7 @@ synchronize:pipeline:
       changes:
         - ".gitlab-ci.yml"
         - "build/**/*"
+        - "sign-client.bat"
 
 create:windows:
   stage: create

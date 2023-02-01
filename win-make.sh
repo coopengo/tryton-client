@@ -1,6 +1,7 @@
 #!/bin/bash
 
 GDRIVE_FOLDER_ID=1zdO12Vei2nAUY__-ICesV_WWkPbkCVH9
+CERTIFICAT_PASSWORD="$2"
 
 version() {
     local t
@@ -51,8 +52,10 @@ build() {
     local v; v=$(version)
     python setup.py compile_catalog
     python setup-freeze.py install_exe -d dist
+    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
-    makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
+    # makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
+    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
     mv dist "$v"
     zip -r "coog-$v.zip" "$v"
 }

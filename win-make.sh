@@ -55,8 +55,8 @@ build() {
     cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
     # makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
-    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
     mv dist "$v"
+    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
     zip -r "coog-$v.zip" "$v"
 }
 

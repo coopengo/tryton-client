@@ -1113,22 +1113,28 @@ class ViewTree(View):
                     and previous_record not in previous_record.group):
                 previous_record = None
 
-            if tree_sel.get_mode() == Gtk.SelectionMode.SINGLE:
-                model, iter_ = tree_sel.get_selected()
-                if model and iter_:
-                    record = model.get_value(iter_, 0)
-                    self.record = record
-                else:
-                    self.record = None
+            # Because do_selection_changed is call through an idle_add it can
+            # be called when the treeview of the selection has had it's
+            # underlying model modified we should thus check if the treeview
+            # linked to the selections still exists
+            has_treeview = tree_sel.get_tree_view() is not None
+            if has_treeview:
+                if tree_sel.get_mode() == Gtk.SelectionMode.SINGLE:
+                    model, iter_ = tree_sel.get_selected()
+                    if model and iter_:
+                        record = model.get_value(iter_, 0)
+                        self.record = record
+                    else:
+                        self.record = None
 
-            elif tree_sel.get_mode() == Gtk.SelectionMode.MULTIPLE:
-                model, paths = tree_sel.get_selected_rows()
-                if model and paths:
-                    iter_ = model.get_iter(paths[0])
-                    record = model.get_value(iter_, 0)
-                    self.record = record
-                else:
-                    self.record = None
+                elif tree_sel.get_mode() == Gtk.SelectionMode.MULTIPLE:
+                    model, paths = tree_sel.get_selected_rows()
+                    if model and paths:
+                        iter_ = model.get_iter(paths[0])
+                        record = model.get_value(iter_, 0)
+                        self.record = record
+                    else:
+                        self.record = None
 
             if self.editable and previous_record:
                 def go_previous():
@@ -1330,7 +1336,8 @@ class ViewTree(View):
             records.append(model.get_value(iter_, 0))
         records = []
         sel = self.treeview.get_selection()
-        sel.selected_foreach(_func_sel_get, records)
+        if sel is not None:
+            sel.selected_foreach(_func_sel_get, records)
         return records
 
     def get_selected_paths(self):

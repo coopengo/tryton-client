@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GDRIVE_FOLDER_ID=1zdO12Vei2nAUY__-ICesV_WWkPbkCVH9
-CERTIFICAT_PASSWORD="$2"
+CERTIFICAT_PASSWORD=$2
 
 version() {
     local t

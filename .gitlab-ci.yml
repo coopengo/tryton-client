@@ -37,13 +37,11 @@ include:
 synchronize:pipeline:
   stage: synchronize
   image: bitnami/git:latest
-  variables:
-    REPOSITORY_SSH_KEY: "${SSH_KEY}"
   before_script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H "${CI_SERVER_HOST}" >>~/.ssh/known_hosts
-    - echo "${REPOSITORY_SSH_KEY}" >~/.ssh/id_rsa
+    - cat "${SSH_KEY}" > ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
     - git config --global user.email "${GITLAB_USER_EMAIL}"
     - git config --global user.name "🤖 GitLab CI/CD 🤖"

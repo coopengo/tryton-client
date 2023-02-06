@@ -124,7 +124,7 @@ create:windows:
 
 build:tryton_client:
   stage: build
-  image: darkwizard242/ansible:ubuntu-20.04
+  image: darkwizard242/ansible:debian-bullseye
   variables:
     ANSIBLE_FORCE_COLOR: "true"
   before_script:

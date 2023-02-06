@@ -124,7 +124,7 @@ create:windows:
 
 build:tryton_client:
   stage: build
-  image: darkwizard242/ansible:ubuntu-20.04
+  image: darkwizard242/ansible:debian-bullseye
   variables:
     ANSIBLE_FORCE_COLOR: "true"
   before_script:
@@ -133,7 +133,7 @@ build:tryton_client:
     - source tryton.env
     - !reference [.git_with_ssh:debian, before_script]
   script:
-    - echo "$SHELL"
+    - echo "$TERM"
     - |-
       export SSH_CONNECTION="1"
       while [[ "$(nmap ${INSTANCE_IP} -Pn -p 22 | egrep -io 'open|closed|filtered')" != "open" ]] && [[ "${SSH_CONNECTION}" -le "20" ]]
@@ -145,7 +145,7 @@ build:tryton_client:
         (( ++SSH_CONNECTION ))
       done
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source build/env/windows.env && echo "$SHELL" && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source build/env/windows.env && echo "$TERM" && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
   needs:
     - create:windows
   rules:

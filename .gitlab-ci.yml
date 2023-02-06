@@ -12,7 +12,7 @@ stages:
     - curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
     - apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     - apt update && apt install -y --no-install-recommends --no-install-suggests terraform
-    - cd "${CI_PROJECT_DIR}/build/terraform"
+    - cd "${CI_PROJECT_DIR}/.gitlab/terraform"
     - |-
       terraform init \
         -backend-config="address=${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}" \
@@ -52,7 +52,7 @@ synchronize:pipeline:
       for BRANCH in $(git ls-remote --refs -h origin -l "coog-*" | cut -s -d '/' -f3 | grep -E "^(coog-[[:digit:]]{1,2}).([[:digit:]]{1,2})$" )
       do
         git checkout "${BRANCH}"
-        git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml sign-client.bat build/
+        git checkout "${CI_COMMIT_SHORT_SHA}" .gitlab-ci.yml sign-client.bat .gitlab/
         git commit -m "Merge .gitlab-ci.yml, sign-client.bat and build directory from \"${CI_COMMIT_SHORT_SHA}\"" || echo "Nothing to do"
       done
       git push --all
@@ -60,7 +60,7 @@ synchronize:pipeline:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       changes:
         - ".gitlab-ci.yml"
-        - "build/**/*"
+        - ".gitlab/**/*"
         - "sign-client.bat"
 
 create:windows:
@@ -114,7 +114,7 @@ create:windows:
         echo "Couldn't get INSTANCE_IP"
         exit 1
       fi
-    - envsubst < "${CI_PROJECT_DIR}/build/env/tryton.env" > tryton.env
+    - envsubst < "${CI_PROJECT_DIR}/.gitlab/env/tryton.env" > tryton.env
   artifacts:
     paths:
       - tryton.env
@@ -145,7 +145,7 @@ build:tryton_client:
         (( ++SSH_CONNECTION ))
       done
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source build/env/windows.env && echo "$TERM" && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
+        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source .gitlab/env/windows.env && echo "$TERM" && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
   needs:
     - create:windows
   rules:

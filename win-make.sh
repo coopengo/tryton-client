@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GDRIVE_FOLDER_ID=1zdO12Vei2nAUY__-ICesV_WWkPbkCVH9
+GDRIVE_FOLDER_ID=1QFesaa6pPX_kPvOZc2fbOa9j9KA9jM1x
 CERTIFICAT_PASSWORD=$2
 
 version() {
@@ -39,7 +39,7 @@ deps() {
         chardet \
         pyflakes
 
-    echo "gdrive should be installed from https://github.com/prasmussen/gdrive#downloads"
+    echo "gdrive should be installed from https://github.com/glotlabs/gdrive#downloads"
     echo "gdrive should be placed in a PATH folder"
 }
 
@@ -63,7 +63,7 @@ build() {
 upload() {
     for f in ./coog-*
     do
-        gdrive upload -p "$GDRIVE_FOLDER_ID" "$f"
+        gdrive upload --parent "$GDRIVE_FOLDER_ID" "$f"
     done
 }
 

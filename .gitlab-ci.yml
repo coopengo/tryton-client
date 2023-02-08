@@ -133,7 +133,6 @@ build:tryton_client:
     - source tryton.env
     - !reference [.git_with_ssh:debian, before_script]
   script:
-    - echo "$TERM"
     - |-
       export SSH_CONNECTION="1"
       while [[ "$(nmap ${INSTANCE_IP} -Pn -p 22 | egrep -io 'open|closed|filtered')" != "open" ]] && [[ "${SSH_CONNECTION}" -le "20" ]]
@@ -144,8 +143,9 @@ build:tryton_client:
         sleep 60
         (( ++SSH_CONNECTION ))
       done
-    - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
-        "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source .gitlab/env/windows.env && echo "$TERM" && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
+    - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" "export CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME} && export COOPENGO_SOFTWARE_CERT_PASSWORD=${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./tryton/.gitlab/trigger-build.sh"
+    # - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
+        # "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source .gitlab/env/windows.env && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
   needs:
     - create:windows
   rules:

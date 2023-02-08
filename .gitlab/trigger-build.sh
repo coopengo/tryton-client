@@ -5,6 +5,7 @@ set -x
 PATH="${PATH}:/c/msys32/mingw32/bin"
 
 cd tryton
+pwd
 /usr/bin/git fetch --tags --all -p -f
 /usr/bin/git reset --hard origin/master
 /usr/bin/git clean -fd

@@ -48,8 +48,7 @@ from threading import Lock
 from gi.repository import Gdk, GdkPixbuf, GLib, GObject, Gtk
 
 from tryton import __version__
-from tryton.exceptions import (
-    TrytonAuthenticationError, TrytonError, TrytonServerError)
+from tryton.exceptions import TrytonError, TrytonServerError
 from tryton.pyson import PYSONEncoder
 
 from .underline import set_underline
@@ -1183,22 +1182,6 @@ class RPCProgress(object):
     def start(self):
         try:
             self.res = getattr(rpc, self.method)(*self.args)
-        except TrytonAuthenticationError:
-            from tryton.gui.main import Main
-            if PLOCK.acquire(False):
-                try:
-                    get_credentials(rpc._USER)
-                except TrytonError as exception:
-                    if exception.faultCode != 'QueryCanceled':
-                        message(
-                            _("Could not get a session."),
-                            msg_type=Gtk.MessageType.ERROR)
-                    Main().on_quit()
-                    sys.exit()
-                finally:
-                    PLOCK.release()
-                if self.args:
-                    self.start()
         except Exception as exception:
             self.error = True
             self.res = False

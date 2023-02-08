@@ -3,7 +3,6 @@
 from .jsonrpc import Fault
 
 TrytonServerError = Fault
-TrytonAuthenticationError = Fault
 
 
 class TrytonServerUnavailable(Exception):

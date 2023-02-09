@@ -167,6 +167,8 @@ destroy:windows:
       artifacts: false
     - job: create:windows
       artifacts: false
+  rules:
+    - when: always
   # rules:
   #   - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
   #     when: always

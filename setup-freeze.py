@@ -112,7 +112,6 @@ if sys.platform == 'win32':
         ('share/languages/python3.lang', 'share/languages/python3.lang'),
         ('share/styles/classic.xml', 'share/styles/classix.xml'),
         ('share/styles/styles.rng', 'share/styles/styles.rng'),
-        (os.path.join(sys.prefix, 'ssl'), 'etc/ssl'),
         ])
     dll_paths = os.getenv('PATH', os.defpath).split(os.pathsep)
     required_dlls = [

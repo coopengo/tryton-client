@@ -23,7 +23,7 @@ module "asg_gitlab_runner_manager" {
   create_lt = true
 
   image_id                   = data.aws_ami.windows.image_id
-  instance_type              = var.instance_type
+  # instance_type              = var.instance_type
   ebs_optimized              = false
   enable_monitoring          = false
   use_mixed_instances_policy = true

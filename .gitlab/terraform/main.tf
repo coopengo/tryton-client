@@ -48,10 +48,10 @@ module "asg_gitlab_runner_manager" {
         instance_type     = "c5n.large"
         weighted_capacity = "3"
       },
-      {
-        instance_type     = "t3.medium"
-        weighted_capacity = "2"
-      },
+      # {
+      #   instance_type     = "t3.medium"
+      #   weighted_capacity = "2"
+      # },
       {
         instance_type     = "c5.large"
         weighted_capacity = "1"

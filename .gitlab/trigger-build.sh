@@ -3,9 +3,9 @@
 set -x
 
 PATH="${PATH}:/c/msys32/mingw32/bin"
-source "$(pwd)/.gitlab/env/windows.env"
 
 cd tryton || exit 1
+source "$(pwd)/.gitlab/env/windows.env"
 git fetch --tags --all -p -f
 git reset --hard origin/master
 git clean -fd

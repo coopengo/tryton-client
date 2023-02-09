@@ -63,75 +63,74 @@ include:
 #         - ".gitlab/**/*"
 #         - "sign-client.bat"
 
-# create:windows:
-#   stage: create
-#   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
-#   before_script:
-#     - apt update && apt install -y --no-install-recommends git
-#     - |-
-#       if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
-#       then
-#         echo "Last commit doesn't have 1 tag, that mean there is no change"
-#         echo "Pipeline stop here"
-#         exit 1
-#       fi
-#     - !reference [.terraform, before_script]
-#   script:
-#     - terraform plan
-#     - terraform apply --auto-approve
-#     - cd "${CI_PROJECT_DIR}"
-#     - |-
-#       export EC2_STATE_TRY="1"
-#       while [[ $(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].State.Name' --output text) != "running" ]] &&
-#             [[ "$EC2_STATE_TRY" -le "10" ]]
-#       do
-#         echo "Warning : Must wait 60 second minimum else ssh refuse connection"
-#         echo "Instance not ready... Retry in 60 sec - ${EC2_STATE_TRY}"
-#         sleep 60
-#         let ++EC2_STATE_TRY
-#       done
-#       if [[ "$EC2_STATE_TRY" -ge "10" ]]
-#       then
-#         echo "Instance still not running"
-#         exit 1
-#       fi
-#     - |-
-#       export INSTANCE_IP_TRY="1"
-#       while [[ "${INSTANCE_IP}" == "" ]] && [[ "${INSTANCE_IP_TRY}" -le "20" ]]
-#       do
-#         export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].PrivateIpAddress' --output text)
-#         if [[ "${INSTANCE_IP}" == "" ]]
-#         then
-#           echo "INSTANCE_IP variable is empty."
-#           echo "Wait 10 seconds before retry"
-#           echo "Try ${INSTANCE_IP_TRY}/20"
-#           sleep 10
-#           (( ++INSTANCE_IP_TRY ))
-#         fi
-#       done
-#       if [[ "$INSTANCE_IP" == "" ]]
-#       then
-#         echo "Couldn't get INSTANCE_IP"
-#         exit 1
-#       fi
-#     - envsubst < "${CI_PROJECT_DIR}/.gitlab/env/tryton.env" > tryton.env
-#   artifacts:
-#     paths:
-#       - tryton.env
-#     expire_in: 2 hours
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
+create:windows:
+  stage: create
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  before_script:
+    - apt update && apt install -y --no-install-recommends git
+    - |-
+      if [[ $(git tag --points-at HEAD | wc -l) -ne 1 && ${CI_PIPELINE_SOURCE} != "web" ]]
+      then
+        echo "Last commit doesn't have 1 tag, that mean there is no change"
+        echo "Pipeline stop here"
+        exit 1
+      fi
+    - !reference [.terraform, before_script]
+  script:
+    - terraform plan
+    - terraform apply --auto-approve
+    - cd "${CI_PROJECT_DIR}"
+    - |-
+      export EC2_STATE_TRY="1"
+      while [[ $(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].State.Name' --output text) != "running" ]] &&
+            [[ "$EC2_STATE_TRY" -le "10" ]]
+      do
+        echo "Warning : Must wait 60 second minimum else ssh refuse connection"
+        echo "Instance not ready... Retry in 60 sec - ${EC2_STATE_TRY}"
+        sleep 60
+        let ++EC2_STATE_TRY
+      done
+      if [[ "$EC2_STATE_TRY" -ge "10" ]]
+      then
+        echo "Instance still not running"
+        exit 1
+      fi
+    - |-
+      export INSTANCE_IP_TRY="1"
+      while [[ "${INSTANCE_IP}" == "" ]] && [[ "${INSTANCE_IP_TRY}" -le "20" ]]
+      do
+        export INSTANCE_IP=$(aws ec2 describe-instances --filters "Name = instance.group-name, Values = tryton-${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}" --query 'Reservations[*].Instances[0].PrivateIpAddress' --output text)
+        if [[ "${INSTANCE_IP}" == "" ]]
+        then
+          echo "INSTANCE_IP variable is empty."
+          echo "Wait 10 seconds before retry"
+          echo "Try ${INSTANCE_IP_TRY}/20"
+          sleep 10
+          (( ++INSTANCE_IP_TRY ))
+        fi
+      done
+      if [[ "$INSTANCE_IP" == "" ]]
+      then
+        echo "Couldn't get INSTANCE_IP"
+        exit 1
+      fi
+    - envsubst < "${CI_PROJECT_DIR}/.gitlab/env/tryton.env" > tryton.env
+  artifacts:
+    paths:
+      - tryton.env
+    expire_in: 2 hours
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
 
 build:tryton_client:
   stage: build
   image: darkwizard242/ansible:debian-bullseye
   variables:
     ANSIBLE_FORCE_COLOR: "true"
-    INSTANCE_IP: "13.38.251.145"
   before_script:
     - ansible --version
     - apt update && apt install --no-install-recommends --no-install-suggests -y git sudo openssh-client nmap
-    # - source tryton.env
+    - source tryton.env
     - !reference [.git_with_ssh:debian, before_script]
   script:
     - |-
@@ -147,26 +146,26 @@ build:tryton_client:
     - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" " export CI_COMMIT_REF_NAME=${CI_COMMIT_REF_NAME} && export COOPENGO_SOFTWARE_CERT_PASSWORD=${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./tryton/.gitlab/trigger-build.sh"
     # - ssh -T -o "StrictHostKeyChecking=no" administrator@"${INSTANCE_IP}" \
         # "PATH=\"${PATH}:/c/msys32/mingw32/bin\" && cd tryton && /usr/bin/git fetch --tags --all -p -f && /usr/bin/git reset --hard origin/master && /usr/bin/git clean -fd && /usr/bin/git checkout ${CI_COMMIT_REF_NAME} && source .gitlab/env/windows.env && ./win-make.sh build ${COOPENGO_SOFTWARE_CERT_PASSWORD} && ./win-make.sh upload"
-  # needs:
-  #   - create:windows
+  needs:
+    - create:windows
   # rules:
   #   - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
     
 
-# destroy:windows:
-#   stage: destroy
-#   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
-#   before_script:
-#     - !reference [.terraform, before_script]
-#   script:
-#     - terraform plan --refresh-only
-#     - terraform destroy --auto-approve
-#     - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}"
-#   needs:
-#     - job: build:tryton_client
-#       artifacts: false
-#     - job: create:windows
-#       artifacts: false
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
-#       when: always
+destroy:windows:
+  stage: destroy
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  before_script:
+    - !reference [.terraform, before_script]
+  script:
+    - terraform plan --refresh-only
+    - terraform destroy --auto-approve
+    - curl -s --header "Private-Token:${PROJECT_API_TOKEN}" --request DELETE "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/terraform/state/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}"
+  needs:
+    - job: build:tryton_client
+      artifacts: false
+    - job: create:windows
+      artifacts: false
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
+      when: always

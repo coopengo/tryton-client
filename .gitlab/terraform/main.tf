@@ -37,15 +37,15 @@ module "asg_gitlab_runner_manager" {
     override = [
 
       {
-        instance_type     = "c5a.large"
+        instance_type     = "c5.xlarge"
         weighted_capacity = "5"
       },
       {
-        instance_type     = "c6i.large"
+        instance_type     = "c6i.xlarge"
         weighted_capacity = "4"
       },
       {
-        instance_type     = "c5n.large"
+        instance_type     = "c5n.xlarge"
         weighted_capacity = "3"
       },
       # {
@@ -53,7 +53,7 @@ module "asg_gitlab_runner_manager" {
       #   weighted_capacity = "2"
       # },
       {
-        instance_type     = "c5.large"
+        instance_type     = "c5a.xlarge"
         weighted_capacity = "1"
       },
     ]

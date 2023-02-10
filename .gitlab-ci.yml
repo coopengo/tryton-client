@@ -169,6 +169,7 @@ destroy:windows:
       artifacts: false
   rules:
     - when: always
+    - when: manual
   # rules:
   #   - if: $CI_COMMIT_TAG =~ /^coog-(([[:digit:]]{1,2}).([[:digit:]]{1,2}))/
   #     when: always

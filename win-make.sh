@@ -59,7 +59,7 @@ build() {
 upload() {
     for f in ./coog-*
     do
-        gdrive upload --parent "$GDRIVE_FOLDER_ID" "$f"
+        gdrive files upload --parent "$GDRIVE_FOLDER_ID" "$f"
     done
 }
 

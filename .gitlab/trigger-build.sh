@@ -11,3 +11,4 @@ git reset --hard origin/master
 git clean -fd
 git checkout "${CI_COMMIT_REF_NAME:?}"
 "$(pwd)/win-make.sh" build "${COOPENGO_SOFTWARE_CERT_PASSWORD:?}"
+"$(pwd)/win-make.sh" upload

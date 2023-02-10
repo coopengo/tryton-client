@@ -1,3 +1,5 @@
+* Save and Restore tree state on List Form
+* Do record (pre)validation and saving on selection change for list-form views
 * Support authentication services
 
 Version 6.4.1 - 2022-07-01

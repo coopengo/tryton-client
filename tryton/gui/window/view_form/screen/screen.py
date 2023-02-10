@@ -908,13 +908,13 @@ class Screen:
         view = self.current_view
         if not view:
             return
-        if view.view_type not in ('tree', 'form'):
+        if view.view_type not in {'tree', 'form', 'list-form'}:
             return
         if id(view) in self.tree_states_done:
             return
         if view.view_type == 'form' and self.tree_states_done:
             return
-        if (view.view_type == 'tree'
+        if (view.view_type in {'tree', 'list-form'}
                 and not view.attributes.get('tree_state', False)):
             # Mark as done to not set later when the view_type change
             self.tree_states_done.add(id(view))
@@ -925,27 +925,28 @@ class Screen:
                 view.expand_nodes(None)
             return
         expanded_nodes, selected_nodes = [], []
-        state = self.tree_states[parent][view.children_field]
-        if state:
-            expanded_nodes, selected_nodes = state
-        if state is None and CONFIG['client.save_tree_state'] and (
-                view.view_type != 'tree' or not view.always_expand):
-            json_domain = self.get_tree_domain(parent)
-            try:
-                expanded_nodes, selected_nodes = RPCExecute('model',
-                    'ir.ui.view_tree_state', 'get',
-                    self.model_name, json_domain,
-                    view.children_field)
-                expanded_nodes = json.loads(expanded_nodes)
-                selected_nodes = json.loads(selected_nodes)
-            except RPCException:
-                logger.warn(
-                    'Unable to get view tree state for %s',
-                    self.model_name)
-            self.tree_states[parent][view.children_field] = (
-                expanded_nodes, selected_nodes)
-        if view.view_type == 'tree':
-            view.expand_nodes(expanded_nodes)
+        if view.view_type in {'tree', 'list-form'}:
+            state = self.tree_states[parent][view.children_field]
+            if state:
+                expanded_nodes, selected_nodes = state
+            if state is None and CONFIG['client.save_tree_state'] and (
+                    view.view_type != 'tree' or not view.always_expand):
+                json_domain = self.get_tree_domain(parent)
+                try:
+                    expanded_nodes, selected_nodes = RPCExecute('model',
+                        'ir.ui.view_tree_state', 'get',
+                        self.model_name, json_domain,
+                        view.children_field)
+                    expanded_nodes = json.loads(expanded_nodes)
+                    selected_nodes = json.loads(selected_nodes)
+                except RPCException:
+                    logger.warn(
+                        'Unable to get view tree state for %s',
+                        self.model_name)
+                self.tree_states[parent][view.children_field] = (
+                    expanded_nodes, selected_nodes)
+            if view.view_type == 'tree':
+                view.expand_nodes(expanded_nodes)
             view.select_nodes(selected_nodes)
         else:
             if selected_nodes:
@@ -981,9 +982,12 @@ class Screen:
                             self.current_record)
                     self.tree_states[parent][view.children_field] = (
                         [], [[path]])
-            elif view.view_type == 'tree':
-                view.save_width()
-                paths = view.get_expanded_paths()
+            elif view.view_type in {'tree', 'list-form'}:
+                if view.view_type == 'tree':
+                    view.save_width()
+                    paths = view.get_expanded_paths()
+                else:
+                    paths = []
                 selected_paths = view.get_selected_paths()
                 self.tree_states[parent][view.children_field] = (
                     paths, selected_paths)

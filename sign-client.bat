@@ -4,8 +4,8 @@ set cert_path=C:\Users\Administrator\Desktop\certificat\coopengo-software-cert.p
 set current_directory=%cd%
 set folder=C:\msys32\home\Administrator\tryton\dist
 
-echo Load windows variables...
-for /f "tokens=1* delims==" %%a in (.gitlab/env/cmd.env) do set "%%a=%%b"
+@REM echo Load windows variables...
+@REM for /f "tokens=1* delims==" %%a in (.gitlab/env/cmd.env) do set "%%a=%%b"
 
 if exist %folder% (
   echo Signing coog.exe ...

@@ -1005,6 +1005,22 @@ def process_exception(exception, *args, **kwargs):
                 _("The server took too much time to answer.\n"
                     "You may try again later."),
                 msg_type=Gtk.MessageType.ERROR)
+        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
+            from tryton.gui.main import Main
+            if PLOCK.acquire(False):
+                try:
+                    get_credentials(rpc._USER)
+                except TrytonError as exception:
+                    if exception.faultCode != 'QueryCanceled':
+                        message(
+                            _("Could not get a session."),
+                            msg_type=Gtk.MessageType.ERROR)
+                    Main().on_quit()
+                    sys.exit()
+                finally:
+                    PLOCK.release()
+                if args:
+                    return rpc_execute(*args)
         elif exception.faultCode == str(int(HTTPStatus.TOO_MANY_REQUESTS)):
             message(
                 _('Too many requests. Try again later.'),

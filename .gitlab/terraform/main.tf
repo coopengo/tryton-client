@@ -5,7 +5,7 @@
 # spot_price - (Optional; Default: On-demand price) The maximum price to request on the spot market.
 module "asg_gitlab_runner_manager" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 4.4"
+  version = "~> 6.7"
 
   name = "${var.name}-${var.coog_main_version}-${var.ci_pipeline_id}"
 

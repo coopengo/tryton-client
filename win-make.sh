@@ -4,6 +4,7 @@ set -x
 
 GDRIVE_FOLDER_ID=1QFesaa6pPX_kPvOZc2fbOa9j9KA9jM1x
 CERTIFICAT_PASSWORD=$2
+WINDOWS_USER_PASSWORD=$3
 
 version() {
     local t
@@ -54,11 +55,11 @@ build() {
     local v; v=$(version)
     python setup.py compile_catalog
     python setup-freeze.py install_exe -d dist
-    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
+    "C:/PSTools/PsExec.exe" -u Administrator -p ${WINDOWS_USER_PASSWORD} "C:\msys32\home\Administrator\tryton\sign-client.bat" ${CERTIFICAT_PASSWORD}
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
     # makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
     mv dist "$v"
-    cmd /c "sign-client.bat ${CERTIFICAT_PASSWORD}"
+    "C:/PSTools/PsExec.exe" -u Administrator -p ${WINDOWS_USER_PASSWORD} "C:\msys32\home\Administrator\tryton\sign-client.bat" ${CERTIFICAT_PASSWORD}
     zip -q -9 -r "coog-$v.zip" "$v"
 }
 

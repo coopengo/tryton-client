@@ -1,6 +1,11 @@
 #!/bin/bash
 
+set -x
+
 GDRIVE_FOLDER_ID=1HPtReG1eJD0vm4MLDNlqJNPQDHjrtlMr
+CERTIFICAT_PASSWORD=$2
+WINDOWS_USER_PASSWORD=$3
+
 version() {
     local t
     t=$(git describe --tags --exact-match 2> /dev/null | grep "^coog-" | head -1)
@@ -48,10 +53,12 @@ build() {
     clean
     local v; v=$(version)
     python setup-freeze.py install_exe -d dist
+    "C:/PSTools/PsExec.exe" -u Administrator -p ${WINDOWS_USER_PASSWORD} "C:\msys32\home\Administrator\tryton\sign-client.bat" ${CERTIFICAT_PASSWORD}
     makensis -DVERSION="$v" -DBITS=32 -DSERIES="$v" setup.nsi
-    makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
+    # makensis -DVERSION="$v" -DBITS=32 setup-single.nsi
     mv dist "$v"
-    zip -r "coog-$v.zip" "$v"
+    "C:/PSTools/PsExec.exe" -u Administrator -p ${WINDOWS_USER_PASSWORD} "C:\msys32\home\Administrator\tryton\sign-client.bat" ${CERTIFICAT_PASSWORD}
+    zip -q -9 -r "coog-$v.zip" "$v"
 }
 
 upload() {

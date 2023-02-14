@@ -14,6 +14,9 @@ import colorsys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from decimal import Decimal
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 try:
     from http import HTTPStatus
 except ImportError:
@@ -900,6 +903,60 @@ def process_exception(exception, *args, **kwargs):
     raise RPCException(exception)
 
 
+def get_credentials(user_id=None):
+    if not CONFIG['login.service']:
+        Login()
+    else:
+        url = CONFIG['login.service']
+        port = CONFIG['login.service.port']
+        next_ = 'http://localhost:%s/' % port
+        url_parts = list(urlparse(url))
+        query = dict(parse_qs(url_parts[4]))
+        query['next'] = next_
+        if user_id is not None:
+            query['renew'] = user_id
+        url_parts[4] = urlencode(query)
+        url = urlunparse(url_parts)
+        webbrowser.open(url)
+
+        class RequestHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html')
+                self.end_headers()
+                try:
+                    rpc.set_service_session(
+                        parse_qs(urlparse(self.path).query))
+                except ValueError:
+                    pass
+                else:
+                    self.server.session_set = True
+                self.wfile.write(b"""\
+<html>
+    <head>
+        <title>Authentication Status</title>
+        <script>
+        window.onload = function() {
+            window.close();
+        }
+        </script>
+    </head>
+    <body>
+        <p>The authentication flow has completed.</p>
+    </body>
+</html>""")
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(('localhost', port), RequestHandler)
+        server.timeout = 5 * 60
+        server.session_set = False
+        server.handle_request()
+        if not server.session_set:
+            raise TrytonError('SessionFailed')
+
+
 class Login(object):
     def __init__(self, func=rpc.login):
         parameters = {}
@@ -1012,6 +1069,22 @@ class RPCProgress(object):
     def start(self):
         try:
             self.res = getattr(rpc, self.method)(*self.args)
+        except TrytonAuthenticationError:
+            from tryton.gui.main import Main
+            if PLOCK.acquire(False):
+                try:
+                    get_credentials(rpc._USER)
+                except TrytonError as exception:
+                    if exception.faultCode != 'QueryCanceled':
+                        message(
+                            _("Could not get a session."),
+                            msg_type=Gtk.MessageType.ERROR)
+                    Main().on_quit()
+                    sys.exit()
+                finally:
+                    PLOCK.release()
+                if self.args:
+                    self.start()
         except Exception as exception:
             self.error = True
             self.res = False

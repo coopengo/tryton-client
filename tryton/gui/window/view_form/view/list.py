@@ -1164,9 +1164,12 @@ class ViewTree(View):
                     GLib.idle_add(pre_validate)
             self.update_sum()
 
-        # Delay the switch to the record so that focus-out event of the mixed
-        # widget can be triggered
-        GLib.idle_add(do_selection_changed)
+        if self.screen._multiview_form:
+            tree, *forms = self.screen._multiview_form.widget_groups[\
+                self.screen._multiview_group]
+            for form in forms:
+                form.set_value()
+        do_selection_changed()
 
     def set_value(self):
         if self.editable:

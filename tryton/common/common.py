@@ -44,8 +44,7 @@ from threading import Lock
 from gi.repository import Gdk, GdkPixbuf, GLib, GObject, Gtk
 
 from tryton import __version__
-from tryton.exceptions import (
-    TrytonAuthenticationError, TrytonServerError, TrytonError)
+from tryton.exceptions import TrytonError, TrytonServerError
 from tryton.pyson import PYSONEncoder
 from .underline import set_underline
 from .widget_style import widget_class
@@ -892,6 +891,22 @@ def process_exception(exception, *args, **kwargs):
                 _("The server took too much time to answer.\n"
                     "You may try again later."),
                 msg_type=Gtk.MessageType.ERROR)
+        elif exception.faultCode == str(int(HTTPStatus.UNAUTHORIZED)):
+            from tryton.gui.main import Main
+            if PLOCK.acquire(False):
+                try:
+                    get_credentials(rpc._USER)
+                except TrytonError as exception:
+                    if exception.faultCode != 'QueryCanceled':
+                        message(
+                            _("Could not get a session."),
+                            msg_type=Gtk.MessageType.ERROR)
+                    Main().on_quit()
+                    sys.exit()
+                finally:
+                    PLOCK.release()
+                if args:
+                    return rpc_execute(*args)
         elif exception.faultCode == str(int(HTTPStatus.TOO_MANY_REQUESTS)):
             message(
                 _('Too many requests. Try again later.'),
@@ -1069,22 +1084,6 @@ class RPCProgress(object):
     def start(self):
         try:
             self.res = getattr(rpc, self.method)(*self.args)
-        except TrytonAuthenticationError:
-            from tryton.gui.main import Main
-            if PLOCK.acquire(False):
-                try:
-                    get_credentials(rpc._USER)
-                except TrytonError as exception:
-                    if exception.faultCode != 'QueryCanceled':
-                        message(
-                            _("Could not get a session."),
-                            msg_type=Gtk.MessageType.ERROR)
-                    Main().on_quit()
-                    sys.exit()
-                finally:
-                    PLOCK.release()
-                if self.args:
-                    self.start()
         except Exception as exception:
             self.error = True
             self.res = False

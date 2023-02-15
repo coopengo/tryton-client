@@ -1009,12 +1009,14 @@ def process_exception(exception, *args, **kwargs):
             from tryton.gui.main import Main
             if PLOCK.acquire(False):
                 try:
-                    Login()
+                    get_credentials(rpc._USER)
                 except TrytonError as exception:
-                    if exception.faultCode == 'QueryCanceled':
-                        Main().on_quit()
-                        sys.exit()
-                    raise
+                    if exception.faultCode != 'QueryCanceled':
+                        message(
+                            _("Could not get a session."),
+                            msg_type=Gtk.MessageType.ERROR)
+                    Main().on_quit()
+                    sys.exit()
                 finally:
                     PLOCK.release()
                 if args:

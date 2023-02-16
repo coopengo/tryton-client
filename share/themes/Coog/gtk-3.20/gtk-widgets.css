@@ -679,12 +679,12 @@ frame > border.flat,
     border: none;
 }
 
-scrolledwindow:not(:multiselection) > viewport.frame,
-frame > box > stack > scrolledwindow:not(:multiselection) {
+scrolledwindow:not(.multiselection) > viewport.frame,
+frame > box > stack > scrolledwindow:not(.multiselection) {
     border-style: none;
 }
 
-frame > box.vertical > scrolledwindow:not(:multiselection).frame {
+frame > box.vertical > scrolledwindow:not(.multiselection).frame {
     border-width: 1px 0px 1px 0px;
 }
 
@@ -1754,7 +1754,7 @@ scrollbar slider:active:backdrop {
  * scrolled window *
  *******************/
 .ubuntu-online-accounts.frame,
-scrolledwindow:not(:multiselection).frame {
+scrolledwindow:not(.multiselection).frame {
     border-top-color: @borders;
     border-right-color: shade (@bg_color, 0.76);
     border-bottom-color: shade (@bg_color, 0.86);
@@ -2308,8 +2308,7 @@ textview.monospace .context-menu {
 decoration:backdrop,
 tooltip.csd decoration,
 .popup decoration {
-    box-shadow: 1px 5px 13px transparent, /* this should match normal shadow geometries */
-                /*1px 5px 8px @inactive_shadow_color;
+    box-shadow: 1px 5px 13px transparent,
     transition: 100ms ease-out;
 }
 

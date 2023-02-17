@@ -20,7 +20,7 @@ module "asg_gitlab_runner_manager" {
   # user_data_base64 = filebase64("configure_postgres.sh")
 
   # Launch template
-  create_lt = true
+  create_launch_template = true
 
   image_id                   = data.aws_ami.windows.image_id
   instance_type              = var.instance_type
@@ -87,5 +87,5 @@ module "asg_gitlab_runner_manager" {
     }
   ]
 
-  tags_as_map = { for k, v in local.common_tags : k => v if k != "Name" }
+  tags = { for k, v in local.common_tags : k => v if k != "Name" }
 }

@@ -1,6 +1,6 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-from gi.repository import Gio, GObject, Gtk
+from gi.repository import Gio, GLib, GObject, Gtk
 
 from tryton.common import common
 
@@ -72,6 +72,7 @@ class ViewListForm(View):
         self.form_xml = xml
         self.listbox = Gtk.ListBox.new()
         self.listbox.connect('row-selected', self._row_selected)
+        self.listbox.connect('selected-rows-changed', self._selection_changed)
         self.listbox.props.activate_on_single_click = False
         self.listbox.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         self.widget = Gtk.ScrolledWindow.new()
@@ -84,6 +85,8 @@ class ViewListForm(View):
             self._view_forms = []
             self._model = ListBoxModel(self.group)
             self.listbox.bind_model(self._model, self._create_form)
+            if self.record:
+                self.set_cursor()
         for idx, view_form in enumerate(self._view_forms):
             view_form.display()
 
@@ -122,6 +125,53 @@ class ViewListForm(View):
         selected_rows = self.listbox.get_selected_rows()
         return [
             self._model.get_item(r.get_index()).record for r in selected_rows]
+
+    def get_selected_paths(self):
+        return [r.id for r in self.selected_records]
+
+    def select_nodes(self, nodes):
+        if not nodes:
+            return
+        self.listbox.unselect_all()
+        for idx, view_form in enumerate(self._view_forms):
+            if view_form.record.id in nodes:
+                row = self.listbox.get_row_at_index(idx)
+                if not row or not row.get_realized():
+                    continue
+                self.listbox.select_row(row)
+
+    def _selection_changed(self, listbox):
+        previous_record = self.record
+        if previous_record and previous_record not in previous_record.group:
+            previous_record = None
+
+        selected_records = self.selected_records
+        if selected_records:
+            self.record = selected_records[0]
+        else:
+            self.record = None
+
+        def go_previous():
+            self.record = previous_record
+            self.set_cursor()
+
+        def save():
+            if not previous_record.destroyed:
+                if not previous_record.save():
+                    go_previous()
+
+        def pre_validate():
+            if not previous_record.detroyed:
+                if not previous_record.pre_validate():
+                    go_previous()
+
+        if not self.screen.parent and previous_record != self.record:
+            if not previous_record.validate(self.get_fields()):
+                go_previous()
+                return True
+            GLib.idle_add(save)
+        elif self.screen.pre_validate and previous_record != self.record:
+            GLib.idle_add(pre_validate)
 
     def select_form(self, listbox_form):
         index = self._view_forms.index(listbox_form)

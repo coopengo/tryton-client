@@ -536,7 +536,8 @@ class Screen:
         return True
 
     def _sync_group(self):
-        if not self._multiview_form or self.current_view.view_type != 'tree':
+        if (not self._multiview_form
+                or self.current_view.view_type not in {'tree', 'list-form'}):
             return
         if self.current_record is None:
             return
@@ -908,7 +909,7 @@ class Screen:
         view = self.current_view
         if not view:
             return
-        if view.view_type not in ('tree', 'form'):
+        if view.view_type not in ('tree', 'form', 'list-form'):
             return
         if id(view) in self.tree_states_done:
             return
@@ -946,6 +947,8 @@ class Screen:
                 expanded_nodes, selected_nodes)
         if view.view_type == 'tree':
             view.expand_nodes(expanded_nodes)
+            view.select_nodes(selected_nodes)
+        elif view.view_type == 'list-form':
             view.select_nodes(selected_nodes)
         else:
             if selected_nodes:
@@ -1003,6 +1006,10 @@ class Screen:
                     except Exception:
                         logger.warn(
                             _('Unable to set view tree state'), exc_info=True)
+            elif view.view_type == 'list-form':
+                selected_paths = view.get_selected_paths()
+                self.tree_states[parent][view.children_field] = (
+                    [], selected_paths)
 
     def get_tree_domain(self, parent):
         if parent:

@@ -182,9 +182,10 @@ class One2Many(Widget):
             self.screen._multiview_form = view
             self.screen._multiview_group = self.attrs['group']
             wgroup = view.widget_groups.setdefault(self.attrs['group'], [])
-            if self.screen.current_view.view_type == 'tree':
+            if self.screen.current_view.view_type in {'tree', 'list-form'}:
                 if (wgroup
-                        and wgroup[0].screen.current_view.view_type == 'tree'):
+                        and wgroup[0].screen.current_view.view_type in {
+                            'tree', 'list-form'}):
                     raise ValueError("Wrong multiview definition")
                 wgroup.insert(0, self)
             else:

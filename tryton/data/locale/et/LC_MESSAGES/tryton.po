@@ -1,10 +1,3 @@
-# Translations template for tryton.
-# Copyright (C) 2018 Tryton
-# This file is distributed under the same license as the tryton project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "määra alternatiivne konfiguratsioonifail"
 
@@ -77,9 +70,6 @@ msgstr "Salvesta nimega..."
 msgid "Do you want to proceed?"
 msgstr "Kas soovid jätkata?"
 
-msgid "Always ignore this warning."
-msgstr "Eira alati seda hoiatust."
-
 msgid "No"
 msgstr "Ei"
 
@@ -128,11 +118,14 @@ msgstr "Kontrolli URLi: %s"
 msgid "Unable to check for new version."
 msgstr "Ei saa kontrollida uut versiooni"
 
-msgid "A new version is available!"
-msgstr "Uus versioon on saadaval!"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
+msgstr ""
 
-msgid "Download"
-msgstr "Allalaadimine"
+#, fuzzy
+msgid "Could not get a session."
+msgstr "Ei saanud serveriga ühendust"
 
 msgid "Too many requests. Try again later."
 msgstr ""
@@ -545,6 +538,10 @@ msgid "User name:"
 msgstr "Kasutaja nimi:"
 
 #, fuzzy
+msgid "Date:"
+msgstr "Andmebaas:"
+
+#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "Ei saa kustutada nõustajat %s"
 
@@ -655,6 +652,9 @@ msgstr ""
 msgid "Record saved."
 msgstr "Kirje salvestatud."
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -677,17 +677,15 @@ msgstr "Aruanne"
 msgid "Open report"
 msgstr "Ava aruanne"
 
-msgid "Print"
-msgstr "Prindi"
-
-msgid "Print report"
-msgstr "Prindi aruanne"
-
 msgid "_Copy URL"
 msgstr "_Kopeeri URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Kopeeri URL lõikelauale"
+
+#, fuzzy
+msgid "name"
+msgstr "Nimi"
 
 msgid "Unknown"
 msgstr "Tundmatu"
@@ -1156,6 +1154,21 @@ msgstr "Kustuta valitud kirje"
 msgid "%s%%"
 msgstr "%s%%"
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Pildid"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "CSV parameetrid"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "CSV parameetrid"
+
 msgid "Choose a language"
 msgstr "Vali keel"
 
@@ -1174,5 +1187,10 @@ msgstr "Kirje tuleb salvestada enne tõlke lisamist."
 msgid "No other language available."
 msgstr "Teisi keeli pole saadaval."
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "Tõlgi vaade"
+

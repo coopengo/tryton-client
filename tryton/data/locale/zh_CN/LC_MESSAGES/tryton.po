@@ -1,10 +1,3 @@
-# Translations template for tryton.
-# Copyright (C) 2016 Tryton
-# This file is distributed under the same license as the tryton project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "指定备选配置文件"
 
@@ -77,9 +70,6 @@ msgstr "另存为..."
 msgid "Do you want to proceed?"
 msgstr "继续此项操作 ?"
 
-msgid "Always ignore this warning."
-msgstr "下次不再提示."
-
 msgid "No"
 msgstr "否"
 
@@ -127,11 +117,14 @@ msgstr "检查URL: %s"
 msgid "Unable to check for new version."
 msgstr "无法检查新版本."
 
-msgid "A new version is available!"
-msgstr "有新版本可用！"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
+msgstr ""
 
-msgid "Download"
-msgstr "下载"
+#, fuzzy
+msgid "Could not get a session."
+msgstr "无法连接服务器."
 
 msgid "Too many requests. Try again later."
 msgstr "请求太多，请稍后重试."
@@ -540,6 +533,10 @@ msgstr "主机/数据库信息"
 msgid "User name:"
 msgstr "用户名:"
 
+#, fuzzy
+msgid "Date:"
+msgstr "数据库:"
+
 msgid "Unable to complete email entry"
 msgstr "无法完成电子邮件输入"
 
@@ -642,6 +639,9 @@ msgstr "正在处理重复记录."
 msgid "Record saved."
 msgstr "记录保存成功."
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -664,17 +664,15 @@ msgstr "报告(_R)"
 msgid "Open report"
 msgstr "打开报告"
 
-msgid "Print"
-msgstr "打印"
-
-msgid "Print report"
-msgstr "打印报告"
-
 msgid "_Copy URL"
 msgstr "复制（_C）URL"
 
 msgid "Copy URL into clipboard"
 msgstr "将URL复制到粘贴板"
+
+#, fuzzy
+msgid "name"
+msgstr "名称"
 
 msgid "Unknown"
 msgstr "未知"
@@ -1136,6 +1134,21 @@ msgstr "删除所选记录"
 msgid "%s%%"
 msgstr "%s%%"
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "图片"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "CSV 参数"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "CSV 参数"
+
 msgid "Choose a language"
 msgstr "选择一种语言"
 
@@ -1154,5 +1167,10 @@ msgstr "请先保存已翻译条目，然后再增加新翻译 ."
 msgid "No other language available."
 msgstr "没有其他可翻译语言."
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "翻译视图"
+

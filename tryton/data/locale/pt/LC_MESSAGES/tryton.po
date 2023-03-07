@@ -1,10 +1,3 @@
-# Translations template for tryton.
-# Copyright (C) 2016 Tryton
-# This file is distributed under the same license as the tryton project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "especificar arquivo de configuração alternativo"
 
@@ -16,8 +9,8 @@ msgstr "Registrar (log) tudo com nível INFO"
 
 msgid "specify the log level: DEBUG, INFO, WARNING, ERROR, CRITICAL"
 msgstr ""
-"Especifique o nível de registro (log level): DEBUG, INFO, WARNING, ERROR, "
-"CRITICAL"
+"Especifique o nível de registro (log level): DEBUG, INFO, WARNING, ERROR,"
+" CRITICAL"
 
 msgid "specify the file used to output logging information"
 msgstr ""
@@ -79,9 +72,6 @@ msgstr "Salvar como..."
 msgid "Do you want to proceed?"
 msgstr "Você deseja prosseguir?"
 
-msgid "Always ignore this warning."
-msgstr "Sempre ignorar este aviso."
-
 msgid "No"
 msgstr "Não"
 
@@ -130,11 +120,14 @@ msgstr "Verificar URL: %s"
 msgid "Unable to check for new version."
 msgstr "Não foi possível verificar por nova versão"
 
-msgid "A new version is available!"
-msgstr "Nova versão disponível!"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
+msgstr ""
 
-msgid "Download"
-msgstr "Baixar"
+#, fuzzy
+msgid "Could not get a session."
+msgstr "Não foi possível se conectar ao servidor"
 
 msgid "Too many requests. Try again later."
 msgstr ""
@@ -549,6 +542,10 @@ msgid "User name:"
 msgstr "Nome de Usuário:"
 
 #, fuzzy
+msgid "Date:"
+msgstr "Banco de Dados:"
+
+#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "Não é possível apagar o assistente %s"
 
@@ -659,6 +656,9 @@ msgstr "Trabalhando agora no(s) registo(s) duplicado(s)"
 msgid "Record saved."
 msgstr "Registo gravado."
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -681,17 +681,15 @@ msgstr "Relatório"
 msgid "Open report"
 msgstr "Abrir relatório"
 
-msgid "Print"
-msgstr "Imprimir"
-
-msgid "Print report"
-msgstr "Imprimir relatório"
-
 msgid "_Copy URL"
 msgstr "_Copiar URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Copiar URL para a área de transferência"
+
+#, fuzzy
+msgid "name"
+msgstr "Nome"
 
 msgid "Unknown"
 msgstr "Desconhecido"
@@ -1163,6 +1161,21 @@ msgstr "Remover o registro selecionado"
 msgid "%s%%"
 msgstr "%s%%"
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Imagens"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "Parâmetros CSV"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "Parâmetros CSV"
+
 msgid "Choose a language"
 msgstr ""
 
@@ -1181,5 +1194,10 @@ msgstr "Você precisa salvar o registro antes de adicionar traduções."
 msgid "No other language available."
 msgstr "Não há outros idiomas disponíveis."
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "Traduzir visão"
+

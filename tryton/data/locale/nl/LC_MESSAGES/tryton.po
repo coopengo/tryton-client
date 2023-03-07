@@ -1,10 +1,3 @@
-# Translations template for tryton.
-# Copyright (C) 2016 Tryton
-# This file is distributed under the same license as the tryton project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "specificeer een alternatief configuratiebestand"
 
@@ -18,8 +11,7 @@ msgid "specify the log level: DEBUG, INFO, WARNING, ERROR, CRITICAL"
 msgstr "specificeer het log niveau: DEBUG, INFO, WARNING, ERROR, CRITICAL"
 
 msgid "specify the file used to output logging information"
-msgstr ""
-"specificeer het bestand dat wordt gebruikt om loggegevens uit te voeren"
+msgstr "specificeer het bestand dat wordt gebruikt om loggegevens uit te voeren"
 
 msgid "specify the login user"
 msgstr "specificeer de inlog gebruiker"
@@ -78,9 +70,6 @@ msgstr "Opslaan als..."
 msgid "Do you want to proceed?"
 msgstr "Doorgaan?"
 
-msgid "Always ignore this warning."
-msgstr "Deze waarschuwing altijd negeren."
-
 msgid "No"
 msgstr "Nee"
 
@@ -128,11 +117,10 @@ msgstr "Controleer URL: %s"
 msgid "Unable to check for new version."
 msgstr "Kon niet controleren op nieuwe versie."
 
-msgid "A new version is available!"
-msgstr "Er is een nieuwe versie beschikbaar!"
-
-msgid "Download"
-msgstr "Download"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
+msgstr ""
 
 msgid "Too many requests. Try again later."
 msgstr "Te veel verzoeken. Probeer het later nog eens."
@@ -541,6 +529,10 @@ msgstr "Hostnaam / database informatie"
 msgid "User name:"
 msgstr "Gebruikersnaam:"
 
+#, fuzzy
+msgid "Date:"
+msgstr "Database:"
+
 msgid "Unable to complete email entry"
 msgstr "E-mailinvoer kan niet worden voltooid"
 
@@ -640,6 +632,9 @@ msgstr "Aan het werk op het(de) gekopieerde record(s)."
 msgid "Record saved."
 msgstr "Record opgeslagen."
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -662,17 +657,15 @@ msgstr "Rapport"
 msgid "Open report"
 msgstr "Open rapport"
 
-msgid "Print"
-msgstr "Afdrukken"
-
-msgid "Print report"
-msgstr "Rapport afdrukken"
-
 msgid "_Copy URL"
 msgstr "_Kopieer URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Kopieer URL naar het klembord"
+
+#, fuzzy
+msgid "name"
+msgstr "Naam"
 
 msgid "Unknown"
 msgstr "Onbekend"
@@ -1133,6 +1126,21 @@ msgstr "Geselecteerde record verwijderen"
 msgid "%s%%"
 msgstr "%s%%"
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Afbeeldingen"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "CSV parameters"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "CSV parameters"
+
 msgid "Choose a language"
 msgstr "Kies een taal"
 
@@ -1151,5 +1159,10 @@ msgstr "U moet de record opslaan voordat u vertalingen kunt toevoegen."
 msgid "No other language available."
 msgstr "Geen andere taal beschikbaar."
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "Vertaal weergave"
+

@@ -1,11 +1,3 @@
-# Catalan translations for tryton.
-# Copyright (C) 2012 Zikzakmedia SL
-# This file is distributed under the same license as the tryton project.
-# Sergi Almacellas Abellana <sergi@koolpi.com> 2012.
-# Jordi Esteve Cusiné <jesteve@zikzakmedia.com> 2012.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "Indica un fitxer de configuració alternatiu"
 
@@ -78,9 +70,6 @@ msgstr "Desa com..."
 msgid "Do you want to proceed?"
 msgstr "Voleu continuar?"
 
-msgid "Always ignore this warning."
-msgstr "Ignora sempre aquest advertiment."
-
 msgid "No"
 msgstr "No"
 
@@ -128,11 +117,10 @@ msgstr "URL de comprovació: %s"
 msgid "Unable to check for new version."
 msgstr "No s'ha pogut comprovar si existeix una nova versió."
 
-msgid "A new version is available!"
-msgstr "Hi ha una nova versió disponible!"
-
-msgid "Download"
-msgstr "Baixa"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
+msgstr ""
 
 msgid "Too many requests. Try again later."
 msgstr "Massa peticions. Proveu-ho de nou més tard."
@@ -541,6 +529,10 @@ msgstr "Informació del Servidor / Base de dades"
 msgid "User name:"
 msgstr "Nom d'usuari:"
 
+#, fuzzy
+msgid "Date:"
+msgstr "Base de dades:"
+
 msgid "Unable to complete email entry"
 msgstr "No s'ha pogut completar l'entrada del correu electrònic"
 
@@ -640,6 +632,9 @@ msgstr "Està treballant amb un registre(s) duplicat."
 msgid "Record saved."
 msgstr "Registre desat."
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -662,17 +657,15 @@ msgstr "Informes"
 msgid "Open report"
 msgstr "Obre informe"
 
-msgid "Print"
-msgstr "Imprimeix"
-
-msgid "Print report"
-msgstr "Imprimeix informe"
-
 msgid "_Copy URL"
 msgstr "_Copia l'URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Copia l'URL al porta-retalls"
+
+#, fuzzy
+msgid "name"
+msgstr "Nom"
 
 msgid "Unknown"
 msgstr "Desconegut"
@@ -1133,6 +1126,21 @@ msgstr "Elimina el registre seleccionat"
 msgid "%s%%"
 msgstr "%s%%"
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Imatges"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "Paràmetres CSV"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "Paràmetres CSV"
+
 msgid "Choose a language"
 msgstr "Escull un idioma"
 
@@ -1151,5 +1159,10 @@ msgstr "Heu de desar el registre abans d'afegir traduccions."
 msgid "No other language available."
 msgstr "No hi ha cap altre idioma disponible."
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "Tradueix la vista"
+

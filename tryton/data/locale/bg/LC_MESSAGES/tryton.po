@@ -1,10 +1,3 @@
-# Bulgarian (Bulgaria) translations for tryton.
-# Copyright (C) 2010 B2CK
-# This file is distributed under the same license as the tryton project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
-msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
-
 msgid "specify alternate config file"
 msgstr "укажете друг конфигурационен файл"
 
@@ -81,9 +74,6 @@ msgstr "Запис като ..."
 msgid "Do you want to proceed?"
 msgstr ""
 
-msgid "Always ignore this warning."
-msgstr "Винаги игнорирай това предупреждение."
-
 msgid "No"
 msgstr ""
 
@@ -132,10 +122,9 @@ msgstr ""
 msgid "Unable to check for new version."
 msgstr ""
 
-msgid "A new version is available!"
-msgstr ""
-
-msgid "Download"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
 msgstr ""
 
 msgid "Too many requests. Try again later."
@@ -568,6 +557,10 @@ msgid "User name:"
 msgstr "Потребителско име:"
 
 #, fuzzy
+msgid "Date:"
+msgstr "База данни:"
+
+#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "Не може да зададе локални настройки %s"
 
@@ -683,6 +676,9 @@ msgstr "Работите върху дублиран(и) запис(и)!"
 msgid "Record saved."
 msgstr "Записа съхранен!"
 
+msgid " of "
+msgstr ""
+
 #, fuzzy
 msgid ""
 "This record has been modified\n"
@@ -706,17 +702,15 @@ msgstr "Справки"
 msgid "Open report"
 msgstr "Отваряне на справка"
 
-msgid "Print"
-msgstr "Печат"
-
-msgid "Print report"
-msgstr "Отпечатване на справка"
-
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
 msgstr ""
+
+#, fuzzy
+msgid "name"
+msgstr "Име"
 
 msgid "Unknown"
 msgstr "Неизвестен"
@@ -1209,6 +1203,21 @@ msgstr "Изтриване на избрания запис <Del>"
 msgid "%s%%"
 msgstr ""
 
+msgid "L"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Изображения"
+
+#, fuzzy
+msgid "Parameters: {}"
+msgstr "CSV параметри"
+
+#, fuzzy
+msgid "No parameters"
+msgstr "CSV параметри"
+
 msgid "Choose a language"
 msgstr ""
 
@@ -1230,5 +1239,10 @@ msgstr "Трябва да съхраните записа преди да доб
 msgid "No other language available."
 msgstr "Няма наличен друг език!"
 
+#, fuzzy
+msgid ": "
+msgstr ":"
+
 msgid "Translate view"
 msgstr "Превод на изглед"
+

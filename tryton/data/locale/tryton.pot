@@ -70,9 +70,6 @@ msgstr ""
 msgid "Do you want to proceed?"
 msgstr ""
 
-msgid "Always ignore this warning."
-msgstr ""
-
 msgid "No"
 msgstr ""
 
@@ -120,10 +117,9 @@ msgstr ""
 msgid "Unable to check for new version."
 msgstr ""
 
-msgid "A new version is available!"
-msgstr ""
-
-msgid "Download"
+msgid ""
+"The server took too much time to answer.\n"
+"You may try again later."
 msgstr ""
 
 msgid "Too many requests. Try again later."
@@ -531,6 +527,9 @@ msgstr ""
 msgid "User name:"
 msgstr ""
 
+msgid "Date:"
+msgstr ""
+
 msgid "Unable to complete email entry"
 msgstr ""
 
@@ -630,6 +629,9 @@ msgstr ""
 msgid "Record saved."
 msgstr ""
 
+msgid " of "
+msgstr ""
+
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -650,16 +652,13 @@ msgstr ""
 msgid "Open report"
 msgstr ""
 
-msgid "Print"
-msgstr ""
-
-msgid "Print report"
-msgstr ""
-
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
+msgstr ""
+
+msgid "name"
 msgstr ""
 
 msgid "Unknown"
@@ -1121,6 +1120,18 @@ msgstr ""
 msgid "%s%%"
 msgstr ""
 
+msgid "L"
+msgstr ""
+
+msgid "Message"
+msgstr ""
+
+msgid "Parameters: {}"
+msgstr ""
+
+msgid "No parameters"
+msgstr ""
+
 msgid "Choose a language"
 msgstr ""
 
@@ -1137,6 +1148,9 @@ msgid "You need to save the record before adding translations."
 msgstr ""
 
 msgid "No other language available."
+msgstr ""
+
+msgid ": "
 msgstr ""
 
 msgid "Translate view"

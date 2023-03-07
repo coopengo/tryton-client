@@ -4,7 +4,7 @@ from . import timedelta
 from .common import (
     COLORS,
     COLOR_RGB, COLOR_SCHEMES, FORMAT_ERROR, MODELACCESS, MODELHISTORY,
-    MODELNAME, MODELNOTIFICATION, TRYTON_ICON, VIEW_SEARCH, IconFactory, Login,
+    MODELNAME, TRYTON_ICON, VIEW_SEARCH, IconFactory, Login,
     Logout, RPCContextReload, RPCException, RPCExecute, RPCProgress, Tooltips,
     apply_label_attributes, ask, check_version, concurrency, data2pixbuf,
     date_format, ellipsize, error, file_open, file_selection, file_write,
@@ -31,7 +31,6 @@ __all__ = [
     MODELACCESS,
     MODELHISTORY,
     MODELNAME,
-    MODELNOTIFICATION,
     RPCContextReload,
     RPCException,
     RPCExecute,

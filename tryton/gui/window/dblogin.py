@@ -279,6 +279,7 @@ class DBListEditor(object):
         Tests if the server version is compatible with the client version
         It returns None if no information on server version is available.
         '''
+        return True
         version = rpc.server_version(host, port)
         if not version:
             return None

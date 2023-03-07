@@ -548,7 +548,6 @@ class Main(Gtk.Application):
                 common.IconFactory.load_icons,
                 common.MODELACCESS.load_models,
                 common.MODELHISTORY.load_history,
-                common.MODELNOTIFICATION.load_names,
                 common.VIEW_SEARCH.load_searches,
                 ):
             t = threading.Thread(target=target)

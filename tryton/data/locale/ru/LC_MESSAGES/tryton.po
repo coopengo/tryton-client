@@ -1,3 +1,10 @@
+# Russian (Russia) translations for tryton.
+# Copyright (C) 2009 B2CK
+# This file is distributed under the same license as the tryton project.
+# Dmitry Klimanov <k-dmitry2@narod.ru>, 2010.
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "указать альтернативный конфигурационный файл"
 
@@ -8,7 +15,8 @@ msgid "logging everything at INFO level"
 msgstr "все сообщения на уровне INFO"
 
 msgid "specify the log level: DEBUG, INFO, WARNING, ERROR, CRITICAL"
-msgstr "указать уровень вывода сообщений: DEBUG, INFO, WARNING, ERROR, CRITICAL"
+msgstr ""
+"указать уровень вывода сообщений: DEBUG, INFO, WARNING, ERROR, CRITICAL"
 
 msgid "specify the file used to output logging information"
 msgstr ""
@@ -74,6 +82,9 @@ msgstr "Сохранить как..."
 msgid "Do you want to proceed?"
 msgstr "Вы хотите продолжить?"
 
+msgid "Always ignore this warning."
+msgstr "Всегда игнорировать это предупреждение."
+
 msgid "No"
 msgstr ""
 
@@ -122,14 +133,11 @@ msgstr ""
 msgid "Unable to check for new version."
 msgstr ""
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
+msgid "A new version is available!"
 msgstr ""
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "Не удается подключиться к серверу!"
+msgid "Download"
+msgstr ""
 
 msgid "Too many requests. Try again later."
 msgstr ""
@@ -563,10 +571,6 @@ msgid "User name:"
 msgstr "Имя пользователя:"
 
 #, fuzzy
-msgid "Date:"
-msgstr "База данных:"
-
-#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "Не удается установить локализацию %s"
 
@@ -682,9 +686,6 @@ msgstr "Сейчас работает на дублирующихся запис
 msgid "Record saved."
 msgstr "Запись сохранена!"
 
-msgid " of "
-msgstr ""
-
 #, fuzzy
 msgid ""
 "This record has been modified\n"
@@ -708,15 +709,17 @@ msgstr "Отчет"
 msgid "Open report"
 msgstr "Открыть отчет"
 
+msgid "Print"
+msgstr "Печать"
+
+msgid "Print report"
+msgstr "Печать отчета"
+
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
 msgstr ""
-
-#, fuzzy
-msgid "name"
-msgstr "Имя"
 
 msgid "Unknown"
 msgstr "Неизвестно"
@@ -1204,21 +1207,6 @@ msgstr "Удалить выбраную запись"
 msgid "%s%%"
 msgstr ""
 
-msgid "L"
-msgstr ""
-
-#, fuzzy
-msgid "Message"
-msgstr "Изображения"
-
-#, fuzzy
-msgid "Parameters: {}"
-msgstr "Параметры CVS"
-
-#, fuzzy
-msgid "No parameters"
-msgstr "Параметры CVS"
-
 msgid "Choose a language"
 msgstr ""
 
@@ -1239,10 +1227,5 @@ msgstr "Необходимо сохранить запись перед доба
 msgid "No other language available."
 msgstr "Отсутствуют другие доступные языки!"
 
-#, fuzzy
-msgid ": "
-msgstr ":"
-
 msgid "Translate view"
 msgstr "Перевод текущего окна"
-

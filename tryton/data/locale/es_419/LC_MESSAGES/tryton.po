@@ -1,3 +1,10 @@
+# Translations template for tryton.
+# Copyright (C) 2016 Tryton
+# This file is distributed under the same license as the tryton project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr ""
 
@@ -70,6 +77,9 @@ msgstr ""
 msgid "Do you want to proceed?"
 msgstr ""
 
+msgid "Always ignore this warning."
+msgstr ""
+
 msgid "No"
 msgstr ""
 
@@ -117,12 +127,10 @@ msgstr ""
 msgid "Unable to check for new version."
 msgstr ""
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
+msgid "A new version is available!"
 msgstr ""
 
-msgid "Could not get a session."
+msgid "Download"
 msgstr ""
 
 msgid "Too many requests. Try again later."
@@ -530,9 +538,6 @@ msgstr ""
 msgid "User name:"
 msgstr ""
 
-msgid "Date:"
-msgstr ""
-
 msgid "Unable to complete email entry"
 msgstr ""
 
@@ -636,9 +641,6 @@ msgstr ""
 msgid "Record saved."
 msgstr ""
 
-msgid " of "
-msgstr ""
-
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -659,13 +661,16 @@ msgstr ""
 msgid "Open report"
 msgstr ""
 
+msgid "Print"
+msgstr ""
+
+msgid "Print report"
+msgstr ""
+
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
-msgstr ""
-
-msgid "name"
 msgstr ""
 
 msgid "Unknown"
@@ -1131,18 +1136,6 @@ msgstr ""
 msgid "%s%%"
 msgstr ""
 
-msgid "L"
-msgstr ""
-
-msgid "Message"
-msgstr ""
-
-msgid "Parameters: {}"
-msgstr ""
-
-msgid "No parameters"
-msgstr ""
-
 msgid "Choose a language"
 msgstr ""
 
@@ -1161,9 +1154,5 @@ msgstr ""
 msgid "No other language available."
 msgstr ""
 
-msgid ": "
-msgstr ""
-
 msgid "Translate view"
 msgstr ""
-

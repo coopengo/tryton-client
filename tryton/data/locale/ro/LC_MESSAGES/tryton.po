@@ -1,3 +1,7 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "specificare alt fisier de configurare"
 
@@ -70,6 +74,9 @@ msgstr "Salvare că..."
 msgid "Do you want to proceed?"
 msgstr "Doriți să continuați?"
 
+msgid "Always ignore this warning."
+msgstr "Ignorați întotdeauna acest avertisment."
+
 msgid "No"
 msgstr "Nu"
 
@@ -117,14 +124,11 @@ msgstr "Verificați adresa URL: %s"
 msgid "Unable to check for new version."
 msgstr "Nu se poate verifica dacă există o versiune nouă."
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
-msgstr ""
+msgid "A new version is available!"
+msgstr "O nouă versiune este disponibilă!"
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "Nu s-a putut conecta la server."
+msgid "Download"
+msgstr "Descarca"
 
 msgid "Too many requests. Try again later."
 msgstr "Prea multe cereri. Încercați mai târziu."
@@ -533,10 +537,6 @@ msgstr "Informații despre gazdă / bază de date"
 msgid "User name:"
 msgstr "Utilizator:"
 
-#, fuzzy
-msgid "Date:"
-msgstr "Bază de date:"
-
 msgid "Unable to complete email entry"
 msgstr "Nu se poate finaliza introducerea e-mailului"
 
@@ -636,9 +636,6 @@ msgstr "Lucrează acum la înregistrările duplicate."
 msgid "Record saved."
 msgstr "Înregistrare salvată."
 
-msgid " of "
-msgstr ""
-
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -661,15 +658,17 @@ msgstr "Raport"
 msgid "Open report"
 msgstr "Deschidere Raport"
 
+msgid "Print"
+msgstr "Tiparire"
+
+msgid "Print report"
+msgstr "Tipărire raport"
+
 msgid "_Copy URL"
 msgstr "_Copiere URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Copiați URL-ul în clipboard"
-
-#, fuzzy
-msgid "name"
-msgstr "Denumire"
 
 msgid "Unknown"
 msgstr "Necunoscut"
@@ -1130,21 +1129,6 @@ msgstr "Ștergere înregistrare selectată"
 msgid "%s%%"
 msgstr "%s%%"
 
-msgid "L"
-msgstr ""
-
-#, fuzzy
-msgid "Message"
-msgstr "Imagini"
-
-#, fuzzy
-msgid "Parameters: {}"
-msgstr "Parametri CSV"
-
-#, fuzzy
-msgid "No parameters"
-msgstr "Parametri CSV"
-
 msgid "Choose a language"
 msgstr "Alegere limbă"
 
@@ -1163,10 +1147,5 @@ msgstr "Trebuie să salvați înregistrarea înainte de a adăuga traduceri."
 msgid "No other language available."
 msgstr "Nu există altă limbă disponibilă."
 
-#, fuzzy
-msgid ": "
-msgstr ":"
-
 msgid "Translate view"
 msgstr "Traducere vedere"
-

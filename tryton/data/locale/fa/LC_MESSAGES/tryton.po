@@ -1,3 +1,10 @@
+# Translations template for tryton.
+# Copyright (C) 2018 Tryton
+# This file is distributed under the same license as the tryton project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "فایل پیکربندی جایگزین را مشخص کنید"
 
@@ -70,6 +77,9 @@ msgstr "ذخیره با نام..."
 msgid "Do you want to proceed?"
 msgstr "آیا می خواهید پردازش شود؟"
 
+msgid "Always ignore this warning."
+msgstr "همیشه این هشدار را نادیده بگیر."
+
 msgid "No"
 msgstr "خیر"
 
@@ -118,14 +128,11 @@ msgstr "بررسی URL : %s"
 msgid "Unable to check for new version."
 msgstr "قادر به بررسی نسخه جدید نیست"
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
-msgstr ""
+msgid "A new version is available!"
+msgstr "نسخه جدید در دسترس می باشد!"
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "نمی تواند به سرور متصل شود"
+msgid "Download"
+msgstr "دانلود"
 
 msgid "Too many requests. Try again later."
 msgstr ""
@@ -543,10 +550,6 @@ msgid "User name:"
 msgstr "نام کاربر:"
 
 #, fuzzy
-msgid "Date:"
-msgstr "پایگاه داده:"
-
-#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "قادر به حذف دستیار \"%s\" نیست"
 
@@ -657,9 +660,6 @@ msgstr "هم اکنون کار بر روی پرونده(ها) تکثیر شده 
 msgid "Record saved."
 msgstr "پرونده ذخیره شد."
 
-msgid " of "
-msgstr ""
-
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -682,15 +682,17 @@ msgstr "گزارش"
 msgid "Open report"
 msgstr "باز کردن گزارش"
 
+msgid "Print"
+msgstr "چاپ"
+
+msgid "Print report"
+msgstr "چاپ گزارش"
+
 msgid "_Copy URL"
 msgstr "_رونوشت URL"
 
 msgid "Copy URL into clipboard"
 msgstr "کپی URL درون کلیپبورد"
-
-#, fuzzy
-msgid "name"
-msgstr "نام"
 
 msgid "Unknown"
 msgstr "نامعلوم"
@@ -1162,21 +1164,6 @@ msgstr "حذف پرونده انتخابی"
 msgid "%s%%"
 msgstr "%s%%"
 
-msgid "L"
-msgstr ""
-
-#, fuzzy
-msgid "Message"
-msgstr "تصاویر"
-
-#, fuzzy
-msgid "Parameters: {}"
-msgstr "مولفه های CSV"
-
-#, fuzzy
-msgid "No parameters"
-msgstr "مولفه های CSV"
-
 msgid "Choose a language"
 msgstr ""
 
@@ -1195,10 +1182,5 @@ msgstr "قبل از اضافه کردن ترجمه ها شما باید پرون
 msgid "No other language available."
 msgstr "هیچ زبان دیگری در دسترس نیست."
 
-#, fuzzy
-msgid ": "
-msgstr ":"
-
 msgid "Translate view"
 msgstr "نمایش ترجمه"
-

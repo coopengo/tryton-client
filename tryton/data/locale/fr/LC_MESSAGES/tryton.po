@@ -1,3 +1,10 @@
+# French (France) translations for tryton.
+# Copyright (C) 2008-2013 B2CK
+# This file is distributed under the same license as the tryton project.
+# FIRST AUTHOR <cedric.krier@b2ck.com>, 2008-2013.
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "spécifier un fichier de configuration alternatif"
 
@@ -12,8 +19,7 @@ msgstr "spécifie le niveau de log : DEBUG, INFO, WARNING, ERROR, CRITICAL"
 
 msgid "specify the file used to output logging information"
 msgstr ""
-"spécifier le fichier utilisé pour générer les informations de "
-"journalisation"
+"spécifier le fichier utilisé pour générer les informations de journalisation"
 
 msgid "specify the login user"
 msgstr "spécifier l'identifiant de l'utilisateur"
@@ -72,6 +78,9 @@ msgstr "Enregistrer sous..."
 msgid "Do you want to proceed?"
 msgstr "Souhaitez-vous continuer ?"
 
+msgid "Always ignore this warning."
+msgstr "Toujours ignorer cet avertissement."
+
 msgid "No"
 msgstr "Non"
 
@@ -121,14 +130,11 @@ msgstr "Vérification de l'URL : %s"
 msgid "Unable to check for new version."
 msgstr "Impossible de vérifier les nouvelles versions."
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
-msgstr ""
+msgid "A new version is available!"
+msgstr "Un nouvelle version est disponible !"
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "Impossible de se connecter au serveur."
+msgid "Download"
+msgstr "Télécharger"
 
 msgid "Too many requests. Try again later."
 msgstr "Trop de demandes. Réessayez plus tard."
@@ -539,10 +545,6 @@ msgstr "Hôte / Port"
 msgid "User name:"
 msgstr "Nom d'utilisateur :"
 
-#, fuzzy
-msgid "Date:"
-msgstr "Base de données :"
-
 msgid "Unable to complete email entry"
 msgstr "Impossible de compléter l'entrée d'e-mail"
 
@@ -642,9 +644,6 @@ msgstr "Sur les enregistrement(s) dupliqué(s) maintenant."
 msgid "Record saved."
 msgstr "Enregistrement sauvegardé."
 
-msgid " of "
-msgstr ""
-
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -667,15 +666,17 @@ msgstr "Rapport"
 msgid "Open report"
 msgstr "Ouvrir un rapport"
 
+msgid "Print"
+msgstr "Imprimer"
+
+msgid "Print report"
+msgstr "Imprimer un rapport"
+
 msgid "_Copy URL"
 msgstr "_Copier l'URL"
 
 msgid "Copy URL into clipboard"
 msgstr "Copier l'URL dans le presse-papiers"
-
-#, fuzzy
-msgid "name"
-msgstr "Nom"
 
 msgid "Unknown"
 msgstr "Inconnu"
@@ -925,6 +926,9 @@ msgstr "Supprimer l'enregistrement sélectionné<Del>"
 msgid "Undelete selected record <Ins>"
 msgstr "Restaurer l'enregistrement sélectionné<Ins>"
 
+msgid "Are you sure you want to delete this record?"
+msgstr "Êtes-vous sûr de vouloir supprimer cet enregistrement ?"
+
 #, python-format
 msgid "CSV Import: %s"
 msgstr "Import CSV : %s"
@@ -1136,21 +1140,6 @@ msgstr "Supprimer l'enregistrement sélectionné"
 msgid "%s%%"
 msgstr "%s%%"
 
-msgid "L"
-msgstr ""
-
-#, fuzzy
-msgid "Message"
-msgstr "Images"
-
-#, fuzzy
-msgid "Parameters: {}"
-msgstr "Paramètres CSV"
-
-#, fuzzy
-msgid "No parameters"
-msgstr "Paramètres CSV"
-
 msgid "Choose a language"
 msgstr "Choisir une langue"
 
@@ -1164,15 +1153,11 @@ msgid "Fuzzy"
 msgstr "Floue"
 
 msgid "You need to save the record before adding translations."
-msgstr "Vous devez sauvegarder l'enregistrement avant d'ajouter des traductions."
+msgstr ""
+"Vous devez sauvegarder l'enregistrement avant d'ajouter des traductions."
 
 msgid "No other language available."
 msgstr "Pas d'autre langue disponible."
 
-#, fuzzy
-msgid ": "
-msgstr " :"
-
 msgid "Translate view"
 msgstr "Traduire la vue"
-

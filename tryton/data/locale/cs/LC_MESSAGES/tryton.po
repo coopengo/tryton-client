@@ -1,3 +1,10 @@
+# Translations template for tryton.
+# Copyright (C) 2016 Tryton
+# This file is distributed under the same license as the tryton project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "zadejte alternativní konfigurační soubor"
 
@@ -75,6 +82,9 @@ msgstr "Uložit jako..."
 msgid "Do you want to proceed?"
 msgstr ""
 
+msgid "Always ignore this warning."
+msgstr "zadejte alternativní konfigurační soubor"
+
 msgid "No"
 msgstr ""
 
@@ -123,14 +133,11 @@ msgstr ""
 msgid "Unable to check for new version."
 msgstr ""
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
+msgid "A new version is available!"
 msgstr ""
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "Nelze se spojit se serverem!"
+msgid "Download"
+msgstr ""
 
 msgid "Too many requests. Try again later."
 msgstr ""
@@ -568,10 +575,6 @@ msgid "User name:"
 msgstr "Uživatelské jméno:"
 
 #, fuzzy
-msgid "Date:"
-msgstr "Databáze:"
-
-#, fuzzy
 msgid "Unable to complete email entry"
 msgstr "Nemohu nastavit lokalizaci %s"
 
@@ -686,9 +689,6 @@ msgstr "Nyní pracujete s duplicitním záznamem!"
 msgid "Record saved."
 msgstr "Záznam uložen!"
 
-msgid " of "
-msgstr ""
-
 #, fuzzy
 msgid ""
 "This record has been modified\n"
@@ -716,15 +716,17 @@ msgstr "Sestavy"
 msgid "Open report"
 msgstr "Otevřít záznam"
 
+msgid "Print"
+msgstr "Tisk"
+
+msgid "Print report"
+msgstr ""
+
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
 msgstr ""
-
-#, fuzzy
-msgid "name"
-msgstr "Uživatelské jméno:"
 
 msgid "Unknown"
 msgstr "Neznámý"
@@ -1224,21 +1226,6 @@ msgstr "Smazat vybraný záznam"
 msgid "%s%%"
 msgstr ""
 
-msgid "L"
-msgstr ""
-
-#, fuzzy
-msgid "Message"
-msgstr "Obrázky"
-
-#, fuzzy
-msgid "Parameters: {}"
-msgstr "Parametry CSV"
-
-#, fuzzy
-msgid "No parameters"
-msgstr "Parametry CSV"
-
 msgid "Choose a language"
 msgstr ""
 
@@ -1260,10 +1247,5 @@ msgstr "Musíte uložit záznam před přidáváním překladů!"
 msgid "No other language available."
 msgstr "Jiný jazyk není k dispozici!"
 
-#, fuzzy
-msgid ": "
-msgstr ":"
-
 msgid "Translate view"
 msgstr "Přeložit pohled"
-

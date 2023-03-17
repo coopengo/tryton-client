@@ -1,3 +1,7 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
 msgid "specify alternate config file"
 msgstr "tentukan file konfigurasi alternatif"
 
@@ -70,6 +74,9 @@ msgstr "Simpan Sebagai..."
 msgid "Do you want to proceed?"
 msgstr "Apakah Anda ingin melanjutkan?"
 
+msgid "Always ignore this warning."
+msgstr "Selalu abaikan peringatan ini."
+
 msgid "No"
 msgstr "Tidak"
 
@@ -117,14 +124,11 @@ msgstr "Periksa URL: %s"
 msgid "Unable to check for new version."
 msgstr "Tidak dapat memeriksa versi baru."
 
-msgid ""
-"The server took too much time to answer.\n"
-"You may try again later."
-msgstr ""
+msgid "A new version is available!"
+msgstr "Versi baru tersedia!"
 
-#, fuzzy
-msgid "Could not get a session."
-msgstr "Tidak dapat terhubung ke server."
+msgid "Download"
+msgstr "Unduh"
 
 msgid "Too many requests. Try again later."
 msgstr "Terlalu banyak permintaan. Coba lagi nanti."
@@ -533,9 +537,6 @@ msgstr ""
 msgid "User name:"
 msgstr ""
 
-msgid "Date:"
-msgstr ""
-
 msgid "Unable to complete email entry"
 msgstr ""
 
@@ -635,9 +636,6 @@ msgstr ""
 msgid "Record saved."
 msgstr ""
 
-msgid " of "
-msgstr ""
-
 msgid ""
 "This record has been modified\n"
 "do you want to save it?"
@@ -658,15 +656,17 @@ msgstr "Laporan"
 msgid "Open report"
 msgstr ""
 
+msgid "Print"
+msgstr "Cetak"
+
+msgid "Print report"
+msgstr "Cetak laporan"
+
 msgid "_Copy URL"
 msgstr ""
 
 msgid "Copy URL into clipboard"
 msgstr ""
-
-#, fuzzy
-msgid "name"
-msgstr "Nama"
 
 msgid "Unknown"
 msgstr ""
@@ -1128,18 +1128,6 @@ msgstr ""
 msgid "%s%%"
 msgstr "%s%%"
 
-msgid "L"
-msgstr ""
-
-msgid "Message"
-msgstr ""
-
-msgid "Parameters: {}"
-msgstr ""
-
-msgid "No parameters"
-msgstr ""
-
 msgid "Choose a language"
 msgstr "Pilih bahasa"
 
@@ -1158,10 +1146,5 @@ msgstr ""
 msgid "No other language available."
 msgstr "Tidak ada bahasa lain yang tersedia."
 
-#, fuzzy
-msgid ": "
-msgstr ":"
-
 msgid "Translate view"
 msgstr ""
-

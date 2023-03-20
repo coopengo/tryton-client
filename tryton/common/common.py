@@ -1459,9 +1459,9 @@ def ellipsize(string, length):
 
 def get_align(float_, expand=True):
     "Convert float align into Gtk.Align"
+    value = float(float_)
     if expand:
         return Gtk.Align.FILL
-    value = float(float_)
     if value < 0.5:
         return Gtk.Align.START
     elif value == 0.5:

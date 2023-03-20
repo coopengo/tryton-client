@@ -311,6 +311,8 @@ class FormXMLViewParser(XMLViewParser):
             attributes['xalign'] = 0.0
 
         attributes.setdefault('xexpand', 0)
+        attributes.setdefault('xalign', 1)
+        attributes.setdefault('yalign', 0.5)
         label = Label(label=attributes.get('string', ''), attrs=attributes)
         label.set_halign(get_align(
                 attributes.get('xalign', 1.0),
@@ -318,6 +320,8 @@ class FormXMLViewParser(XMLViewParser):
         label.set_valign(get_align(
                 attributes.get('yalign', 0.5),
                 bool(attributes.get('yexpand'))))
+        label.props.xalign = float(attributes['xalign'])
+        label.props.yalign = float(attributes['yalign'])
         label.set_angle(int(attributes.get('angle', 0)))
         self.view.state_widgets.append(label)
         self.container.add(label, attributes)

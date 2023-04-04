@@ -72,12 +72,12 @@ build() {
 upload() {
     local v; v=$(version)
 
-    CREATE_RELEASE=$(curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/coopengo/tryton/releases -d "{\"tag_name\":\"coog-$v\",\"name\":\"coog-$v\",\"body\":\"Coog client for coog-$v\"}")
+    CREATE_RELEASE=$(curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/coopengo/tryton/releases -d "{\"tag_name\":\"coog-$v\",\"name\":\"coog-$v\",\"body\":\"Coog client for coog-$v\",\"make_latest\":false}")
     UPLOAD_URL=$(echo "${CREATE_RELEASE}" | jq -r '.upload_url' | sed 's/{?name,label}//')
 
     for f in ./coog-*
     do
-        curl -X POST -H "Content-Type: application/octet-stream" --data-binary "@${f}" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${UPLOAD_URL}?name=${f}"
+        curl -X POST -H "Content-Type: application/octet-stream" --data-binary "@${f/.\/}" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${UPLOAD_URL}?name=${f/.\/}"
         # gdrive files upload --parent "$GDRIVE_FOLDER_ID" "$f"
     done
 }

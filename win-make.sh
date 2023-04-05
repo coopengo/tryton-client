@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 
 GDRIVE_FOLDER_ID=1QFesaa6pPX_kPvOZc2fbOa9j9KA9jM1x
 

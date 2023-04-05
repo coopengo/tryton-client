@@ -78,7 +78,7 @@ upload() {
     for f in ./coog-*
     do
         curl -X POST -H "Content-Type: application/octet-stream" --data-binary "@${f/.\/}" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${UPLOAD_URL}?name=${f/.\/}"
-        # gdrive files upload --parent "$GDRIVE_FOLDER_ID" "$f"
+        gdrive files upload --parent "$GDRIVE_FOLDER_ID" "$f"
     done
 }
 

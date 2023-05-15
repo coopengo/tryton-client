@@ -1,16 +1,11 @@
 #!/bin/bash
 
-set -x
-
-GDRIVE_FOLDER_ID=1wrsfp7PBa8Sdg7nh4lJnx2FmYAtdGATq
-
 # For build
 CERTIFICAT_PASSWORD=$2
 WINDOWS_USER_PASSWORD=$3
 
 # For upload
 GITHUB_TOKEN=$2
-CI_COMMIT_REF_NAME=$3
 
 version() {
     local t
@@ -77,7 +72,6 @@ upload() {
     for f in ./coog-*
     do
         curl -X POST -H "Content-Type: application/octet-stream" --data-binary "@${f/.\/}" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${UPLOAD_URL}?name=${f/.\/}"
-        gdrive files upload --parent "$GDRIVE_FOLDER_ID" "$f"
     done
 }
 

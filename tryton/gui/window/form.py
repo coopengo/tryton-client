@@ -321,7 +321,8 @@ class Form(TabContent):
             if isinstance(value, datetime.datetime):
                 value = timezoned_date(value).strftime(datetime_format)
             message_str += '%s %s\n' % (label, value)
-        message_str += _('Model:') + ' ' + self.model
+        message_str += _('Model:') + ' ' + self.model + \
+            ' (' + self.name + ')'
         message(message_str)
         return True
 

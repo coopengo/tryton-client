@@ -427,7 +427,8 @@ class SourceView(Widget):
         if Gdk.keyval_name(event.keyval) == 'F7':
             self.check_code(None)
             sourceview.stop_emission_by_name('key-press-event')
-        elif Gdk.keyval_name(event.keyval) == 'F5':
+        elif (Gdk.keyval_name(event.keyval) == 'f'
+                and event.state & Gdk.ModifierType.CONTROL_MASK):
             if self.search_band.is_visible():
                 self.search_band_hide()
             else:
@@ -542,7 +543,7 @@ class SourceView(Widget):
             return True
 
     def _hide_search(self, widget, event):
-        if Gdk.keyval_name(event.keyval) in {'F5', 'Escape'}:
+        if Gdk.keyval_name(event.keyval) in {'Escape'}:
             self.search_band_hide()
 
     def do_replace(self, *args):

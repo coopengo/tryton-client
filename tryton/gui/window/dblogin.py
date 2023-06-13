@@ -6,6 +6,7 @@ import datetime
 import gettext
 import logging
 import os
+import re
 import threading
 
 from gi.repository import GLib, GObject, Gtk
@@ -19,6 +20,7 @@ from tryton.config import CONFIG, PIXMAPS_DIR, TRYTON_ICON, get_config_dir
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
+DEMO_HOSTNAME = re.compile(r"demo\d+\.\d+\.tryton\.org")
 
 
 class DBListEditor(object):
@@ -497,22 +499,30 @@ class DBLogin(object):
         # Profile informations
         self.profile_cfg = os.path.join(get_config_dir(), 'profiles.cfg')
         self.profiles = configparser.ConfigParser()
+        serie = '.'.join(__version__.split('.', 2)[:2])
+        current_demo = f"demo{serie}.tryton.org"
         if not os.path.exists(self.profile_cfg):
-            short_version = '.'.join(__version__.split('.', 2)[:2])
-            name = 'demo%s.tryton.org' % short_version
-            self.profiles.add_section(name)
-            self.profiles.set(name, 'host', name)
-            self.profiles.set(name, 'database', 'demo%s' % short_version)
-            self.profiles.set(name, 'username', 'demo')
-        else:
-            try:
-                self.profiles.read(self.profile_cfg)
-            except configparser.ParsingError:
-                logger.error("Fail to parse profiles.cfg", exc_info=True)
+            self.profiles.add_section(current_demo)
+            self.profiles.set(current_demo, 'host', current_demo)
+            self.profiles.set(current_demo, 'database', f'demo{serie}')
+            self.profiles.set(current_demo, 'username', 'demo')
+        to_remove = []
         for section in self.profiles.sections():
+            host = self.profiles.get(section, 'host', fallback='')
+            if host and DEMO_HOSTNAME.match(host) and host != current_demo:
+                to_remove.append(section)
+                continue
             active = all(self.profiles.has_option(section, option)
                 for option in ('host', 'database'))
             self.profile_store.append([section, active])
+        for section in to_remove:
+            self.profiles.remove_section(section)
+        if to_remove and not self.profiles.has_section(current_demo):
+            self.profiles.add_section(current_demo)
+            self.profiles.set(current_demo, 'host', current_demo)
+            self.profiles.set(current_demo, 'database', f'demo{serie}')
+            self.profiles.set(current_demo, 'username', 'demo')
+            self.profile_store.append([current_demo, True])
 
         self.services = []
         self.service_base = ''

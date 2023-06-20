@@ -564,6 +564,10 @@ class ScreenContainer(object):
             self.do_search(widget)
 
     def do_search(self, widget=None):
+        searched_text = self.get_text()
+        if searched_text != self.last_search_text:
+            self.last_search_text = searched_text
+            self.screen.offset = 0
         self.screen.search_filter(self.get_text())
 
     def set_cursor(self, new=False, reset_view=True):

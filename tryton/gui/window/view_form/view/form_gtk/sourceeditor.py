@@ -141,6 +141,7 @@ class SourceView(Widget):
         toolbar.insert(check_btn, -1)
 
         self.replacing = False
+        self.replacements = None
         self.search_band = Gtk.HBox()
         self.search_band.connect('key-press-event', self._hide_search)
         self.search_entry = Gtk.Entry()
@@ -153,9 +154,10 @@ class SourceView(Widget):
         self.replace_entry.props.max_width_chars = 40
         self.replace_entry.props.placeholder_text = "Replace"
         self.replace_entry.connect('activate', self.do_replace)
-        self.replace_entry.set_icon_from_icon_name(
-            Gtk.EntryIconPosition.SECONDARY, 'edit-find-replace-symbolic')
-        self.replace_entry.connect('icon-press', self.do_replace)
+        replace = Gtk.Button.new_with_label("Replace")
+        replace.connect('clicked', self.do_replace)
+        replace_all = Gtk.Button.new_with_label("Replace All")
+        replace_all.connect('clicked', self.do_replace_all)
         self.occurrence_label = Gtk.Label()
         prev_button = Gtk.Button.new_from_icon_name(
             'go-previous-symbolic', Gtk.IconSize.BUTTON)
@@ -176,6 +178,10 @@ class SourceView(Widget):
             self.occurrence_label, expand=True, fill=True, padding=2)
         self.search_band.pack_start(
             self.replace_entry, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            replace, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            replace_all, expand=False, fill=True, padding=2)
         self.search_settings = GtkSource.SearchSettings()
         self.search_settings.props.wrap_around = True
         self.search_context = GtkSource.SearchContext.new(
@@ -462,6 +468,8 @@ class SourceView(Widget):
     def search_band_hide(self):
         self.search_entry.set_text('')
         self.replace_entry.set_text('')
+        self.occurrence_label.set_text('')
+        self.replacements = None
         self.search_settings.props.search_text = ''
         self.search_context.props.highlight = False
         insert_mark = self.sourcebuffer.get_insert()
@@ -472,6 +480,7 @@ class SourceView(Widget):
         self.grab_focus()
 
     def do_search(self, entry, forward=True):
+        self.replacements = None
         searched_text = entry.get_text()
         if searched_text:
             self.search_settings.props.search_text = searched_text
@@ -485,6 +494,7 @@ class SourceView(Widget):
             self.search_context.props.highlight = False
 
     def prev_search_entry(self, button):
+        self.replacements = None
         if not self.search_settings.props.search_text:
             self.do_search(self.search_entry)
 
@@ -499,7 +509,7 @@ class SourceView(Widget):
             start, None, self._backward_search_finished)
 
     def _backward_search_finished(self, context, task):
-        success, start, stop = context.backward_finish(task)
+        success, start, stop, wrap = context.backward_finish2(task)
         if not success:
             return
         self.sourcebuffer.select_range(start, stop)
@@ -511,6 +521,7 @@ class SourceView(Widget):
             GLib.idle_add(self.do_replace)
 
     def next_search_entry(self, button):
+        self.replacements = None
         if not self.search_settings.props.search_text:
             self.do_search(self.search_entry)
 
@@ -525,7 +536,7 @@ class SourceView(Widget):
             start, None, self._forward_search_finished)
 
     def _forward_search_finished(self, context, task):
-        success, start, stop = context.forward_finish(task)
+        success, start, stop, wrap = context.forward_finish2(task)
         if not success:
             return
         self.sourcebuffer.select_range(start, stop)
@@ -547,6 +558,7 @@ class SourceView(Widget):
             self.search_band_hide()
 
     def do_replace(self, *args):
+        self.replacements = None
         replacement_text = self.replace_entry.get_text()
         selection_bounds = self.sourcebuffer.get_selection_bounds()
         if not replacement_text:
@@ -568,6 +580,27 @@ class SourceView(Widget):
         self.search_context.forward_async(
             end, None, self._forward_search_finished)
 
+    def do_replace_all(self, *args):
+        searched_text = self.search_entry.get_text()
+        replacement_text = self.replace_entry.get_text()
+        if not replacement_text or not searched_text:
+            return
+
+        self.search_settings.props.search_text = searched_text
+        start, _ = self.sourcebuffer.get_bounds()
+        self.search_context.forward_async(
+            start, None, self._replace_all_search_finished)
+
+    def _replace_all_search_finished(self, context, task):
+        success, start, stop, wrap = context.forward_finish2(task)
+        if not success:
+            return
+
+        replacement_text = self.replace_entry.get_text()
+        replacement_text_length = self.replace_entry.get_buffer().get_bytes()
+        self.replacements = context.replace_all(
+            replacement_text, replacement_text_length)
+
     def update_occurrences(self, context, param):
         count = context.get_occurrences_count()
         if self.sourcebuffer.get_has_selection():
@@ -576,7 +609,9 @@ class SourceView(Widget):
         else:
             position = -1
 
-        if count == -1:
+        if self.replacements is not None:
+            text = f"{self.replacements} occurrence(s) replaced"
+        elif count == -1:
             text = ""
         elif position == -1:
             text = f"{count} occurrence(s)"

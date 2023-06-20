@@ -140,6 +140,56 @@ class SourceView(Widget):
         check_btn.connect('clicked', self.check_code)
         toolbar.insert(check_btn, -1)
 
+        self.replacing = False
+        self.replacements = None
+        self.search_band = Gtk.HBox()
+        self.search_band.connect('key-press-event', self._hide_search)
+        self.search_entry = Gtk.Entry()
+        self.search_entry.props.max_width_chars = 40
+        self.search_entry.props.placeholder_text = "Search"
+        self.search_entry.connect('activate', self.do_search)
+        self.search_entry.set_icon_from_icon_name(
+            Gtk.EntryIconPosition.PRIMARY, 'system-search-symbolic')
+        self.replace_entry = Gtk.Entry()
+        self.replace_entry.props.max_width_chars = 40
+        self.replace_entry.props.placeholder_text = "Replace"
+        self.replace_entry.connect('activate', self.do_replace)
+        replace = Gtk.Button.new_with_label("Replace")
+        replace.connect('clicked', self.do_replace)
+        replace_all = Gtk.Button.new_with_label("Replace All")
+        replace_all.connect('clicked', self.do_replace_all)
+        self.occurrence_label = Gtk.Label()
+        prev_button = Gtk.Button.new_from_icon_name(
+            'go-previous-symbolic', Gtk.IconSize.BUTTON)
+        prev_button.connect('clicked', self.prev_search_entry)
+        next_button = Gtk.Button.new_from_icon_name(
+            'go-next-symbolic', Gtk.IconSize.BUTTON)
+        next_button.connect('clicked', self.next_search_entry)
+        # Required because Tabbing from the next button to the replace entry
+        # deselects the text in the TextView
+        next_button.connect('key-press-event', self._go_replace)
+        self.search_band.pack_start(
+            self.search_entry, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            prev_button, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            next_button, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            self.occurrence_label, expand=True, fill=True, padding=2)
+        self.search_band.pack_start(
+            self.replace_entry, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            replace, expand=False, fill=True, padding=2)
+        self.search_band.pack_start(
+            replace_all, expand=False, fill=True, padding=2)
+        self.search_settings = GtkSource.SearchSettings()
+        self.search_settings.props.wrap_around = True
+        self.search_context = GtkSource.SearchContext.new(
+            self.sourcebuffer, self.search_settings)
+        self.search_context.connect(
+            'notify::occurrences-count', self.update_occurrences)
+        self.sourcebuffer.connect('mark-set', self._mark_cb)
+
         self.error_store = Gtk.ListStore(
             GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_STRING)
 
@@ -167,6 +217,7 @@ class SourceView(Widget):
 
         vbox.pack_start(toolbar, expand=False, fill=True, padding=0)
         vbox.pack_start(sc_editor, expand=True, fill=True, padding=0)
+        vbox.pack_start(self.search_band, expand=False, fill=True, padding=0)
         vbox.pack_start(sc_error, expand=True, fill=True, padding=0)
         vbox.show_all()
 
@@ -224,6 +275,7 @@ class SourceView(Widget):
         else:
             self.widget = vbox
 
+        self.search_band.hide()
         self.tree_data = []
         self.known_funcs = set()
 
@@ -280,6 +332,7 @@ class SourceView(Widget):
                 self.tree_data = []
                 self.model.clear()
                 self.known_funcs.clear()
+        self.search_band_hide()
         self.check_code()
 
     def populate_tree(self, tree_data, parent=None):
@@ -379,7 +432,15 @@ class SourceView(Widget):
     def _test_check(self, sourceview, event):
         if Gdk.keyval_name(event.keyval) == 'F7':
             self.check_code(None)
-            sourceview.emit_stop_by_name('key-press-event')
+            sourceview.stop_emission_by_name('key-press-event')
+        elif (Gdk.keyval_name(event.keyval) == 'f'
+                and event.state & Gdk.ModifierType.CONTROL_MASK):
+            if self.search_band.is_visible():
+                self.search_band_hide()
+            else:
+                self.search_band.show_all()
+                self.search_entry.grab_focus()
+            sourceview.stop_emission_by_name('key-press-event')
 
     def _clear_marks(self, sourcebuffer):
         tag_table = sourcebuffer.get_tag_table()
@@ -403,3 +464,161 @@ class SourceView(Widget):
 
     def tree_display_tooltip(self, treeview, x, y, keyboard_mode, tooltip):
         return False
+
+    def search_band_hide(self):
+        self.search_entry.set_text('')
+        self.replace_entry.set_text('')
+        self.occurrence_label.set_text('')
+        self.replacements = None
+        self.search_settings.props.search_text = ''
+        self.search_context.props.highlight = False
+        insert_mark = self.sourcebuffer.get_insert()
+        self.sourcebuffer.move_mark_by_name(
+            'selection_bound',
+            self.sourcebuffer.get_iter_at_mark(insert_mark))
+        self.search_band.hide()
+        self.grab_focus()
+
+    def do_search(self, entry, forward=True):
+        self.replacements = None
+        searched_text = entry.get_text()
+        if searched_text:
+            self.search_settings.props.search_text = searched_text
+            self.search_context.props.highlight = True
+            if forward:
+                self.next_search_entry(None)
+            else:
+                self.prev_search_entry(None)
+        else:
+            self.search_settings.props.search_text = ''
+            self.search_context.props.highlight = False
+
+    def prev_search_entry(self, button):
+        self.replacements = None
+        if not self.search_settings.props.search_text:
+            self.do_search(self.search_entry)
+
+        selection = self.sourcebuffer.get_selection_bounds()
+        if not selection:
+            insert_mark = self.sourcebuffer.get_insert()
+            start = self.sourcebuffer.get_iter_at_mark(insert_mark)
+        else:
+            start = selection[0]
+
+        self.search_context.backward_async(
+            start, None, self._backward_search_finished)
+
+    def _backward_search_finished(self, context, task):
+        success, start, stop, wrap = context.backward_finish2(task)
+        if not success:
+            return
+        self.sourcebuffer.select_range(start, stop)
+        insert_mark = self.sourcebuffer.get_insert()
+        self.sourceview.scroll_mark_onscreen(insert_mark)
+
+        if self.replacing:
+            self.replacing = False
+            GLib.idle_add(self.do_replace)
+
+    def next_search_entry(self, button):
+        self.replacements = None
+        if not self.search_settings.props.search_text:
+            self.do_search(self.search_entry)
+
+        selection = self.sourcebuffer.get_selection_bounds()
+        if not selection:
+            insert_mark = self.sourcebuffer.get_insert()
+            start = self.sourcebuffer.get_iter_at_mark(insert_mark)
+        else:
+            start = selection[1]
+
+        self.search_context.forward_async(
+            start, None, self._forward_search_finished)
+
+    def _forward_search_finished(self, context, task):
+        success, start, stop, wrap = context.forward_finish2(task)
+        if not success:
+            return
+        self.sourcebuffer.select_range(start, stop)
+        insert_mark = self.sourcebuffer.get_insert()
+        self.sourceview.scroll_mark_onscreen(insert_mark)
+
+        if self.replacing:
+            self.replacing = False
+            GLib.idle_add(self.do_replace)
+
+    def _go_replace(self, widget, event):
+        if (Gdk.keyval_name(event.keyval) == 'Tab'
+                and not event.state & Gdk.ModifierType.MODIFIER_MASK):
+            self.replace_entry.grab_focus_without_selecting()
+            return True
+
+    def _hide_search(self, widget, event):
+        if Gdk.keyval_name(event.keyval) in {'Escape'}:
+            self.search_band_hide()
+
+    def do_replace(self, *args):
+        self.replacements = None
+        replacement_text = self.replace_entry.get_text()
+        selection_bounds = self.sourcebuffer.get_selection_bounds()
+        if not replacement_text:
+            return
+        if (not self.search_settings.props.search_text
+                or not selection_bounds):
+            self.replacing = True
+            self.do_search(self.search_entry)
+            return
+
+        replacement_text_length = self.replace_entry.get_buffer().get_bytes()
+        start, end = selection_bounds
+        self.search_context.replace(
+            start, end, replacement_text, replacement_text_length)
+        self.replacing = False
+
+        selection_bound = self.sourcebuffer.get_selection_bound()
+        end = self.sourcebuffer.get_iter_at_mark(selection_bound)
+        self.search_context.forward_async(
+            end, None, self._forward_search_finished)
+
+    def do_replace_all(self, *args):
+        searched_text = self.search_entry.get_text()
+        replacement_text = self.replace_entry.get_text()
+        if not replacement_text or not searched_text:
+            return
+
+        self.search_settings.props.search_text = searched_text
+        start, _ = self.sourcebuffer.get_bounds()
+        self.search_context.forward_async(
+            start, None, self._replace_all_search_finished)
+
+    def _replace_all_search_finished(self, context, task):
+        success, start, stop, wrap = context.forward_finish2(task)
+        if not success:
+            return
+
+        replacement_text = self.replace_entry.get_text()
+        replacement_text_length = self.replace_entry.get_buffer().get_bytes()
+        self.replacements = context.replace_all(
+            replacement_text, replacement_text_length)
+
+    def update_occurrences(self, context, param):
+        count = context.get_occurrences_count()
+        if self.sourcebuffer.get_has_selection():
+            start, end = self.sourcebuffer.get_selection_bounds()
+            position = context.get_occurrence_position(start, end)
+        else:
+            position = -1
+
+        if self.replacements is not None:
+            text = f"{self.replacements} occurrence(s) replaced"
+        elif count == -1:
+            text = ""
+        elif position == -1:
+            text = f"{count} occurrence(s)"
+        else:
+            text = f"{position} / {count} occurrence(s)"
+        self.occurrence_label.set_text(text)
+
+    def _mark_cb(self, buffer, iter_, mark):
+        if mark.get_name() in {'insert', 'selection_bound'}:
+            GLib.idle_add(self.update_occurrences, self.search_context, None)

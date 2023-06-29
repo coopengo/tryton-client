@@ -1110,7 +1110,8 @@ class ViewTree(View):
         def do_selection_changed():
             previous_record = self.record
             if (previous_record
-                    and previous_record not in previous_record.group):
+                    and (previous_record not in previous_record.group 
+                        or previous_record.destroyed)):
                 previous_record = None
 
             # Because do_selection_changed is call through an idle_add it can

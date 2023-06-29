@@ -12,8 +12,9 @@ from gi.repository import Gdk, GLib, Gtk
 from tryton.gui.window.win_search import WinSearch
 from tryton.gui.window.win_form import WinForm
 from tryton.gui.window.view_form.screen import Screen
-from tryton.common import file_selection, file_open, file_write
 import tryton.common as common
+from tryton.common import (
+    data2pixbuf, file_open, file_selection, file_write, get_gdk_backend)
 from tryton.common.cellrendererbutton import CellRendererButton
 from tryton.common.cellrenderertext import CellRendererText, \
     CellRendererTextCompletion
@@ -23,7 +24,6 @@ from tryton.common.cellrendererinteger import CellRendererInteger
 from tryton.common.cellrendererfloat import CellRendererFloat
 from tryton.common.cellrendererclickablepixbuf import \
     CellRendererClickablePixbuf
-from tryton.common import data2pixbuf
 from tryton.common.completion import get_completion, update_completion
 from tryton.common.selection import (
     SelectionMixin, PopdownMixin, selection_shortcuts)
@@ -1180,10 +1180,12 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
     def editing_started(self, cell, editable, path):
         super(Selection, self).editing_started(cell, editable, path)
         record, field = self._get_record_field_from_path(path)
-        # Combobox does not emit remove-widget when focus is changed
-        self.editable.connect(
-            'editing-done',
-            lambda *a: self.editable.emit('remove-widget'))
+        gdk_backend = get_gdk_backend()
+        if gdk_backend == 'x11':
+            # Combobox does not emit remove-widget when focus is changed
+            self.editable.connect(
+                'editing-done',
+                lambda *a: self.editable.emit('remove-widget'))
 
         selection_shortcuts(editable)
 
@@ -1191,6 +1193,12 @@ class Selection(GenericText, SelectionMixin, PopdownMixin):
             return self.set_value(editable, record, field)
         editable.get_child().connect('activate', set_value)
         editable.get_child().connect('focus-out-event', set_value)
+
+        if gdk_backend != 'x11':
+            def remove_entry(entry, event):
+                editable.emit('editing-done')
+                editable.emit('remove-widget')
+            editable.get_child().connect('focus-out-event', remove_entry)
         editable.connect('changed', set_value)
 
         self.update_selection(record, field)

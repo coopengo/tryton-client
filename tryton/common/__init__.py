@@ -2,15 +2,15 @@
 # this repository contains the full copyright notices and license terms.
 from .common import (
     COLOR_RGB, COLOR_SCHEMES, COLORS, FORMAT_ERROR, MODELACCESS, MODELHISTORY,
-    MODELNAME, MODELNOTIFICATION, TRYTON_ICON, VIEW_SEARCH, IconFactory, Login,
+    MODELNAME, TRYTON_ICON, VIEW_SEARCH, IconFactory, Login,
     Logout, RPCContextReload, RPCException, RPCExecute, RPCProgress, Tooltips,
     apply_label_attributes, ask, check_version, concurrency, data2pixbuf, date_format,
     ellipsize, error, file_open, file_selection, file_write, filter_domain,
-    generateColorscheme, get_align, get_credentials, get_gdk_backend, get_hostname,
+    generateColorscheme, get_align, get_gdk_backend, get_hostname,
     get_port, get_sensible_widget, get_toplevel_window, hex2rgb, highlight_rgb,
     humanize, idle_add, mailto, message, node_attributes, process_exception,
     resize_pixbuf, selection, setup_window, slugify, sur, sur_3b, timezoned_date,
-    to_xml, untimezoned_date, url_open, userwarning, warning)
+    to_xml, untimezoned_date, userwarning, warning)
 from .domain_inversion import (
     domain_inversion, eval_domain, localize_domain, merge, inverse_leaf,
     filter_leaf, prepare_reference_domain, extract_reference_models, concat,
@@ -30,7 +30,6 @@ __all__ = [
     MODELACCESS,
     MODELHISTORY,
     MODELNAME,
-    MODELNOTIFICATION,
     RPCContextReload,
     RPCException,
     RPCExecute,
@@ -57,7 +56,6 @@ __all__ = [
     filter_leaf,
     generateColorscheme,
     get_align,
-    get_credentials,
     get_gdk_backend,
     get_hostname,
     get_port,
@@ -86,7 +84,6 @@ __all__ = [
     to_xml,
     unique_value,
     untimezoned_date,
-    url_open,
     userwarning,
     warning,
     ]

@@ -101,6 +101,7 @@ class Field(object):
             return True
         state_attrs = self.get_state_attrs(record)
         is_required = bool(int(state_attrs.get('required') or 0))
+        is_invisible = bool(int(state_attrs.get('invisible') or 0))
         invalid = False
         state_attrs['domain_readonly'] = False
         domain = simplify(self.validation_domains(record, pre_validate))
@@ -127,6 +128,7 @@ class Field(object):
                 screen_domain, multi_valued_field=multi_valued)
             if (self._is_empty(record)
                     and not is_required
+                    and not is_invisible
                     and not unique_from_screen):
                 pass
             elif unique:
